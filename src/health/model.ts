@@ -9,6 +9,10 @@ export type MonitorErrorType =
   | "EMPTY_DATA"
   | "STALE_DATA"
   | "INVALID_TIMESTAMP"
+  /** A CI workflow ran and did not succeed. */
+  | "WORKFLOW_FAILED"
+  /** A scheduled workflow has not produced a run when one was due. */
+  | "WORKFLOW_NOT_RUN"
   | "UNKNOWN";
 
 export interface MonitorHealth {

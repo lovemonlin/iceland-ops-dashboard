@@ -25,13 +25,15 @@ In particular, the Android project's Gradle, APK, emulator and Android Studio ru
 
 ## Data sources monitored
 
-Phase one covers seven sources. ECMWF and IRCA are wired to live production data; the rest are
-still mock.
+Phase one covers seven data sources plus the two GitHub Actions workflows that publish them.
+ECMWF, IRCA and both pipelines are live; the rest are still mock.
 
 | Section | Monitor | id | Data |
 | --- | --- | --- | --- |
 | Weather | MET Norway Weather | `metno` | mock |
 | Roads | IRCA Roads | `irca` | **live, read-only** |
+| Pipelines | IRCA Road Publisher | `ircaPipeline` | **live, read-only** |
+| Pipelines | ECMWF Cloud Publisher | `ecmwfPipeline` | **live, read-only** |
 | Aurora | NOAA Kp | `noaaKp` | mock |
 | Aurora | NOAA Solar Wind | `solarWind` | mock |
 | Aurora | NOAA OVATION | `ovation` | mock |
@@ -80,6 +82,30 @@ and its siblings are downloaded solely when the manifest identity changes. Since
 all-or-nothing, the files cannot change without the manifest changing. The cache is server-process
 memory only — no database, and losing it on restart costs one extra download.
 
+
+### GitHub Actions pipeline monitors
+
+The output monitors can prove that published data is old. They cannot say why. The pipeline monitors
+read the public GitHub REST API, anonymously and GET-only, to separate four very different problems:
+
+- the workflow **ran and failed** — with the failing job and step named;
+- the workflow **never ran** — a missing scheduled trigger, which needs a different fix entirely;
+- the workflow **succeeded but the output did not advance** — a publish-side problem;
+- **GitHub could not be checked** — stated as such, never as a workflow failure.
+
+Each source and its pipeline are merged into a single incident, so one problem produces one entry.
+
+No token is used, so GitHub allows 60 requests/hour/IP. GitHub is therefore polled at most every
+5 minutes from an in-memory cache, and the jobs endpoint is only touched when the latest run failed.
+Rate-limit headers are parsed and shown on the card; below 10 remaining the interval stretches to
+10 minutes.
+
+**A note on GitHub scheduling.** A sample of the last 10 runs of each workflow showed IRCA running
+every 105-277 minutes despite declaring a five-minute cron, and ECMWF every ~134-401 minutes against
+a three-hourly cron. GitHub drops most scheduled triggers on free public repositories, so a cron is
+an upper bound, never a promise — which is worth knowing before tuning any freshness threshold in
+this repository.
+
 ## Status meanings
 
 | Status | Colour | Meaning |
@@ -122,10 +148,12 @@ src/
   app/          Next.js App Router page, layout, dark stylesheet
   components/   Dashboard (client, holds refresh + session event log), StatusCard
   app/api/      /api/health route: runs every monitor, returns a snapshot
-  config/       monitor ids, mock freshness thresholds, request timeout, ECMWF and IRCA contracts
+  config/       monitor ids and incident families, mock freshness thresholds, request timeout,
+                ECMWF / IRCA / GitHub contracts
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
   lib/          fetch diagnostics, session event log, time-zone formatting
-  monitors/     runAllMonitors, live ECMWF and IRCA monitors, mock monitors, validation helpers
+  monitors/     runAllMonitors, live ECMWF / IRCA / pipeline monitors, incident correlation,
+                mock monitors, validation helpers
 tests/          offline Node test-runner suites
 ```
 
@@ -157,6 +185,8 @@ upstream guarantees.
 `src/lib/fetchWithDiagnostics.ts` is the server-only wrapper used in production. Monitors take an
 injectable fetcher, so the whole test suite runs offline.
 
-Every outbound request is a `GET` or `HEAD` to the public GitHub Pages host: the two manifests,
-two ECMWF frame probes, three IRCA dataset probes, and the three IRCA GeoJSON downloads only when
-the IRCA manifest has changed. No credential, no write request, no GitHub API call.
+Every outbound request is a `GET` or `HEAD`, to the public GitHub Pages host or to
+`api.github.com`, and nowhere else: the two manifests, two ECMWF frame probes, three IRCA dataset
+probes, the three IRCA GeoJSON downloads only when the IRCA manifest has changed, and at most
+every five minutes the GitHub Actions run listings. No credential, no `Authorization` header, no
+write request, and no GitHub mutation endpoint — no dispatch, rerun, cancel or artifact download.

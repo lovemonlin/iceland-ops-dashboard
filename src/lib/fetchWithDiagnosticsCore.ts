@@ -18,6 +18,8 @@ export interface FetchDiagnostics {
   httpStatus?: number;
   contentType?: string;
   responseBytes?: number;
+  /** Response headers the caller asked for by name, lower-cased keys. */
+  capturedHeaders?: Record<string, string>;
 }
 
 export interface DiagnosticSuccess<T> {
@@ -42,6 +44,8 @@ export interface DiagnosticRequestOptions {
   init?: RequestInit;
   responseType?: ResponseMode;
   timeoutMs?: number;
+  /** Response header names to record in diagnostics, e.g. rate-limit headers. */
+  captureHeaders?: string[];
 }
 
 /**
@@ -52,6 +56,16 @@ export type DiagnosticFetcher = <T>(
   url: string,
   options?: Omit<DiagnosticRequestOptions, "fetch">,
 ) => Promise<DiagnosticResult<T>>;
+
+function captureHeaders(response: Response, names?: string[]) {
+  if (!names?.length) return undefined;
+  const captured: Record<string, string> = {};
+  for (const name of names) {
+    const value = response.headers.get(name);
+    if (value !== null) captured[name.toLowerCase()] = value;
+  }
+  return Object.keys(captured).length > 0 ? captured : undefined;
+}
 
 /** Never let a URL reach a log, a UI string or an error message with a secret still in it. */
 export function safeUrl(rawUrl: string) {
@@ -122,7 +136,9 @@ export async function fetchWithDiagnosticsCore<T = unknown>(
   try {
     const response = await (options.fetch ?? globalThis.fetch)(url, { ...options.init, signal: controller.signal });
     const contentType = response.headers.get("content-type") ?? undefined;
-    responseDiagnostics = (extra = {}) => finish({ httpStatus: response.status, contentType, ...extra }, true);
+    const capturedHeaders = captureHeaders(response, options.captureHeaders);
+    responseDiagnostics = (extra = {}) =>
+      finish({ httpStatus: response.status, contentType, capturedHeaders, ...extra }, true);
 
     if (!response.ok) return failure("HTTP_ERROR", `HTTP ${response.status}.`, responseDiagnostics());
 

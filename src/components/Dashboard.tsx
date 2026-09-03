@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StatusCard } from "@/components/StatusCard";
 import { LIVE_MONITOR_IDS, MONITOR_IDS } from "@/config/monitors";
 import { getSystemStatus } from "@/health/evaluate";
-import type { HealthStatus, MonitorHealth } from "@/health/model";
+import type { HealthStatus } from "@/health/model";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
 import { formatClock, formatDateTime, formatShortClock, ICELAND_TIME_ZONE, TAIWAN_TIME_ZONE } from "@/lib/time";
 import type { HealthSnapshot } from "@/monitors";
+import { buildIncidents, type IncidentGroup } from "@/monitors/correlate";
 
 /** Deliberately slow: this is a maintenance console, not a live ticker. */
 const AUTO_REFRESH_MS = 60_000;
@@ -17,11 +18,11 @@ const groups: [string, string[]][] = [
   ["ROADS", ["irca"]],
   ["AURORA", ["noaaKp", "solarWind", "ovation"]],
   ["FORECAST / WARNINGS", ["ecmwf", "imo"]],
+  ["PIPELINES", ["ircaPipeline", "ecmwfPipeline"]],
 ];
 
 const order: HealthStatus[] = ["ok", "info", "stale", "degraded", "error"];
 const dot: Record<HealthStatus, string> = { ok: "🟢", info: "🔵", stale: "🟡", degraded: "🟠", error: "🔴" };
-const severity: Record<HealthStatus, number> = { error: 0, degraded: 1, stale: 2, info: 3, ok: 4 };
 
 export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
@@ -74,9 +75,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot
   const { monitors, checkedAt } = snapshot;
   const summary = order.map((status) => [status, monitors.filter((monitor) => monitor.status === status).length] as const);
   const systemStatus = getSystemStatus(monitors);
-  const incidents = monitors
-    .filter((monitor) => monitor.status === "stale" || monitor.status === "degraded" || monitor.status === "error")
-    .sort((a, b) => severity[a.status] - severity[b.status]);
+  const incidents = buildIncidents(monitors);
 
   return (
     <main>
@@ -139,7 +138,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot
           {incidents.length === 0 ? (
             <p className="empty">No stale, degraded, or failing source.</p>
           ) : (
-            incidents.map((monitor, index) => <Incident key={monitor.id} monitor={monitor} mostUrgent={index === 0} />)
+            incidents.map((incident, index) => <Incident key={incident.key} incident={incident} mostUrgent={index === 0} />)
           )}
         </div>
         <div>
@@ -162,22 +161,29 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot
   );
 }
 
-function Incident({ monitor, mostUrgent }: { monitor: MonitorHealth; mostUrgent: boolean }) {
-  // The data's own timestamp answers "how old is what we are serving"; the check time does not.
-  const lastGoodData = monitor.dataTime ?? monitor.lastSuccess;
+function Incident({ incident, mostUrgent }: { incident: IncidentGroup; mostUrgent: boolean }) {
   return (
-    <article className={`incident ${monitor.status}`}>
+    <article className={`incident ${incident.status}`}>
       <div className="incident-head">
         <strong>
-          {dot[monitor.status]} {monitor.name}
+          {dot[incident.status]} {incident.title}
         </strong>
-        <span className={`status ${monitor.status}`}>{monitor.errorType ?? monitor.status.toUpperCase()}</span>
+        <span className={`status ${incident.status}`}>
+          {incident.monitors
+            .filter((monitor) => monitor.errorType)
+            .map((monitor) => monitor.errorType)
+            .join(" + ") || incident.status.toUpperCase()}
+        </span>
       </div>
-      <p>{monitor.errorMessage ?? "Status requires attention."}</p>
+      <p>{incident.summary}</p>
       <p className="incident-meta">
-        Checked {formatClock(monitor.checkedAt, ICELAND_TIME_ZONE)} Iceland · last good data{" "}
-        {lastGoodData ? formatClock(lastGoodData, ICELAND_TIME_ZONE) : "—"}
-        {mostUrgent && <strong className="urgent"> · HANDLE THIS FIRST</strong>}
+        {incident.monitors.map((monitor) => (
+          <span key={monitor.id} className="incident-part">
+            <span className={monitor.status}>{dot[monitor.status]}</span> {monitor.name}
+            {monitor.dataTime ? ` · last good data ${formatClock(monitor.dataTime, ICELAND_TIME_ZONE)}` : ""}
+          </span>
+        ))}
+        {mostUrgent && <strong className="urgent">HANDLE THIS FIRST</strong>}
       </p>
     </article>
   );

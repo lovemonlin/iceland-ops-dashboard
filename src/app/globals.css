@@ -88,8 +88,10 @@ dd { margin: 0; font-variant-numeric: tabular-nums; }
 .incident.degraded { border-left-color: var(--degraded); }
 .incident.stale { border-left-color: var(--stale); }
 .incident-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-.incident-meta { margin-top: 8px; font-variant-numeric: tabular-nums; }
+.incident-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.incident-part { white-space: nowrap; }
 .urgent { color: var(--error); letter-spacing: .06em; }
+.incident p { margin-top: 4px; }
 
 .events { list-style: none; margin: 0; padding: 6px 16px; }
 .events li {

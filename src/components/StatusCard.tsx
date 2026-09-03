@@ -27,6 +27,8 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export function StatusCard({ monitor }: { monitor: MonitorHealth }) {
+  // Keys starting with "_" are for other code to read, not for the card.
+  const visibleDetails = Object.entries(monitor.details ?? {}).filter(([key]) => !key.startsWith("_"));
   const checks = [
     `net ${monitor.networkOk ? "ok" : "fail"}`,
     `parse ${monitor.parseOk ? "ok" : "fail"}`,
@@ -66,9 +68,9 @@ export function StatusCard({ monitor }: { monitor: MonitorHealth }) {
         <Row label="Checks" value={checks} />
       </dl>
 
-      {monitor.details && Object.keys(monitor.details).length > 0 && (
+      {visibleDetails.length > 0 && (
         <dl className="details">
-          {Object.entries(monitor.details).map(([key, value]) => (
+          {visibleDetails.map(([key, value]) => (
             <Row key={key} label={humanise(key)} value={String(value)} />
           ))}
         </dl>

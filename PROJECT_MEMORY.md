@@ -4,9 +4,10 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 
 ## Status (2026-09-03)
 
-Phase one steps 1–5 are complete. **Two production monitors are live: ECMWF (step 6) and IRCA
-(step 7).** The other five sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind,
-NOAA OVATION, MET Norway or IMO without explicit approval.
+Phase one steps 1–5 are complete. **Four production monitors are live: ECMWF output (step 6),
+IRCA output (step 7), and the IRCA and ECMWF GitHub Actions pipelines (step 8).** The other five
+sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind, NOAA OVATION, MET Norway or
+IMO without explicit approval.
 
 ## Completed
 
@@ -19,6 +20,8 @@ NOAA OVATION, MET Norway or IMO without explicit approval.
 - Server-only fetch wrapper plus an injectable, offline-testable diagnostics core.
 - ECMWF cloud-forecast monitor reading live production data, read-only.
 - IRCA road-data monitor reading live production data, read-only.
+- GitHub Actions pipeline monitors for both publishers, anonymous and read-only.
+- Incident correlation: a source and its pipeline are merged into one incident.
 
 ## Monitors
 
@@ -26,10 +29,12 @@ NOAA OVATION, MET Norway or IMO without explicit approval.
 | --- | --- | --- |
 | MET Norway Weather | `metno` | mock |
 | IRCA Roads | `irca` | **live production (read-only)** |
+| IRCA Road Publisher | `ircaPipeline` | **live GitHub Actions (read-only)** |
 | NOAA Kp | `noaaKp` | mock |
 | NOAA Solar Wind | `solarWind` | mock |
 | NOAA OVATION | `ovation` | mock |
 | ECMWF Cloud Forecast | `ecmwf` | **live production (read-only)** |
+| ECMWF Cloud Publisher | `ecmwfPipeline` | **live GitHub Actions (read-only)** |
 | IMO Warnings | `imo` | mock |
 
 `MONITOR_IDS` in `src/config/monitors.ts` is the single list, and `LIVE_MONITOR_IDS` records which
@@ -38,12 +43,16 @@ policy file, so the mock thresholds and the production policies can never drift 
 
 ## Safety boundary
 
-Phase one is read only. Every outbound request goes to `lovemonlin.github.io` and is a `GET` or a
-`HEAD`. A steady-state check issues eight: ECMWF manifest `GET` + 2 frame `HEAD`s, IRCA manifest
-`GET` + 3 dataset `HEAD`s, plus the 3 IRCA GeoJSON `GET`s only when the manifest changed.
+Phase one is read only. Every outbound request is a `GET` or a `HEAD`, to `lovemonlin.github.io`
+or `api.github.com` and nowhere else. A steady-state check issues eight to GitHub Pages (ECMWF
+manifest `GET` + 2 frame `HEAD`s, IRCA manifest `GET` + 3 dataset `HEAD`s, plus the 3 IRCA GeoJSON
+`GET`s only when the manifest changed) and, at most every 5 minutes, 2-4 to the GitHub REST API.
+No `Authorization` header is ever sent and no GitHub mutation endpoint is ever called: no
+dispatch, rerun, cancel, artifact download or repository write.
 There is no credential, no write request, no repair action, no GitHub API call, no workflow
 dispatch, no commit or push to any Iceland production repository, and no deployment automation.
-Both monitors have a test asserting every request they make is a GET or HEAD against the public base URL.
+Every monitor has a test asserting the shape of its requests: GET/HEAD only, correct host, and for
+the pipeline monitor, no `Authorization` header.
 
 ## Production endpoints
 
@@ -51,6 +60,7 @@ Both monitors have a test asserting every request they make is a GET or HEAD aga
 - ECMWF frames: `https://lovemonlin.github.io/iceland-aurora-cloud/tcc-<step>h.png`, step 00–48 by 3.
 - IRCA manifest: `https://lovemonlin.github.io/iceland-aurora-cloud/road-manifest.json`
 - IRCA datasets: `.../road-conditions.geojson`, `.../road-incidents.geojson`, `.../road-stations.geojson`
+- GitHub Actions: `https://api.github.com/repos/lovemonlin/iceland-aurora-cloud/actions/...`
 
 All are the public GitHub Pages output of `iceland-aurora-cloud`. The dashboard never touches
 ECMWF Open Data, GRIB2, or IRCA (umferdin.is) itself.
@@ -230,6 +240,104 @@ but road-conditions.geojson contains 699.`); the derived traffic-station count e
 Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
 outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
+## GitHub Actions pipeline monitor
+
+Two monitors, `ircaPipeline` and `ecmwfPipeline`, answer a question the output monitors cannot:
+did the workflow run at all, did it fail, where did it fail, and how long has it been failing.
+
+### Endpoints and request strategy
+
+Anonymous, read-only, GET only. No token exists, so no `Authorization` header is ever sent.
+
+```
+GET https://api.github.com/repos/lovemonlin/iceland-aurora-cloud/actions/workflows/{file}/runs?per_page=10
+GET https://api.github.com/repos/lovemonlin/iceland-aurora-cloud/actions/runs/{run_id}/jobs
+```
+
+Headers: `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`.
+
+The jobs endpoint is requested **only when the latest run failed** — never for a successful run and
+never for older runs. A steady check therefore costs 2 requests, or 3-4 while something is failing.
+
+Workflow filenames were confirmed against the repository read-only, not guessed:
+
+| Monitor | Workflow file | GitHub name |
+| --- | --- | --- |
+| `ircaPipeline` | `update-road-info.yml` | Update IRCA road information |
+| `ecmwfPipeline` | `update-cloud-forecast.yml` | Update ECMWF cloud forecast |
+
+### Rate limit and caching
+
+Unauthenticated GitHub allows 60 requests/hour/IP while the dashboard refreshes every 60 seconds, so
+GitHub is polled at most every **5 minutes** from a server-process memory cache
+(`src/monitors/github/monitor.ts`). Inside that window `/api/health` serves the cached result and
+issues no GitHub request at all.
+
+`X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` are parsed from every response
+(via a generic `captureHeaders` option on the diagnostics core) and shown on the card as
+`53 / 60 requests remaining`. When remaining drops to 10 or below the poll interval stretches to
+10 minutes rather than burning the hourly budget.
+
+### Run status rules
+
+| Status | Condition |
+| --- | --- |
+| INFO | latest run is `queued` / `in_progress` — a run in flight is never a failure |
+| OK | latest completed run concluded `success` and a run happened recently enough |
+| STALE | no run when one was due (`WORKFLOW_NOT_RUN`) |
+| ERROR | latest completed run concluded failure / timed_out / cancelled / action_required / startup_failure (`WORKFLOW_FAILED`), or GitHub could not be reached |
+
+Two error types were added to the shared model for this: `WORKFLOW_FAILED` and `WORKFLOW_NOT_RUN`.
+They are deliberately distinct — "the run failed" and "the run never happened" need different fixes.
+
+Cadence is per workflow. IRCA uses a plain age budget (45 min). ECMWF uses cron slots (:20 past
+every third UTC hour, 45 min grace) so the question is "should a run have happened by now?" rather
+than "is the last run old?". The ECMWF *pipeline* check is independent of the ECMWF *output* check:
+a workflow can run on time and still fail to publish, and that must be visible.
+
+### Failed job and step analysis
+
+On a failed latest run the jobs endpoint is read and the first job with a failing conclusion, then
+its first failing step, are reported. Verified against a real failure (run #854): job `publish`,
+failed step `Download IRCA DATEX and generate app data`. Log ZIP download and log parsing are
+deliberately out of scope for this step.
+
+`consecutiveFailures` counts back from the newest completed run until the first success; runs still
+in flight are skipped rather than breaking the streak.
+
+### Correlation with the output monitors
+
+`src/monitors/correlate.ts` merges each source with its pipeline into a single incident, so a stale
+IRCA output plus a failing IRCA workflow is one entry, not two alarms. It distinguishes four cases
+that a single monitor cannot tell apart:
+
+1. **Workflow failed** - output age plus consecutive failure count plus the failed step.
+2. **Workflow never ran** - "The workflow did not fail - it did not run. Check the schedule trigger."
+3. **Workflow succeeded after the publish, output did not advance** - points at no-change publish
+   logic, generated_at, commit behaviour and Pages deployment.
+4. **GitHub could not be reached** - says explicitly that the workflow could not be verified and may
+   be fine. A failed API call never becomes a claim that the workflow failed.
+
+None of these conclude that an upstream service is down; they report only what the two checks prove.
+
+### GitHub scheduling reality (measured, important)
+
+A read-only sample of the last 10 runs of each workflow on 2026-09-03:
+
+- `update-road-info.yml` declares a five-minute cron. Observed delivery: every **105-277 minutes**,
+  median 147.
+- `update-cloud-forecast.yml` declares :20 past every third hour. Observed delivery: every
+  **~134-401 minutes**.
+
+GitHub drops most scheduled triggers on free public repositories, so a cron expression is an upper
+bound on frequency and never a promise. This matters beyond this monitor: the IRCA *output*
+freshness policy (45 min STALE / 120 min ERROR) assumes a 30-minute publish cadence that GitHub is
+not actually delivering, so IRCA will read STALE or ERROR most of the time.
+
+TODO: decide whether those thresholds describe the desired service level (keep, and treat the
+constant red as a real finding) or the expected one (relax them to match observed delivery). Both
+are one-line changes in `src/config/irca.ts` and `src/config/github.ts`.
+
 ## Health rule order (do not reorder casually)
 
 networkOk → httpStatus → parseOk → schemaOk → recordCount/allowEmpty → fatalError →
@@ -243,6 +351,8 @@ Notes:
   whose age policy lives in its own config file (IRCA).
 - `fatalError` carries a source-specific fatal condition the generic rules cannot express; it
   outranks partial failure and staleness but never a transport or schema failure.
+- The stale branch also honours a caller `errorType`, which is how a missing workflow run reports
+  `WORKFLOW_NOT_RUN` rather than a generic `STALE_DATA`.
 - The schema branch honours a caller `errorType`, so ECMWF can report `INVALID_TIMESTAMP` or
   `EMPTY_DATA` instead of a blanket `SCHEMA_ERROR`.
 
@@ -292,16 +402,17 @@ the header adds Taipei.
 - If ECMWF is STALE, the dashboard says the cloud pipeline is behind — it cannot say *why*.
   Distinguishing "workflow failed" from "ECMWF Open Data was late" needs the GitHub Actions monitor,
   which is deliberately out of scope for this step.
-- The same limit applies to IRCA, and matters more because of all-or-nothing publishing: when
-  IRCA data is stale the dashboard can prove the output is old, but **cannot tell whether the
-  failure is IRCA upstream, the XML converter, the GitHub Actions workflow, or GitHub Pages**.
-  All four look identical from the published output. Resolving it needs the Actions monitor.
+- Step 8 narrowed this considerably: the pipeline monitor now separates "the workflow failed",
+  "the workflow never ran", "the workflow succeeded but the output did not advance" and "GitHub
+  could not be checked". What it still cannot do is name the cause *inside* a failed step — an
+  IRCA HTTP 503, an empty measurement table, a rejected git push all look the same. That needs a
+  Failed Run Log Inspector, deliberately out of scope for this step.
 - The git working copy was created under a different Windows account; the current user needs
   `git config --global --add safe.directory C:/dev/iceland-ops-dashboard` (that one path only).
 
 ## Tests
 
-`npm test` — 97 fully offline tests, no network access:
+`npm test` — 124 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -316,9 +427,17 @@ the header adds Taipei.
   incidents 404, two and three datasets down, manifest HTTP error, manifest parse error,
   download-only-on-manifest-change, cache reuse, read-only request shape), plus two priority
   tests proving a core outage is not hidden behind STALE
+- GitHub pipeline monitor: 20 cases covering the required 25 checks — success, failure, queued,
+  in_progress, jobs fetched only for a failed run, failed job and step detection, failure streaks
+  of 1 and 4, streak reset, missing scheduled run, GitHub 403 and 500 leaving the workflow
+  unverified, rate-limit header parsing, low-budget cache extension, cache hit and expiry, cron
+  slot boundaries, and a request-shape test asserting GET-only, api.github.com-only and no
+  Authorization header
+- Incident correlation: 7 cases covering the four correlation outcomes, grouping a source with
+  its pipeline into one incident, and severity ordering
 - mock monitor cases, time and session-event helpers, network diagnostics
 
-No test depends on the wall clock, and no test reaches production.
+No test depends on the wall clock, and no test reaches production or the GitHub API.
 
 ## Next step
 
@@ -326,7 +445,28 @@ Do not proceed automatically. The remaining order is NOAA Kp → NOAA Solar Wind
 MET Norway → IMO, one at a time, each with a normal case and an error case tested and this file
 updated before the next one starts.
 
-## Production verification (2026-09-03 02:37 UTC)
+## Production verification (2026-09-03 03:02 UTC, step 8)
+
+Read-only GitHub API sample. **The IRCA incident is a missing scheduler, not a failing pipeline.**
+
+IRCA workflow (`update-road-info.yml`, 858 runs total):
+
+- Latest run **#858, conclusion success**, created 2026-09-03T00:34:54Z, updated 00:35:39Z.
+- **No run at all since 00:34:54Z** — 147 minutes at the time of checking, and still climbing.
+- Consecutive failures: **0**. The last failure was #854 at 2026-09-02T14:04Z, which failed in
+  job `publish` at step `Download IRCA DATEX and generate app data`; #855-858 all succeeded.
+- Run #858 finishing at 00:35:39Z matches the production `generated_at` of 00:35:31Z exactly, so
+  the current stale output is precisely what run #858 published.
+
+ECMWF workflow (`update-cloud-forecast.yml`, 235 runs total): latest **#235, success**, created
+2026-09-02T23:21:30Z. Also past its expected slot, so the pipeline reads STALE while the ECMWF
+*output* is still OK — the forecast it published is valid for another 48 hours.
+
+Conclusion supported by the evidence: both scheduled workflows stopped being triggered after
+00:34 (IRCA) and 23:21 (ECMWF). Nothing failed. Why GitHub stopped delivering the schedule is not
+determinable from these endpoints.
+
+## Production verification (2026-09-03 02:37 UTC, step 7)
 
 ECMWF: OK. Run 2026-09-02 12Z (the expected run), 17/17 frames, coverage to 2026-09-04 12:00 UTC,
 both sampled images 200, manifest latency ~130 ms.

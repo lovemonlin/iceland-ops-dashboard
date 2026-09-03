@@ -90,7 +90,7 @@ export function evaluateHealth(input: HealthInput): MonitorHealth {
       ...base,
       status: "stale",
       fresh: false,
-      errorType: "STALE_DATA",
+      errorType: input.errorType ?? "STALE_DATA",
       errorMessage: input.errorMessage ?? "Data is older than the configured threshold.",
     };
   }
