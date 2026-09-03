@@ -4,8 +4,9 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 
 ## Status (2026-09-03)
 
-Phase one steps 1–5 are complete. **Four production monitors are live: ECMWF output (step 6),
-IRCA output (step 7), and the IRCA and ECMWF GitHub Actions pipelines (steps 8 and 8.1).** The other five
+The dashboard now runs on the **scheduled snapshot architecture** (step 9). **Four production
+monitors are live: ECMWF output (step 6), IRCA output (step 7), and the IRCA and ECMWF GitHub
+Actions pipelines (steps 8 and 8.1).** The other five
 sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind, NOAA OVATION, MET Norway or
 IMO without explicit approval.
 
@@ -15,8 +16,10 @@ IMO without explicit approval.
 - `MonitorHealth` / `MonitorErrorType` health and error models.
 - `evaluateHealth` decides OK / INFO / STALE / DEGRADED / ERROR from one ordered rule set;
   every monitor, mock or live, goes through it.
-- Dark, dense, responsive single-page dashboard with 60 s auto refresh, `Refresh now`,
-  pause/resume, active incidents and a session event log.
+- Dark, dense, responsive single-page dashboard reading a scheduled snapshot, with a 5-minute
+  snapshot reload, an overdue-scheduler banner, active incidents and a session change log.
+- Scheduled snapshot pipeline: `npm run snapshot` collects, merges and atomically writes
+  `public/data/latest-health.json`; a failed collection preserves the last good data.
 - Server-only fetch wrapper plus an injectable, offline-testable diagnostics core.
 - ECMWF cloud-forecast monitor reading live production data, read-only.
 - IRCA road-data monitor reading live production data, read-only.
@@ -240,6 +243,56 @@ but road-conditions.geojson contains 699.`); the derived traffic-station count e
 Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
 outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
+## Architecture decision (2026-09-03): scheduled snapshot, not live-on-page
+
+The dashboard architecture was changed from live-on-page monitoring to scheduled snapshot
+monitoring, at the user's direction.
+
+User requirement:
+
+- AI collects production data once per hour.
+- Dashboard remains available at any time.
+- Opening the dashboard must not be required to trigger updates.
+- Dashboard shows the latest successful data plus the latest update status.
+- Failed collection attempts must preserve the last successful data.
+
+What this changed in practice:
+
+- `/api/health`, which ran every monitor on request, was **deleted**. The page now reads
+  `public/data/latest-health.json` from disk and performs no network request at all.
+- `npm run snapshot` (`scripts/snapshot.ts`) is the only entry point that contacts production.
+- The browser reload button re-reads the snapshot file; it no longer re-checks production.
+- All existing monitors were kept unchanged in behaviour and became the snapshot's data sources.
+- `MonitorHealth` gained an explicit `data` payload. Its presence *is* the definition of "this
+  collection succeeded", which is what lets a failed attempt keep the previous values.
+
+### Snapshot contract
+
+`status`, `errorType`, `errorMessage` and `diagnostics` describe the **latest attempt**.
+`data`, `dataTime` and `lastSuccessAt` describe the **last attempt that actually collected**.
+A failed attempt updates the former and preserves the latter. A source that has never succeeded
+simply has no `data`. A successful attempt clears any error the previous one left behind.
+
+Pipelines are stored under `pipelines`, sources under `sources`; a source the round did not report
+is carried forward untouched rather than dropped.
+
+The writer is atomic (temp file then rename, temp removed on failure), so a crash mid-write leaves
+the previous good snapshot rather than an unparseable file. The reader refuses to overwrite a
+snapshot it cannot parse, so a human sees the problem before history is lost.
+
+### Three freshness clocks, deliberately separate
+
+1. **Snapshot freshness** — when the scheduler last ran (`generatedAt`). Over 90 minutes shows a
+   top-level SCHEDULED UPDATE OVERDUE banner. This is the scheduler's problem, not a source's.
+2. **Source freshness** — the data's own timestamp (IRCA `generated_at`, ECMWF model run).
+3. **Collection freshness** — when we last successfully fetched that source (`lastSuccessAt`).
+
+### Not done on purpose
+
+No database and no history directory yet; only `latest-health.json` exists. No GitHub write path —
+publishing the snapshot to the dashboard repository is the next step and needs a decision from the
+user (see below). No new data sources: NOAA, MET Norway, IMO and EUMETSAT remain mock.
+
 ## GitHub Actions pipeline monitor
 
 Two monitors, `ircaPipeline` and `ecmwfPipeline`, answer a question the output monitors cannot:
@@ -412,10 +465,11 @@ Monitors take an injectable `DiagnosticFetcher`. Production passes the server-on
 
 ## Rendering
 
-`/` and `/api/health` are both `force-dynamic`: checks run per request, never at build time.
-The server component renders the first real snapshot; the client re-fetches `/api/health` every
-60 s and on demand. If the dashboard's own request fails, the last snapshot stays on screen with a
-banner rather than blanking the page.
+`/` is `force-dynamic` so each request re-reads the snapshot file and a freshly written snapshot
+appears immediately. There is no API route. The client re-reads `/data/latest-health.json` every
+5 minutes and on demand; if that read fails, the last snapshot stays on screen with a banner
+rather than blanking the page. Measured page load after the change: ~50 ms, against seconds when
+the page collected live.
 
 ## Time handling
 
@@ -442,7 +496,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 136 fully offline tests, no network access:
+`npm test` — 163 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -467,15 +521,32 @@ the header adds Taipei.
   test asserting GET-only, allowed hosts only and no Authorization header
 - Incident correlation: 7 cases covering the four correlation outcomes, grouping a source with
   its pipeline into one incident, and severity ordering
+- Snapshot merge and storage: 16 cases — success replaces data, success moves `lastSuccessAt`,
+  failure preserves data and `lastSuccessAt` while updating `lastAttemptAt` and the error, a
+  never-successful source has no data, recovery clears the old error, a mixed round produces the
+  right overall status and summary, valid re-readable JSON, no temp file left behind, and a failed
+  write leaving the previous snapshot intact
+- Dashboard data path: 9 cases — the homepage reads the snapshot, no page or component references
+  a monitor or a fetcher, no API route exists, snapshot age and the overdue threshold, a failed
+  collection still exposing the last successful data, and the reload path pointing at the snapshot
+  file rather than an endpoint
 - mock monitor cases, time and session-event helpers, network diagnostics
 
 No test depends on the wall clock, and no test reaches production or the GitHub API.
 
 ## Next step
 
-Do not proceed automatically. The remaining order is NOAA Kp → NOAA Solar Wind → NOAA OVATION →
-MET Norway → IMO, one at a time, each with a normal case and an error case tested and this file
-updated before the next one starts.
+Do not proceed automatically.
+
+**Blocking on the user:** the snapshot is written to the local working tree only. For the hourly
+AI collection to publish it, this project needs its own GitHub repository
+(`lovemonlin/iceland-ops-dashboard`) and a decision on how the scheduled task authenticates to
+write to it. No remote is configured and none must be created without the user's instruction.
+Writing to `iceland-aurora`, `iceland-aurora-ios` or `iceland-aurora-cloud` remains forbidden.
+
+After that, the remaining source order is NOAA Kp → NOAA Solar Wind → NOAA OVATION → MET Norway
+→ IMO, one at a time, each with a normal case and an error case tested and this file updated
+before the next one starts.
 
 ## Scheduler diagnosis (2026-09-03 03:19 UTC, step 8.1)
 

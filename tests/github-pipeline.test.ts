@@ -252,7 +252,7 @@ test("12. a GitHub 403 leaves the workflow unverified rather than declaring it f
   const pipeline = byId(await check({ status: 403, body: JSON.stringify({ message: "rate limited" }) }), "ircaPipeline");
   assert.equal(pipeline.status, "error");
   assert.equal(pipeline.errorType, "HTTP_ERROR");
-  assert.equal(pipeline.details?._workflowStatusKnown, false);
+  assert.equal(pipeline.data, undefined, "no data collected means the workflow could not be verified");
   assert.match(String(pipeline.errorMessage), /could not verify it/);
   assert.doesNotMatch(String(pipeline.errorMessage), /workflow failed/i);
 });
@@ -260,7 +260,7 @@ test("12. a GitHub 403 leaves the workflow unverified rather than declaring it f
 test("13. a GitHub 500 is handled the same way", async () => {
   const pipeline = byId(await check({ status: 500, body: "{}" }), "ircaPipeline");
   assert.equal(pipeline.status, "error");
-  assert.equal(pipeline.details?._workflowStatusKnown, false);
+  assert.equal(pipeline.data, undefined, "no data collected means the workflow could not be verified");
   assert.equal(pipeline.httpStatus, 500);
 });
 
@@ -353,7 +353,7 @@ test("a malformed runs payload leaves the workflow unverified", async () => {
   const pipeline = byId(await check({ body: JSON.stringify({ nope: true }) }), "ircaPipeline");
   assert.equal(pipeline.status, "error");
   assert.equal(pipeline.errorType, "SCHEMA_ERROR");
-  assert.equal(pipeline.details?._workflowStatusKnown, false);
+  assert.equal(pipeline.data, undefined, "no data collected means the workflow could not be verified");
 });
 
 test("both monitored workflow files are the ones verified against the repository", () => {

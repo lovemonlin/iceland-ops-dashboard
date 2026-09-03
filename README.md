@@ -140,12 +140,15 @@ schema is `ERROR / SCHEMA_ERROR`; IMO returning 200 with zero active warnings is
 
 ```powershell
 npm install
-npm run dev
+npm run snapshot   # collect production data once and write the snapshot
+npm run dev        # serve the dashboard from that snapshot
 ```
 
-The server renders the first real snapshot; the browser re-checks `/api/health` every 60 seconds.
-`Refresh now` and `Pause auto refresh` are in the header. Both `/` and `/api/health` are dynamic, so
-no check ever runs at build time.
+`npm run snapshot` is the scheduled collection: it is the only thing that contacts production, and
+it is meant to be invoked hourly by an external scheduler. There is deliberately no built-in cron.
+
+In the browser, `Reload latest snapshot` re-reads the file, and the page does so on its own every
+5 minutes. Neither re-checks production.
 
 ## Checks
 
@@ -158,21 +161,55 @@ npm run build
 ## Architecture
 
 ```
+Production sources (ECMWF, IRCA, GitHub Actions, ...)
+        |
+        v
+Scheduled collection  --  npm run snapshot, once per hour
+        |
+        v
+public/data/latest-health.json  --  the snapshot
+        |
+        v
+Dashboard  --  reads the snapshot, never the sources
+```
+
+**Browser refresh and production data collection are different things.** Opening or reloading the
+dashboard reads a static JSON file and contacts no production API. Production data is collected only
+when the scheduled task runs `npm run snapshot`. The dashboard does not need to be open for that to
+happen, and having it open does not make it happen more often.
+
+The snapshot's central contract: **a failed collection never erases the last good data.** Each source
+stores the result of the latest attempt (`status`, `errorType`, `lastAttemptAt`) alongside the last
+values that were successfully collected (`data`, `dataTime`, `lastSuccessAt`). A source can therefore
+show `UPDATE ERROR` while still displaying the readings it last managed to fetch, and the card names
+all three times separately.
+
+Three kinds of freshness are shown and never conflated:
+
+| Question | Field | Example |
+| --- | --- | --- |
+| When did the scheduler last run? | snapshot `generatedAt` | 13:00 |
+| How old is the source's own data? | source `dataTime` | 10:35 (IRCA `generated_at`) |
+| When did we last collect it successfully? | source `lastSuccessAt` | 12:00 |
+
+If the snapshot itself goes stale (older than 90 minutes) the dashboard shows a **SCHEDULED UPDATE
+OVERDUE** banner at the top. That is the *scheduler's* freshness, not any source's.
+
+```
 src/
-  app/          Next.js App Router page, layout, dark stylesheet
-  components/   Dashboard (client, holds refresh + session event log), StatusCard
-  app/api/      /api/health route: runs every monitor, returns a snapshot
-  config/       monitor ids and incident families, mock freshness thresholds, request timeout,
-                ECMWF / IRCA / GitHub contracts
+  app/          page (reads the snapshot file), layout, dark stylesheet
+  components/   Dashboard (client, reloads the snapshot), StatusCard
+  config/       monitor ids and incident families, snapshot policy, mock freshness thresholds,
+                request timeout, ECMWF / IRCA / GitHub contracts
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
   lib/          fetch diagnostics, session event log, time-zone formatting
   monitors/     runAllMonitors, live ECMWF / IRCA / pipeline monitors, incident correlation,
                 mock monitors, validation helpers
+  snapshot/     schema, merge, build, atomic write, read
+scripts/        snapshot.ts - the scheduled collection entry point
+public/data/    latest-health.json - the snapshot the dashboard reads
 tests/          offline Node test-runner suites
 ```
-
-Every monitor status — mock or, later, production — is produced by `evaluateHealth`, so one set of
-rules decides OK / INFO / STALE / DEGRADED / ERROR for every source.
 
 ## Time handling
 
@@ -203,6 +240,7 @@ red against them, that is the finding — the publishing architecture is not mee
 `src/lib/fetchWithDiagnostics.ts` is the server-only wrapper used in production. Monitors take an
 injectable fetcher, so the whole test suite runs offline.
 
+All of these happen during `npm run snapshot` only — never when someone opens the dashboard.
 Every outbound request is a `GET` or `HEAD`, to the public GitHub Pages host or to
 `api.github.com`, and nowhere else: the two manifests, two ECMWF frame probes, three IRCA dataset
 probes, the three IRCA GeoJSON downloads only when the IRCA manifest has changed, and at most

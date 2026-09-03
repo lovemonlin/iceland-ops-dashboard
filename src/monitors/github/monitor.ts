@@ -126,7 +126,6 @@ async function checkWorkflow(
           alertingRule: cadence,
           ...schedulerDetails,
           githubApi: rateLimitLabel(nextRateLimit),
-          _workflowStatusKnown: false,
         },
       }),
     };
@@ -150,7 +149,6 @@ async function checkWorkflow(
           alertingRule: cadence,
           ...schedulerDetails,
           githubApi: rateLimitLabel(nextRateLimit),
-          _workflowStatusKnown: false,
         },
       }),
     };
@@ -171,31 +169,33 @@ async function checkWorkflow(
     if (jobs.ok) failure = findFailure(parseJobsPayload(jobs.data));
   }
 
+  // Reaching here means the run history was read, so this attempt collected data.
+  const data: Record<string, unknown> = { consecutiveFailures };
+  if (latest) {
+    data.latestRun = `#${latest.run_number}`;
+    data.conclusion = (latest.conclusion ?? latest.status).toUpperCase();
+    data.event = latest.event;
+    data.lastRun = utcMinute(latest.created_at);
+    if (latest.html_url) data.runUrl = latest.html_url;
+  }
+  if (lastSuccess) {
+    data.lastSuccessfulRun = `#${lastSuccess.run_number}`;
+    data.lastSuccessAt = utcMinute(lastSuccess.updated_at);
+  }
+  if (failure) {
+    data.failedJob = failure.job;
+    if (failure.step) data.failedStep = failure.step;
+    if (failure.startedAt) data.failureStarted = utcMinute(failure.startedAt);
+    if (failure.completedAt) data.failureFinished = utcMinute(failure.completedAt);
+  }
+
   const details: Record<string, unknown> = {
     workflowFile: workflow.file,
     ...schedulerDetails,
     alertingRule: cadence,
     githubApi: rateLimitLabel(nextRateLimit),
-    consecutiveFailures,
-    _workflowStatusKnown: true,
+    ...data,
   };
-  if (latest) {
-    details.latestRun = `#${latest.run_number}`;
-    details.conclusion = (latest.conclusion ?? latest.status).toUpperCase();
-    details.event = latest.event;
-    details.lastRun = utcMinute(latest.created_at);
-    if (latest.html_url) details.runUrl = latest.html_url;
-  }
-  if (lastSuccess) {
-    details.lastSuccessfulRun = `#${lastSuccess.run_number}`;
-    details.lastSuccessAt = utcMinute(lastSuccess.updated_at);
-  }
-  if (failure) {
-    details.failedJob = failure.job;
-    if (failure.step) details.failedStep = failure.step;
-    if (failure.startedAt) details.failureStarted = utcMinute(failure.startedAt);
-    if (failure.completedAt) details.failureFinished = utcMinute(failure.completedAt);
-  }
 
   const ageSeconds = latest ? (now.getTime() - Date.parse(latest.created_at)) / 1000 : undefined;
   if (ageSeconds !== undefined) details.lastObservedRunAge = `${Math.floor(ageSeconds / 60)} min ago`;
@@ -251,6 +251,7 @@ async function checkWorkflow(
       stale: noRecentRun,
       errorType: noRecentRun ? ("WORKFLOW_NOT_RUN" as const) : undefined,
       errorMessage: noRecentRun ? missingRunMessage(workflow, latest, scheduler, metadata) : undefined,
+      data,
       infoNote: running
         ? `Run #${latest?.run_number} is ${latest?.status.replace("_", " ")}. A run in flight is not a failure.`
         : undefined,

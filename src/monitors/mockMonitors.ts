@@ -96,6 +96,12 @@ const specs: MockSpec[] = [
   },
 ];
 
+/** A mock that models a failed collection carries no data, exactly like a real failed attempt. */
+function collectedData(spec: MockSpec) {
+  const failedCollection = spec.networkOk === false || spec.parseOk === false || spec.schemaOk === false;
+  return failedCollection ? undefined : spec.details;
+}
+
 function shift(checkedAtMs: number, ageSeconds: number | undefined) {
   return ageSeconds === undefined ? undefined : new Date(checkedAtMs - ageSeconds * 1000).toISOString();
 }
@@ -111,6 +117,7 @@ export function getMockMonitors(checkedAt: string = MOCK_BASELINE_CHECKED_AT): M
       lastSuccess: shift(checkedAtMs, lastSuccessAgeSeconds),
       ageSeconds: dataAgeSeconds,
       staleAfter: freshnessThresholds[spec.id].staleAfter,
+      data: collectedData(spec),
     }),
   );
 }

@@ -22,6 +22,10 @@ body {
 
 main { max-width: 1400px; margin: auto; padding: 32px; }
 
+.overdue { border: 1px solid var(--error); border-left: 4px solid var(--error); background: #2a1119; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+.overdue strong { color: var(--error); letter-spacing: .08em; }
+.overdue p { margin-top: 6px; color: var(--text); font-size: 13px; }
+
 header, .summary, .card, .events, .incident {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -77,7 +81,8 @@ dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
 dt { margin-bottom: 2px; }
 dd { margin: 0; font-variant-numeric: tabular-nums; }
 
-.details { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.details-label { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.details { margin-top: 10px; }
 .details dd { font-size: 12px; word-break: break-word; }
 
 .bottom-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }

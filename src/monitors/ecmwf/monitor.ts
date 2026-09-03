@@ -120,17 +120,24 @@ export async function checkEcmwf(options: EcmwfCheckOptions = {}): Promise<Monit
   const availableImages = probes.filter((probe) => probe.ok).length;
   const failedProbes = probes.filter((probe) => !probe.ok);
 
-  const details: Record<string, unknown> = {
+  // What was actually collected from the source. Kept apart from diagnostics because a later
+  // failed attempt preserves this and discards those.
+  const data: Record<string, unknown> = {
     modelRun: formatModelRun(manifest.runAt),
-    ...scheduleDetails,
+    expectedRun: scheduleDetails.expectedRun,
     frames: `${frames.length} / ${ECMWF_EXPECTED_FRAME_COUNT}`,
     coverage: `run → +${ECMWF_FORECAST_HORIZON_HOURS}h`,
     latestValid: utcMinute(latestValid),
     images: `${availableImages} / ${probes.length} sampled OK`,
-    imageProbeLatency: `${probes.map((probe) => probe.latencyMs).join(" / ")} ms`,
     model: manifest.model,
   };
-  if (manifest.generatedAt) details.generatedAt = utcMinute(manifest.generatedAt);
+  if (manifest.generatedAt) data.generatedAt = utcMinute(manifest.generatedAt);
+
+  const details: Record<string, unknown> = {
+    ...data,
+    expectedBy: scheduleDetails.expectedBy,
+    imageProbeLatency: `${probes.map((probe) => probe.latencyMs).join(" / ")} ms`,
+  };
   if (failedProbes.length > 0) {
     details.failedImages = failedProbes.map((probe) => probe.detail).join("; ");
   }
@@ -183,6 +190,7 @@ export async function checkEcmwf(options: EcmwfCheckOptions = {}): Promise<Monit
     partialFailure: partialImages,
     errorType,
     errorMessage,
+    data,
     details,
   });
 }

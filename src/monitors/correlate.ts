@@ -1,6 +1,7 @@
 import { INCIDENT_FAMILIES } from "@/config/monitors";
 import { getSystemStatus } from "@/health/evaluate";
-import type { HealthStatus, MonitorHealth } from "@/health/model";
+import type { HealthStatus } from "@/health/model";
+import { allSnapshotEntries, snapshotEntry, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
 
 export interface IncidentGroup {
   key: string;
@@ -8,35 +9,40 @@ export interface IncidentGroup {
   status: HealthStatus;
   /** What the combined evidence shows — never a guess at root cause. */
   summary: string;
-  monitors: MonitorHealth[];
+  entries: SnapshotSource[];
 }
 
 const UNHEALTHY: HealthStatus[] = ["stale", "degraded", "error"];
 
-function isUnhealthy(monitor: MonitorHealth | undefined) {
-  return monitor !== undefined && UNHEALTHY.includes(monitor.status);
+function isUnhealthy(entry: SnapshotSource | undefined) {
+  return entry !== undefined && UNHEALTHY.includes(entry.status);
 }
 
-function minutesOld(monitor: MonitorHealth) {
-  return monitor.ageSeconds === undefined ? undefined : Math.round(monitor.ageSeconds / 60);
+/** How old the stored data is, from the data's own timestamp — not from the collection time. */
+export function dataAgeMinutes(entry: SnapshotSource, now: Date) {
+  if (!entry.dataTime) return undefined;
+  const parsed = Date.parse(entry.dataTime);
+  if (Number.isNaN(parsed)) return undefined;
+  return Math.max(0, Math.round((now.getTime() - parsed) / 60_000));
 }
 
 /**
- * Combines an output monitor with the pipeline that publishes it.
+ * Combines a source with the pipeline that publishes it.
  *
- * The point is to separate four situations a single monitor cannot tell apart: the workflow ran and
- * failed, the workflow never ran, the workflow succeeded but the output did not advance, and the
- * workflow status could not be checked at all. It reports only what the two checks prove — it never
+ * It separates four situations a single check cannot tell apart: the workflow ran and failed, the
+ * workflow never ran, the workflow succeeded but the output did not advance, and the workflow
+ * status could not be checked at all. It reports only what the two checks prove — it never
  * concludes that an upstream service is down.
  */
-function correlate(output: MonitorHealth, pipeline: MonitorHealth) {
-  const age = minutesOld(output);
+function correlate(output: SnapshotSource, pipeline: SnapshotSource, now: Date) {
+  const age = dataAgeMinutes(output, now);
   const outputLine =
     age === undefined
-      ? `${output.name} output is unhealthy.`
+      ? `${output.name} data is unhealthy.`
       : `${output.name} production output has not updated for ${age} min.`;
 
-  if (pipeline.details?._workflowStatusKnown === false) {
+  // No collected data from the pipeline check means GitHub itself could not be read.
+  if (pipeline.data === undefined) {
     return (
       `${outputLine} GitHub Actions status is unavailable, so the workflow could not be verified — ` +
       `the pipeline may be fine. ${pipeline.errorMessage ?? ""}`.trim()
@@ -44,9 +50,9 @@ function correlate(output: MonitorHealth, pipeline: MonitorHealth) {
   }
 
   if (pipeline.errorType === "WORKFLOW_FAILED") {
-    const failures = Number(pipeline.details?.consecutiveFailures ?? 0);
-    const step = pipeline.details?.failedStep;
-    const job = pipeline.details?.failedJob;
+    const failures = Number(pipeline.data.consecutiveFailures ?? 0);
+    const step = pipeline.data.failedStep;
+    const job = pipeline.data.failedJob;
     return [
       outputLine,
       failures > 1
@@ -58,8 +64,12 @@ function correlate(output: MonitorHealth, pipeline: MonitorHealth) {
       .join(" ");
   }
 
+  if (pipeline.errorType === "WORKFLOW_DISABLED") {
+    return `${outputLine} GitHub reports the publishing workflow as disabled, so no schedule can fire.`;
+  }
+
   if (pipeline.errorType === "WORKFLOW_NOT_RUN") {
-    const lastRun = pipeline.details?.lastRun;
+    const lastRun = pipeline.data.lastRun;
     return (
       `${outputLine} No recent scheduled workflow run was observed` +
       `${lastRun ? `; the newest run is from ${lastRun}` : ""}. ` +
@@ -85,44 +95,43 @@ function correlate(output: MonitorHealth, pipeline: MonitorHealth) {
 }
 
 /**
- * Groups stale, degraded and failing monitors into incidents, most severe first, merging each
- * source with its pipeline so one problem produces one entry.
+ * Groups stale, degraded and failing entries into incidents, most severe first, merging each source
+ * with its pipeline so one problem produces one entry.
  */
-export function buildIncidents(monitors: MonitorHealth[]): IncidentGroup[] {
-  const byId = new Map(monitors.map((monitor) => [monitor.id, monitor]));
+export function buildIncidents(snapshot: DashboardSnapshot, now: Date): IncidentGroup[] {
   const grouped = new Set<string>();
   const incidents: IncidentGroup[] = [];
 
   for (const family of INCIDENT_FAMILIES) {
-    const output = byId.get(family.output);
-    const pipeline = byId.get(family.pipeline);
+    const output = snapshotEntry(snapshot, family.output);
+    const pipeline = snapshotEntry(snapshot, family.pipeline);
     if (!output || !pipeline) continue;
     grouped.add(family.output);
     grouped.add(family.pipeline);
     if (!isUnhealthy(output) && !isUnhealthy(pipeline)) continue;
 
-    const members = [output, pipeline];
+    const entries = [output, pipeline];
     incidents.push({
       key: family.key,
       title: family.title,
-      status: getSystemStatus(members),
+      status: getSystemStatus(entries),
       summary: isUnhealthy(output)
-        ? correlate(output, pipeline)
+        ? correlate(output, pipeline, now)
         : `${output.name} output is healthy, but its publishing pipeline is not: ${
             pipeline.errorMessage ?? pipeline.status
           }`,
-      monitors: members,
+      entries,
     });
   }
 
-  for (const monitor of monitors) {
-    if (grouped.has(monitor.id) || !isUnhealthy(monitor)) continue;
+  for (const entry of allSnapshotEntries(snapshot)) {
+    if (grouped.has(entry.id) || !isUnhealthy(entry)) continue;
     incidents.push({
-      key: monitor.id,
-      title: monitor.name,
-      status: monitor.status,
-      summary: monitor.errorMessage ?? monitor.note ?? "Status requires attention.",
-      monitors: [monitor],
+      key: entry.id,
+      title: entry.name,
+      status: entry.status,
+      summary: entry.errorMessage ?? entry.note ?? "Status requires attention.",
+      entries: [entry],
     });
   }
 

@@ -246,23 +246,30 @@ export async function checkIrca(options: IrcaCheckOptions = {}): Promise<Monitor
   const counts = content?.counts ?? manifest.counts;
   const trafficStations = content?.trafficStations ?? manifest.trafficStationCount;
 
-  const details: Record<string, unknown> = {
+  // What was actually collected. A later failed attempt keeps this and drops the diagnostics.
+  const data: Record<string, unknown> = {
     lastPublished: utcMinute(manifest.generatedAt),
-    expectedRefresh: `${IRCA_WORKFLOW_INTERVAL_MINUTES} min`,
     roads: counts.roads,
     incidents: counts.incidents,
     stations: counts.stations,
     trafficStations,
+    schemaVersion: manifest.schemaVersion,
+  };
+
+  const details: Record<string, unknown> = {
+    ...data,
+    expectedRefresh: `${IRCA_WORKFLOW_INTERVAL_MINUTES} min`,
     datasets: `${probes.length - unavailable.length} / ${probes.length} available`,
     contentCheck: contentSource,
-    schemaVersion: manifest.schemaVersion,
   };
   if (content?.trafficStations === undefined && unavailable.length === 0) {
     details.trafficStationSource = "manifest only (has_traffic not derivable)";
   }
   if (unavailable.length > 0) details.unavailable = unavailable.map((probe) => probe.detail).join("; ");
-  if (manifest.roadDataAt) details.roadDataAt = utcMinute(manifest.roadDataAt);
-  if (manifest.measurementDataAt) details.measurementDataAt = utcMinute(manifest.measurementDataAt);
+  if (manifest.roadDataAt) data.roadDataAt = details.roadDataAt = utcMinute(manifest.roadDataAt);
+  if (manifest.measurementDataAt) {
+    data.measurementDataAt = details.measurementDataAt = utcMinute(manifest.measurementDataAt);
+  }
 
   // A broken GeoJSON or a count that contradicts the manifest is a schema failure, not a transport one.
   if (content?.failure && content.failure.errorType === "SCHEMA_ERROR") {
@@ -274,6 +281,7 @@ export async function checkIrca(options: IrcaCheckOptions = {}): Promise<Monitor
       ageSeconds,
       errorType: content.failure.errorType,
       errorMessage: content.failure.message,
+      data,
       details,
     });
   }
@@ -316,6 +324,7 @@ export async function checkIrca(options: IrcaCheckOptions = {}): Promise<Monitor
           `pipeline republishes about every ${IRCA_WORKFLOW_INTERVAL_MINUTES} min, so at least one scheduled update ` +
           `did not reach production.`
         : undefined,
+    data,
     details,
   });
 }

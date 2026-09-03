@@ -21,6 +21,15 @@ export type LiveMonitorId = (typeof LIVE_MONITOR_IDS)[number];
 /** Everything still on placeholder data, and the only ids `freshnessThresholds` covers. */
 export type MockMonitorId = Exclude<MonitorId, LiveMonitorId>;
 
+/** Monitors that describe a publishing pipeline rather than a data source. */
+export const PIPELINE_MONITOR_IDS = ["ircaPipeline", "ecmwfPipeline"] as const;
+
+export type PipelineMonitorId = (typeof PIPELINE_MONITOR_IDS)[number];
+
+export function isPipelineMonitor(id: string): id is PipelineMonitorId {
+  return (PIPELINE_MONITOR_IDS as readonly string[]).includes(id);
+}
+
 /**
  * A source and the pipeline that publishes it are two monitors but one problem, so incidents are
  * grouped: a stale IRCA output plus a failing IRCA workflow is one story, not two alarms.

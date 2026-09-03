@@ -1,5 +1,6 @@
 import { getSystemStatus } from "@/health/evaluate";
-import type { HealthStatus, MonitorHealth } from "@/health/model";
+import type { HealthStatus } from "@/health/model";
+import type { SnapshotSource } from "@/snapshot/types";
 
 export interface DashboardEvent {
   key: string;
@@ -13,7 +14,7 @@ export interface DashboardEvent {
 /** Session-scoped only: nothing is persisted in phase one. */
 export const MAX_SESSION_EVENTS = 40;
 
-export function statusMap(monitors: MonitorHealth[]): Record<string, HealthStatus> {
+export function statusMap(monitors: SnapshotSource[]): Record<string, HealthStatus> {
   return Object.fromEntries(monitors.map((monitor) => [monitor.id, monitor.status]));
 }
 
@@ -23,7 +24,7 @@ export function statusMap(monitors: MonitorHealth[]): Record<string, HealthStatu
  */
 export function recordCheck(
   existing: DashboardEvent[],
-  monitors: MonitorHealth[],
+  monitors: SnapshotSource[],
   previousStatuses: Record<string, HealthStatus> | null,
   checkedAt: string,
 ): DashboardEvent[] {
@@ -33,7 +34,7 @@ export function recordCheck(
       at: checkedAt,
       label: monitor.name,
       status: monitor.status,
-      detail: monitor.errorType ?? "first check",
+      detail: monitor.errorType ?? "first snapshot",
     }));
     return [...seed, ...existing].slice(0, MAX_SESSION_EVENTS);
   }
@@ -51,7 +52,7 @@ export function recordCheck(
   const cycle: DashboardEvent = {
     key: `${checkedAt}-cycle`,
     at: checkedAt,
-    label: `Check cycle (${monitors.length} sources)`,
+    label: `Snapshot (${monitors.length} sources)`,
     status: getSystemStatus(monitors),
     detail: changed.length === 0 ? "no change" : `${changed.length} changed`,
   };

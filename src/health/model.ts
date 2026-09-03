@@ -39,5 +39,11 @@ export interface MonitorHealth {
   errorMessage?: string;
   /** Healthy-but-worth-saying note that turns "ok" into "info" (see status INFO). */
   note?: string;
+  /**
+   * The values actually collected from the source this attempt, and nothing else.
+   * Its presence is the definition of "this collection succeeded": a snapshot keeps the previous
+   * `data` whenever a later attempt produces none. Diagnostics belong in `details`, not here.
+   */
+  data?: Record<string, unknown>;
   details?: Record<string, unknown>;
 }
