@@ -11,7 +11,8 @@ export const SNAPSHOT_SCHEMA_VERSION = 1;
 
 /** Written by `npm run snapshot`, served as a static file, read by the page on the server. */
 export const SNAPSHOT_RELATIVE_PATH = "public/data/latest-health.json";
-export const SNAPSHOT_PUBLIC_URL = "/data/latest-health.json";
+/** Path within the site. Combine with the deployment base path via `getSnapshotUrl()`. */
+export const SNAPSHOT_PUBLIC_PATH = "/data/latest-health.json";
 
 /** How often the scheduled collection is expected to run. */
 export const SNAPSHOT_INTERVAL_MINUTES = 60;

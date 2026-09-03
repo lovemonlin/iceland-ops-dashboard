@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import test from "node:test";
-import { SNAPSHOT_OVERDUE_MINUTES, SNAPSHOT_PUBLIC_URL, SNAPSHOT_RELATIVE_PATH } from "../src/config/snapshot";
+import { SNAPSHOT_OVERDUE_MINUTES, SNAPSHOT_PUBLIC_PATH, SNAPSHOT_RELATIVE_PATH } from "../src/config/snapshot";
 import type { MonitorHealth } from "../src/health/model";
 import { buildSnapshot } from "../src/snapshot/buildSnapshot";
 import { mergeSource } from "../src/snapshot/mergeSnapshot";
@@ -104,15 +104,15 @@ test("16. a failed collection still exposes the last successful data to the card
 
 test("17. the browser reload path reads the snapshot file, not a monitor endpoint", async () => {
   const dashboard = await readProjectFile("src/components/Dashboard.tsx");
-  assert.match(dashboard, /SNAPSHOT_PUBLIC_URL/);
+  assert.match(dashboard, /getSnapshotUrl/);
   assert.equal(dashboard.includes("/api/health"), false);
-  assert.equal(SNAPSHOT_PUBLIC_URL, "/data/latest-health.json");
+  assert.equal(SNAPSHOT_PUBLIC_PATH, "/data/latest-health.json");
   // The button says what it does.
   assert.match(dashboard, /Reload latest snapshot/);
 });
 
 test("the snapshot the dashboard reads is the one the script writes", () => {
-  assert.equal(SNAPSHOT_RELATIVE_PATH, `public${SNAPSHOT_PUBLIC_URL}`);
+  assert.equal(SNAPSHOT_RELATIVE_PATH, `public${SNAPSHOT_PUBLIC_PATH}`);
 });
 
 test("pipelines and sources are both reachable by id for the card grid", () => {

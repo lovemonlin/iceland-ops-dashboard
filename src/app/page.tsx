@@ -3,12 +3,13 @@ import { Dashboard } from "@/components/Dashboard";
 import { SNAPSHOT_RELATIVE_PATH } from "@/config/snapshot";
 import { readSnapshot } from "@/snapshot/readSnapshot";
 
-/** Read the snapshot file on every request, so a newly written snapshot appears immediately. */
-export const dynamic = "force-dynamic";
-
 /**
  * The dashboard's only data path is the snapshot file on disk.
  * It deliberately imports no monitor: opening this page must never contact a production API.
+ *
+ * The site is statically exported, so this runs at build time and the snapshot is baked into the
+ * HTML. Every deployment ships the snapshot committed with it, and the client re-reads the JSON
+ * file on load, so a browser holding a cached page still ends up on the newest data.
  */
 export default async function Home() {
   const path = resolve(process.cwd(), SNAPSHOT_RELATIVE_PATH);

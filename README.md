@@ -138,10 +138,16 @@ schema is `ERROR / SCHEMA_ERROR`; IMO returning 200 with zero active warnings is
 
 ## Run
 
+The published dashboard is at **https://lovemonlin.github.io/iceland-ops-dashboard/** and needs
+nothing running locally.
+
+To work on it:
+
 ```powershell
 npm install
 npm run snapshot   # collect production data once and write the snapshot
 npm run dev        # serve the dashboard from that snapshot
+npm run build      # static export into out/
 ```
 
 `npm run snapshot` is the scheduled collection: it is the only thing that contacts production, and
@@ -161,22 +167,47 @@ npm run build
 ## Architecture
 
 ```
-Production sources (ECMWF, IRCA, GitHub Actions, ...)
+Production public sources (ECMWF, IRCA, GitHub Actions, ...)
         |
         v
-Scheduled collection  --  npm run snapshot, once per hour
+Hourly scheduled collection  --  npm run snapshot
         |
         v
 public/data/latest-health.json  --  the snapshot
         |
         v
-Dashboard  --  reads the snapshot, never the sources
+GitHub commit + push to main
+        |
+        v
+GitHub Pages deployment (build on push, never on a schedule)
+        |
+        v
+Iceland Ops Dashboard  --  https://lovemonlin.github.io/iceland-ops-dashboard/
 ```
 
 **Browser refresh and production data collection are different things.** Opening or reloading the
-dashboard reads a static JSON file and contacts no production API. Production data is collected only
-when the scheduled task runs `npm run snapshot`. The dashboard does not need to be open for that to
-happen, and having it open does not make it happen more often.
+dashboard reads one static JSON file and contacts no production API. Production data is collected
+only when the scheduled task runs. The dashboard does not need to be open for that to happen, and
+having it open does not make it happen more often.
+
+The scheduled collection is only ever allowed to change one file: `public/data/latest-health.json`.
+It must not touch source code, `package.json`, the workflow, configuration or this README. Pushing
+that one file to `main` is what publishes new data: the Pages workflow rebuilds and redeploys.
+
+`npm run snapshot` is a local development, manual validation and recovery tool. It is not something
+that has to run on anyone's Windows machine for the site to stay up.
+
+### Deployment
+
+The site is a Next.js **static export** (`output: "export"`), served by GitHub Pages from
+`out/`. GitHub Pages project sites live under `/<repository>/`, so the Pages build sets
+`NEXT_PUBLIC_BASE_PATH=/iceland-ops-dashboard`; locally the variable is unset and everything is
+served from `/`. Every path is built through `getPublicAssetPath()` / `getSnapshotUrl()` in
+`src/lib/publicPath.ts` — the base path is never written out by hand in a component.
+
+`public/.nojekyll` stops GitHub Pages from discarding the `_next/` directory. The snapshot request
+is cache-busted with a timestamp so a redeployed snapshot is never hidden behind a cached copy; the
+rest of the site stays ordinary cacheable static content.
 
 The snapshot's central contract: **a failed collection never erases the last good data.** Each source
 stores the result of the latest attempt (`status`, `errorType`, `lastAttemptAt`) alongside the last
@@ -197,17 +228,18 @@ OVERDUE** banner at the top. That is the *scheduler's* freshness, not any source
 
 ```
 src/
-  app/          page (reads the snapshot file), layout, dark stylesheet
+  app/          page (reads the snapshot file at build time), layout, dark stylesheet
   components/   Dashboard (client, reloads the snapshot), StatusCard
   config/       monitor ids and incident families, snapshot policy, mock freshness thresholds,
                 request timeout, ECMWF / IRCA / GitHub contracts
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
-  lib/          fetch diagnostics, session event log, time-zone formatting
+  lib/          fetch diagnostics, session event log, time-zone formatting, public path helpers
   monitors/     runAllMonitors, live ECMWF / IRCA / pipeline monitors, incident correlation,
                 mock monitors, validation helpers
   snapshot/     schema, merge, build, atomic write, read
 scripts/        snapshot.ts - the scheduled collection entry point
 public/data/    latest-health.json - the snapshot the dashboard reads
+.github/        deploy-pages.yml - builds and deploys on push to main
 tests/          offline Node test-runner suites
 ```
 

@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StatusCard } from "@/components/StatusCard";
 import { LIVE_MONITOR_IDS, MONITOR_IDS } from "@/config/monitors";
-import {
-  SNAPSHOT_INTERVAL_MINUTES,
-  SNAPSHOT_OVERDUE_MINUTES,
-  SNAPSHOT_PUBLIC_URL,
-  SNAPSHOT_RELOAD_MS,
-} from "@/config/snapshot";
+import { SNAPSHOT_INTERVAL_MINUTES, SNAPSHOT_OVERDUE_MINUTES, SNAPSHOT_RELOAD_MS } from "@/config/snapshot";
 import type { HealthStatus } from "@/health/model";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
+import { getSnapshotUrl } from "@/lib/publicPath";
 import { formatClock, formatDateTime, formatShortClock, ICELAND_TIME_ZONE, TAIWAN_TIME_ZONE } from "@/lib/time";
 import { buildIncidents, dataAgeMinutes, type IncidentGroup } from "@/monitors/correlate";
 import { snapshotAgeMinutes, snapshotEntry, allSnapshotEntries, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
@@ -56,7 +52,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
     inFlight.current = true;
     setLoading(true);
     try {
-      const response = await fetch(SNAPSHOT_PUBLIC_URL, { cache: "no-store" });
+      // Cache-busted so a redeployed snapshot is never hidden behind a cached copy.
+      const response = await fetch(getSnapshotUrl({ cacheBust: true }), { cache: "no-store" });
       if (!response.ok) throw new Error(`snapshot file returned HTTP ${response.status}`);
       const next = (await response.json()) as DashboardSnapshot;
       if (!mounted.current) return;
@@ -76,10 +73,16 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
     }
   }, [snapshot.generatedAt]);
 
-  // Leave the deterministic server-rendered clock behind once mounted.
+  // Leave the build-time clock behind, and re-read the snapshot in case this HTML was cached.
+  // The page is statically exported, so a visitor can arrive on HTML older than the deployed JSON.
   useEffect(() => {
-    const timer = setTimeout(() => setNow(new Date()), 0);
+    const timer = setTimeout(() => {
+      setNow(new Date());
+      void reloadSnapshot();
+    }, 0);
     return () => clearTimeout(timer);
+    // Deliberately once on mount: later reads come from the interval and the button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -119,8 +122,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
             {formatClock(snapshot.generatedAt, TAIWAN_TIME_ZONE)} Taipei
           </p>
           <p>
-            Snapshot age: <strong className={overdue ? "error" : "ok"}>{ageMinutes ?? "—"} min</strong> · collected
-            every {SNAPSHOT_INTERVAL_MINUTES} min by the scheduled task
+            Snapshot age: <strong className={overdue ? "error" : "ok"}>{ageMinutes ?? "—"} min</strong> · data
+            collection target: every {SNAPSHOT_INTERVAL_MINUTES} min
             {snapshot.scheduledFor ? ` · next due ${formatShortClock(snapshot.scheduledFor, "UTC")} UTC` : ""}
           </p>
           {reloadError && <p className="error">Could not re-read the snapshot ({reloadError}); showing the last one.</p>}

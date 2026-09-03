@@ -243,6 +243,35 @@ but road-conditions.geojson contains 699.`); the derived traffic-station count e
 Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
 outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
+## Deployment decision (2026-09-03): published on GitHub Pages
+
+The dashboard has its own repository and public URL:
+
+- Repository: `https://github.com/lovemonlin/iceland-ops-dashboard` (public, default branch `main`)
+- Site: `https://lovemonlin.github.io/iceland-ops-dashboard/`
+- Snapshot: `https://lovemonlin.github.io/iceland-ops-dashboard/data/latest-health.json`
+
+This is the **only** repository this project may write to. `iceland-aurora`, `iceland-aurora-ios`
+and `iceland-aurora-cloud` stay strictly read-only.
+
+Because the dashboard no longer collects on page load, it is a Next.js static export
+(`output: "export"`) with `trailingSlash: true`, deployed by `.github/workflows/deploy-pages.yml`
+on **push to main only** — never on a schedule, so the unreliable scheduled-trigger behaviour found
+in step 8.1 does not apply to it. Workflow permissions are the Pages minimum
+(`contents: read`, `pages: write`, `id-token: write`); no token or secret is used.
+
+GitHub Pages serves project sites from `/<repository>/`, so the Pages build sets
+`NEXT_PUBLIC_BASE_PATH=/iceland-ops-dashboard` and every URL is produced by
+`getPublicAssetPath()` / `getSnapshotUrl()` in `src/lib/publicPath.ts`. Local development leaves the
+variable unset and serves from `/`. `public/.nojekyll` keeps Pages from discarding `_next/`.
+Only the snapshot request is cache-busted (`?t=<timestamp>`); the rest of the site stays cacheable.
+
+### The one file the hourly collection may change
+
+`public/data/latest-health.json`, and nothing else. Committing and pushing it to `main` triggers the
+Pages rebuild, which is the entire publish path. The scheduled collection must never modify source
+code, `package.json`, the workflow, configuration or documentation.
+
 ## Architecture decision (2026-09-03): scheduled snapshot, not live-on-page
 
 The dashboard architecture was changed from live-on-page monitoring to scheduled snapshot
@@ -496,7 +525,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 163 fully offline tests, no network access:
+`npm test` — 174 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -530,6 +559,11 @@ the header adds Taipei.
   a monitor or a fetcher, no API route exists, snapshot age and the overdue threshold, a failed
   collection still exposing the last successful data, and the reload path pointing at the snapshot
   file rather than an endpoint
+- Deployment: 11 cases — static export configured, the Pages base path applied to assets and to
+  the snapshot URL, local development still served from `/`, cache-busting confined to the
+  snapshot, no browser-loaded file referencing a monitor or a production host, the export
+  shipping the snapshot and `.nojekyll`, the workflow triggering on push with least-privilege
+  permissions and no schedule, no credential, and no external host or scheduler introduced
 - mock monitor cases, time and session-event helpers, network diagnostics
 
 No test depends on the wall clock, and no test reaches production or the GitHub API.
@@ -538,11 +572,12 @@ No test depends on the wall clock, and no test reaches production or the GitHub 
 
 Do not proceed automatically.
 
-**Blocking on the user:** the snapshot is written to the local working tree only. For the hourly
-AI collection to publish it, this project needs its own GitHub repository
-(`lovemonlin/iceland-ops-dashboard`) and a decision on how the scheduled task authenticates to
-write to it. No remote is configured and none must be created without the user's instruction.
-Writing to `iceland-aurora`, `iceland-aurora-ios` or `iceland-aurora-cloud` remains forbidden.
+**Still blocking for hourly automation:** the repository and the site now exist, and pushing
+`public/data/latest-health.json` to `main` publishes new data. What is missing is a scheduler
+that runs `npm run snapshot` hourly and commits that one file, plus the write credential it
+would use — scoped to `iceland-ops-dashboard` only. None has been created; no token is stored
+anywhere in this project. Writing to `iceland-aurora`, `iceland-aurora-ios` or
+`iceland-aurora-cloud` remains forbidden.
 
 After that, the remaining source order is NOAA Kp → NOAA Solar Wind → NOAA OVATION → MET Norway
 → IMO, one at a time, each with a normal case and an error case tested and this file updated
