@@ -1,5 +1,5 @@
 import { freshnessThresholds } from "@/config/freshness";
-import type { AgeBasedMonitorId } from "@/config/monitors";
+import type { MockMonitorId } from "@/config/monitors";
 import { evaluateHealth, type HealthInput } from "@/health/evaluate";
 import type { MonitorHealth } from "@/health/model";
 
@@ -10,7 +10,7 @@ import type { MonitorHealth } from "@/health/model";
 export const MOCK_BASELINE_CHECKED_AT = "2026-09-03T08:52:13.000Z";
 
 type MockSpec = Omit<HealthInput, "id" | "checkedAt" | "dataTime" | "lastSuccess" | "ageSeconds" | "staleAfter"> & {
-  id: AgeBasedMonitorId;
+  id: MockMonitorId;
   /** Age of the data itself at check time, in seconds. Omit when no data was obtained. */
   dataAgeSeconds?: number;
   /** Age of the last check that produced usable data, in seconds. */
@@ -19,7 +19,7 @@ type MockSpec = Omit<HealthInput, "id" | "checkedAt" | "dataTime" | "lastSuccess
 
 /**
  * Placeholder data for the sources that are not wired to production yet.
- * ECMWF is absent on purpose: it is a real monitor now (`src/monitors/ecmwf`).
+ * ECMWF and IRCA are absent on purpose: they are real monitors now (`src/monitors/`).
  *
  * Deliberately covers ok, info, degraded and error.
  * Every status below is derived by `evaluateHealth`, never hand-written, so the
@@ -38,20 +38,6 @@ const specs: MockSpec[] = [
     schemaOk: true,
     recordCount: 4,
     details: { locations: "4/4", temperatureC: 8, windMps: 6.4, lowCloudPercent: 42, mediumCloudPercent: 21, highCloudPercent: 9 },
-  },
-  {
-    id: "irca",
-    name: "IRCA Roads",
-    dataAgeSeconds: 4873,
-    lastSuccessAgeSeconds: 4873,
-    latencyMs: 195,
-    httpStatus: 200,
-    networkOk: true,
-    parseOk: true,
-    schemaOk: true,
-    recordCount: 0,
-    errorMessage: "Public endpoint is reachable, but the road dataset contains zero records.",
-    details: { roads: 0, events: 0, stations: 0 },
   },
   {
     id: "noaaKp",

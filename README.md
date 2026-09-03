@@ -25,12 +25,13 @@ In particular, the Android project's Gradle, APK, emulator and Android Studio ru
 
 ## Data sources monitored
 
-Phase one covers seven sources. ECMWF is wired to live production data; the rest are still mock.
+Phase one covers seven sources. ECMWF and IRCA are wired to live production data; the rest are
+still mock.
 
 | Section | Monitor | id | Data |
 | --- | --- | --- | --- |
 | Weather | MET Norway Weather | `metno` | mock |
-| Roads | IRCA Roads | `irca` | mock |
+| Roads | IRCA Roads | `irca` | **live, read-only** |
 | Aurora | NOAA Kp | `noaaKp` | mock |
 | Aurora | NOAA Solar Wind | `solarWind` | mock |
 | Aurora | NOAA OVATION | `ovation` | mock |
@@ -49,6 +50,35 @@ is STALE. The schedule lives in `src/config/ecmwf.ts` and the comparison in `src
 
 A STALE ECMWF card names the expected run, the published run and the deadline, so the maintainer can
 see at a glance that the API is fine and the cloud pipeline is behind.
+
+
+### IRCA monitor
+
+Reads the public GitHub Pages output of `iceland-aurora-cloud`: `road-manifest.json` plus `HEAD`
+probes of the three GeoJSON datasets. It never talks to IRCA (umferdin.is), the cloud repository or
+GitHub Actions.
+
+The publisher is **all-or-nothing** — when IRCA fails upstream the publish fails and the previous
+good output stays online — so HTTP 200 proves nothing here. The diagnosis comes from four signals:
+
+- **Freshness.** The pipeline republishes about every 30 minutes. Past 45 minutes is `STALE`; past
+  120 minutes is `ERROR`, because the data should no longer be read as a live picture of the roads.
+  This is dashboard operational policy, not an IRCA or pipeline SLA.
+- **Availability.** Losing `road-conditions.geojson` alone is `ERROR` (it is the core dataset);
+  losing one of incidents or stations is `DEGRADED`; losing two or more is `ERROR`.
+- **Sanity floors.** Roads >= 500, stations >= 100, traffic stations >= 50, derived from observed
+  production scale (701 / 203 / 107) to catch a collapsed publish. Incidents legitimately reach
+  zero and are never `EMPTY_DATA` on their own. Messages name both numbers, never "invalid data".
+- **Consistency.** Every manifest count must equal the actual feature count in its file, and the
+  traffic-station count is re-derived from the `has_traffic` flags on station features.
+
+Transport, core-dataset and emptiness failures all outrank age, so an outage is never hidden behind
+a STALE badge.
+
+To keep a 60-second refresh cheap, only the manifest is fetched every check; the 1.3 MB road file
+and its siblings are downloaded solely when the manifest identity changes. Since the publisher is
+all-or-nothing, the files cannot change without the manifest changing. The cache is server-process
+memory only — no database, and losing it on restart costs one extra download.
 
 ## Status meanings
 
@@ -92,10 +122,10 @@ src/
   app/          Next.js App Router page, layout, dark stylesheet
   components/   Dashboard (client, holds refresh + session event log), StatusCard
   app/api/      /api/health route: runs every monitor, returns a snapshot
-  config/       monitor ids, freshness thresholds, request timeout, ECMWF contract
+  config/       monitor ids, mock freshness thresholds, request timeout, ECMWF and IRCA contracts
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
   lib/          fetch diagnostics, session event log, time-zone formatting
-  monitors/     runAllMonitors, live ECMWF monitor, mock monitors, validation helpers
+  monitors/     runAllMonitors, live ECMWF and IRCA monitors, mock monitors, validation helpers
 tests/          offline Node test-runner suites
 ```
 
@@ -110,10 +140,14 @@ and UTC side by side, and the header adds Taipei.
 
 ## Freshness and safety
 
-Age-based thresholds live in `src/config/freshness.ts` and are **conservative placeholders, not
+Mock thresholds live in `src/config/freshness.ts` and are **conservative placeholders, not
 official source guarantees**. `TODO: confirm each production source's documented update cadence
-before enabling a live monitor.` ECMWF is deliberately absent from that file: its freshness comes
-from the model-cycle publication schedule instead.
+before enabling a live monitor.`
+
+A monitor leaves that file when it goes live and gains its own policy: ECMWF uses the model-cycle
+publication schedule (`src/config/ecmwf.ts`), IRCA uses a 45-minute STALE / 120-minute ERROR
+output-age policy (`src/config/irca.ts`). Both policies are dashboard operational choices, not
+upstream guarantees.
 
 ## Network diagnostics
 
@@ -123,5 +157,6 @@ from the model-cycle publication schedule instead.
 `src/lib/fetchWithDiagnostics.ts` is the server-only wrapper used in production. Monitors take an
 injectable fetcher, so the whole test suite runs offline.
 
-The only outbound requests the dashboard makes are one `GET` for the ECMWF manifest and two `HEAD`
-probes for sampled frames, all to the public GitHub Pages host. No credential, no write request.
+Every outbound request is a `GET` or `HEAD` to the public GitHub Pages host: the two manifests,
+two ECMWF frame probes, three IRCA dataset probes, and the three IRCA GeoJSON downloads only when
+the IRCA manifest has changed. No credential, no write request, no GitHub API call.

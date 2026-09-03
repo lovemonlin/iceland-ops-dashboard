@@ -3,9 +3,10 @@ export const MONITOR_IDS = ["metno", "irca", "noaaKp", "solarWind", "ovation", "
 
 export type MonitorId = (typeof MONITOR_IDS)[number];
 
-/**
- * Monitors whose freshness is a plain "how old is the data" threshold.
- * ECMWF is excluded on purpose: its freshness is decided by the production model-cycle
- * publication schedule in `src/config/ecmwf.ts`, not by a fixed age.
- */
-export type AgeBasedMonitorId = Exclude<MonitorId, "ecmwf">;
+/** Monitors wired to real production data. Each owns its freshness policy in `src/config/`. */
+export const LIVE_MONITOR_IDS = ["ecmwf", "irca"] as const;
+
+export type LiveMonitorId = (typeof LIVE_MONITOR_IDS)[number];
+
+/** Everything still on placeholder data, and the only ids `freshnessThresholds` covers. */
+export type MockMonitorId = Exclude<MonitorId, LiveMonitorId>;

@@ -4,9 +4,9 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 
 ## Status (2026-09-03)
 
-Phase one steps 1–5 are complete. **Step 6 has started: ECMWF is the first — and so far only —
-production monitor.** The other six sources are still mock data. Do not wire IRCA, NOAA Kp,
-NOAA Solar Wind, NOAA OVATION, MET Norway or IMO without explicit approval.
+Phase one steps 1–5 are complete. **Two production monitors are live: ECMWF (step 6) and IRCA
+(step 7).** The other five sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind,
+NOAA OVATION, MET Norway or IMO without explicit approval.
 
 ## Completed
 
@@ -18,37 +18,42 @@ NOAA Solar Wind, NOAA OVATION, MET Norway or IMO without explicit approval.
   pause/resume, active incidents and a session event log.
 - Server-only fetch wrapper plus an injectable, offline-testable diagnostics core.
 - ECMWF cloud-forecast monitor reading live production data, read-only.
+- IRCA road-data monitor reading live production data, read-only.
 
 ## Monitors
 
 | Monitor | id | Source |
 | --- | --- | --- |
 | MET Norway Weather | `metno` | mock |
-| IRCA Roads | `irca` | mock |
+| IRCA Roads | `irca` | **live production (read-only)** |
 | NOAA Kp | `noaaKp` | mock |
 | NOAA Solar Wind | `solarWind` | mock |
 | NOAA OVATION | `ovation` | mock |
 | ECMWF Cloud Forecast | `ecmwf` | **live production (read-only)** |
 | IMO Warnings | `imo` | mock |
 
-`MONITOR_IDS` in `src/config/monitors.ts` is the single list. Age-based monitors must also have a
-`freshnessThresholds` entry; ECMWF is excluded from that record on purpose (see below).
+`MONITOR_IDS` in `src/config/monitors.ts` is the single list, and `LIVE_MONITOR_IDS` records which
+have gone live. A monitor leaves `freshnessThresholds` when it goes live and gains its own freshness
+policy file, so the mock thresholds and the production policies can never drift into each other.
 
 ## Safety boundary
 
-Phase one is read only. The dashboard issues exactly three outbound requests per check, all to
-`lovemonlin.github.io`: one `GET` for the ECMWF manifest and two `HEAD` probes for sampled frames.
+Phase one is read only. Every outbound request goes to `lovemonlin.github.io` and is a `GET` or a
+`HEAD`. A steady-state check issues eight: ECMWF manifest `GET` + 2 frame `HEAD`s, IRCA manifest
+`GET` + 3 dataset `HEAD`s, plus the 3 IRCA GeoJSON `GET`s only when the manifest changed.
 There is no credential, no write request, no repair action, no GitHub API call, no workflow
 dispatch, no commit or push to any Iceland production repository, and no deployment automation.
-A test asserts that every request the ECMWF monitor makes is a GET or HEAD against the public base URL.
+Both monitors have a test asserting every request they make is a GET or HEAD against the public base URL.
 
 ## Production endpoints
 
 - ECMWF manifest: `https://lovemonlin.github.io/iceland-aurora-cloud/manifest.json`
 - ECMWF frames: `https://lovemonlin.github.io/iceland-aurora-cloud/tcc-<step>h.png`, step 00–48 by 3.
+- IRCA manifest: `https://lovemonlin.github.io/iceland-aurora-cloud/road-manifest.json`
+- IRCA datasets: `.../road-conditions.geojson`, `.../road-incidents.geojson`, `.../road-stations.geojson`
 
-Both are the public GitHub Pages output of `iceland-aurora-cloud`. The dashboard never touches
-ECMWF Open Data or GRIB2 itself.
+All are the public GitHub Pages output of `iceland-aurora-cloud`. The dashboard never touches
+ECMWF Open Data, GRIB2, or IRCA (umferdin.is) itself.
 
 ## ECMWF manifest schema (verified read-only against production, 2026-09-03)
 
@@ -132,6 +137,99 @@ The expired-coverage case reports status `error` with error type `STALE_DATA`: t
 well-formed but no frame reaches the present, so nothing is usable. This is the one place where
 `STALE_DATA` appears on an ERROR rather than a STALE.
 
+## IRCA manifest schema (verified read-only against production, 2026-09-03)
+
+```
+{
+  "schema_version": 2,
+  "generated_at":        "2026-09-03T00:35:31.832760Z",
+  "road_data_at":        "2026-09-03T00:35:19.3177126Z",
+  "incident_data_at":    "2026-09-03T00:35:03.5945497Z",
+  "measurement_data_at": "2026-09-03T00:35:30.054811Z",
+  "road_count": 701, "incident_count": 41,
+  "station_count": 203, "traffic_station_count": 107,
+  "roads_url":     ".../road-conditions.geojson",
+  "incidents_url": ".../road-incidents.geojson",
+  "stations_url":  ".../road-stations.geojson",
+  "attribution": "Based on information provided by the Icelandic Road and Coastal Administration (IRCA).",
+  "source_url": "https://umferdin.is/en"
+}
+```
+
+Required: `schema_version`, `generated_at`, the four counts, the three URLs.
+Informational: the three per-source timestamps, `attribution`, `source_url`.
+Freshness uses `generated_at` — the publish time.
+
+The three datasets are plain `FeatureCollection`s served as `application/geo+json`:
+
+| File | Geometry | Observed size | Observed features |
+| --- | --- | --- | --- |
+| road-conditions.geojson | MultiLineString | 1,307,471 B | 701 |
+| road-incidents.geojson | Point | 19,699 B | 41 |
+| road-stations.geojson | Point | 79,315 B | 203 |
+
+Station features carry a boolean `properties.has_traffic`; the publisher computes
+`traffic_station_count` as the number of true flags, so the dashboard derives and cross-checks it
+the same way (107 observed, matching the manifest). If a schema change ever removes the flag, the
+cross-check degrades to "not derivable" instead of reporting a false mismatch.
+
+Dataset URLs come from the manifest, which is external data, so they are rejected unless they start
+with the published base URL. The manifest is never hardcoded — only field names and the contract.
+
+## IRCA publishing cadence and freshness policy
+
+The cloud workflow republishes roughly **every 30 minutes**, and the publisher is
+**all-or-nothing**: if IRCA is unreachable, returns malformed XML or returns no measurements, the
+publish fails and the previous successful output stays online. HTTP 200 on these files therefore
+proves nothing about the health of IRCA itself — only age, availability and count sanity do.
+
+Dashboard operational policy, **not** an IRCA or pipeline SLA (`src/config/irca.ts`):
+
+| Age of `generated_at` | Status |
+| --- | --- |
+| <= 45 min | OK |
+| > 45 min and <= 120 min | STALE (`STALE_DATA`) |
+| > 120 min | ERROR (`STALE_DATA`), message says the data is no longer a reliable live picture |
+
+## IRCA sanity floors
+
+`IRCA_SANITY_FLOORS`: roads >= 500, stations >= 100, traffic stations >= 50. Incidents have **no
+floor** — zero incidents is a legitimate answer and must never be `EMPTY_DATA` on its own.
+
+These are anomaly detectors derived from observed production scale (701 / 203 / 107), not IRCA
+guarantees. They exist to catch a collapsed publish (701 to 0 roads, 203 to 0 stations). Messages
+always name both numbers, e.g. `Expected at least 500 road features, received 82.`, and describe
+only what is provable — never "IRCA is down", because the dashboard cannot yet tell IRCA upstream
+from the converter, the workflow or GitHub Pages.
+
+## IRCA consistency and caching strategy
+
+Every check: `GET road-manifest.json` plus `HEAD` on all three datasets (availability, no bodies).
+
+The three GeoJSON files are downloaded in full **only when the manifest identity changes** — key is
+`schema_version | generated_at | the four counts`. Because the publisher is all-or-nothing, the
+files cannot change without the manifest changing, so this is safe and keeps the 1.3 MB road file
+off every 60-second check. The cache is server-process memory (`src/monitors/irca/datasets.ts`),
+lost on restart, no database. Validation results are cached, including validation *failures*;
+transport failures are never cached, so a network hiccup is retried on the next check.
+
+On a full download the monitor checks: each file is a real `FeatureCollection` with a features
+array; each manifest count equals the actual feature count (`Manifest reports 701 roads features,
+but road-conditions.geojson contains 699.`); the derived traffic-station count equals
+`traffic_station_count`; and every sanity floor holds.
+
+## IRCA status rules
+
+| Status | Condition |
+| --- | --- |
+| OK | manifest valid, age <= 45 min, 3/3 datasets available, valid GeoJSON, counts match, floors met (incidents may be 0) |
+| STALE | everything readable and consistent, but age is 45-120 min |
+| DEGRADED | exactly one **non-core** dataset (incidents or stations) unavailable, road data intact |
+| ERROR | manifest unavailable / malformed / bad timestamp; road-conditions unavailable; 2 or more datasets unavailable; invalid GeoJSON; count mismatch; any sanity floor breached; age > 120 min |
+
+Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
+outage is never hidden behind a STALE badge. Two tests pin that behaviour.
+
 ## Health rule order (do not reorder casually)
 
 networkOk → httpStatus → parseOk → schemaOk → recordCount/allowEmpty → fatalError →
@@ -141,16 +239,18 @@ Notes:
 - `allowEmpty` exists so a legitimately empty dataset (IMO with zero active warnings) is not `EMPTY_DATA`.
 - `infoNote` promotes an otherwise-OK monitor to `info`. INFO never changes the overall system status.
 - `partialFailure` is checked before freshness, so a partly broken source reports DEGRADED rather than STALE.
-- `stale` is a caller-determined flag for sources whose freshness is not an age (ECMWF).
+- `stale` is a caller-determined flag for sources whose freshness is not an age (ECMWF), or
+  whose age policy lives in its own config file (IRCA).
 - `fatalError` carries a source-specific fatal condition the generic rules cannot express; it
   outranks partial failure and staleness but never a transport or schema failure.
 - The schema branch honours a caller `errorType`, so ECMWF can report `INVALID_TIMESTAMP` or
   `EMPTY_DATA` instead of a blanket `SCHEMA_ERROR`.
 
-## Freshness thresholds (age-based monitors only)
+## Freshness thresholds (mock monitors only)
 
 `src/config/freshness.ts`, in seconds. **Conservative placeholders, not official guarantees.**
-metno 7200 · noaaKp 21600 · solarWind 1800 · ovation 14400 · irca 10800 · imo 10800.
+metno 7200 · noaaKp 21600 · solarWind 1800 · ovation 14400 · imo 10800.
+ECMWF and IRCA have left this file; each owns its policy in `src/config/`.
 
 The unused `warningAfter` placeholder was removed: no code read it and the status model has no
 warning band. Do not reintroduce it without adding a real status for it.
@@ -192,12 +292,16 @@ the header adds Taipei.
 - If ECMWF is STALE, the dashboard says the cloud pipeline is behind — it cannot say *why*.
   Distinguishing "workflow failed" from "ECMWF Open Data was late" needs the GitHub Actions monitor,
   which is deliberately out of scope for this step.
+- The same limit applies to IRCA, and matters more because of all-or-nothing publishing: when
+  IRCA data is stale the dashboard can prove the output is old, but **cannot tell whether the
+  failure is IRCA upstream, the XML converter, the GitHub Actions workflow, or GitHub Pages**.
+  All four look identical from the published output. Resolving it needs the Actions monitor.
 - The git working copy was created under a different Windows account; the current user needs
   `git config --global --add safe.directory C:/dev/iceland-ops-dashboard` (that one path only).
 
 ## Tests
 
-`npm test` — 71 fully offline tests, no network access:
+`npm test` — 97 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -206,12 +310,30 @@ the header adds Taipei.
   run, UTC day crossing, malformed manifest, invalid `run_at`, future `run_at`, empty frames,
   17 valid frames, non-3 h sequence, expired latest `valid_at`, one image failing, both images
   failing, HTTP failure, parse failure) plus a request-shape test asserting GET/HEAD only
+- IRCA monitor: the 25 required cases (valid data, zero incidents OK, zero roads / stations /
+  traffic stations, each sanity floor breached, ages 44:59 / 45:01 / 119:59 / >120 against fixed
+  clocks, malformed manifest, malformed GeoJSON, count mismatch, conditions 404, stations 404,
+  incidents 404, two and three datasets down, manifest HTTP error, manifest parse error,
+  download-only-on-manifest-change, cache reuse, read-only request shape), plus two priority
+  tests proving a core outage is not hidden behind STALE
 - mock monitor cases, time and session-event helpers, network diagnostics
 
-No test depends on the wall clock.
+No test depends on the wall clock, and no test reaches production.
 
 ## Next step
 
-Do not proceed automatically. The remaining order is IRCA → NOAA Kp → NOAA Solar Wind →
-NOAA OVATION → MET Norway → IMO, one at a time, each with a normal case and an error case tested
-and this file updated before the next one starts.
+Do not proceed automatically. The remaining order is NOAA Kp → NOAA Solar Wind → NOAA OVATION →
+MET Norway → IMO, one at a time, each with a normal case and an error case tested and this file
+updated before the next one starts.
+
+## Production verification (2026-09-03 02:37 UTC)
+
+ECMWF: OK. Run 2026-09-02 12Z (the expected run), 17/17 frames, coverage to 2026-09-04 12:00 UTC,
+both sampled images 200, manifest latency ~130 ms.
+
+IRCA: **ERROR / STALE_DATA** — a real finding, not a monitor bug. All three datasets returned 200,
+schema valid, counts fully consistent (701 roads / 41 incidents / 203 stations / 107 traffic
+stations, manifest and GeoJSON agreeing), file sizes 1,307,471 / 19,699 / 79,315 B, manifest
+latency ~130-330 ms. But `generated_at` was 2026-09-03 00:35 UTC, making the output **122 minutes
+old** against a 30-minute cadence, past the 120-minute limit. At least four scheduled publishes
+did not reach production. Which layer failed is not determinable from the published output.

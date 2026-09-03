@@ -5,18 +5,14 @@ import { getMockMonitors, MOCK_BASELINE_CHECKED_AT } from "../src/monitors/mockM
 const monitors = getMockMonitors();
 const byId = (id: string) => monitors.find((monitor) => monitor.id === id)!;
 
-test("ECMWF is no longer a mock; it is a live production monitor", () => {
-  assert.equal(
-    monitors.find((monitor) => monitor.id === "ecmwf"),
-    undefined,
-  );
-});
-
-test("IRCA mock is ERROR on zero records despite HTTP 200", () => {
-  const irca = byId("irca");
-  assert.equal(irca.status, "error");
-  assert.equal(irca.errorType, "EMPTY_DATA");
-  assert.equal(irca.httpStatus, 200);
+test("ECMWF and IRCA are no longer mocks; they are live production monitors", () => {
+  for (const id of ["ecmwf", "irca"]) {
+    assert.equal(
+      monitors.find((monitor) => monitor.id === id),
+      undefined,
+      `${id} should not be in the mock set`,
+    );
+  }
 });
 
 test("MET mock represents all locations succeeding", () => {

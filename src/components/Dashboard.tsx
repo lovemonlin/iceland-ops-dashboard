@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StatusCard } from "@/components/StatusCard";
+import { LIVE_MONITOR_IDS, MONITOR_IDS } from "@/config/monitors";
 import { getSystemStatus } from "@/health/evaluate";
 import type { HealthStatus, MonitorHealth } from "@/health/model";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
@@ -81,7 +82,9 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot
     <main>
       <header>
         <div>
-          <p className="eyebrow">READ-ONLY MONITOR · ECMWF LIVE · OTHER SOURCES STILL MOCK DATA</p>
+          <p className="eyebrow">
+            READ-ONLY MONITOR · {LIVE_MONITOR_IDS.length} OF {MONITOR_IDS.length} SOURCES LIVE · REST STILL MOCK DATA
+          </p>
           <h1>ICELAND OPS DASHBOARD</h1>
           <p>
             Last check: {formatDateTime(checkedAt, "UTC")} UTC · {formatClock(checkedAt, ICELAND_TIME_ZONE)} Iceland ·{" "}
@@ -160,6 +163,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot
 }
 
 function Incident({ monitor, mostUrgent }: { monitor: MonitorHealth; mostUrgent: boolean }) {
+  // The data's own timestamp answers "how old is what we are serving"; the check time does not.
+  const lastGoodData = monitor.dataTime ?? monitor.lastSuccess;
   return (
     <article className={`incident ${monitor.status}`}>
       <div className="incident-head">
@@ -170,8 +175,8 @@ function Incident({ monitor, mostUrgent }: { monitor: MonitorHealth; mostUrgent:
       </div>
       <p>{monitor.errorMessage ?? "Status requires attention."}</p>
       <p className="incident-meta">
-        Checked {formatClock(monitor.checkedAt, ICELAND_TIME_ZONE)} Iceland · last success{" "}
-        {monitor.lastSuccess ? formatClock(monitor.lastSuccess, ICELAND_TIME_ZONE) : "—"}
+        Checked {formatClock(monitor.checkedAt, ICELAND_TIME_ZONE)} Iceland · last good data{" "}
+        {lastGoodData ? formatClock(lastGoodData, ICELAND_TIME_ZONE) : "—"}
         {mostUrgent && <strong className="urgent"> · HANDLE THIS FIRST</strong>}
       </p>
     </article>

@@ -41,9 +41,9 @@ test("an unchanged check logs only the cycle line", () => {
 });
 
 test("a status change is logged with its transition", () => {
-  const previous = { ...statusMap(monitors), irca: "ok" as const };
+  const previous = { ...statusMap(monitors), noaaKp: "ok" as const };
   const events = recordCheck([], monitors, previous, "2026-09-03T08:53:13.000Z");
-  const change = events.find((event) => event.label === "IRCA Roads");
+  const change = events.find((event) => event.label === "NOAA Kp");
   assert.equal(change?.detail, "OK → ERROR");
   assert.equal(change?.status, "error");
 });

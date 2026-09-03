@@ -6,11 +6,7 @@ import {
 } from "@/config/ecmwf";
 import { evaluateHealth } from "@/health/evaluate";
 import type { MonitorHealth } from "@/health/model";
-import {
-  fetchWithDiagnosticsCore,
-  type DiagnosticRequestOptions,
-  type DiagnosticResult,
-} from "@/lib/fetchWithDiagnosticsCore";
+import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "@/lib/fetchWithDiagnosticsCore";
 import { validateEcmwfManifest } from "@/monitors/ecmwf/manifest";
 import {
   expectedModelRun,
@@ -21,15 +17,6 @@ import {
 
 export const ECMWF_MONITOR_ID = "ecmwf";
 export const ECMWF_MONITOR_NAME = "ECMWF Cloud Forecast";
-
-/**
- * A diagnostics-returning request function. Production passes the server-only
- * `fetchWithDiagnostics`; tests pass a fake, so the monitor is fully testable offline.
- */
-export type DiagnosticFetcher = <T>(
-  url: string,
-  options?: Omit<DiagnosticRequestOptions, "fetch">,
-) => Promise<DiagnosticResult<T>>;
 
 const defaultRequest: DiagnosticFetcher = (url, options) => fetchWithDiagnosticsCore(url, options);
 

@@ -1,6 +1,8 @@
 import { MONITOR_IDS } from "@/config/monitors";
 import type { MonitorHealth } from "@/health/model";
-import { checkEcmwf, type DiagnosticFetcher } from "@/monitors/ecmwf/monitor";
+import type { DiagnosticFetcher } from "@/lib/fetchWithDiagnosticsCore";
+import { checkEcmwf } from "@/monitors/ecmwf/monitor";
+import { checkIrca } from "@/monitors/irca/monitor";
 import { getMockMonitors } from "@/monitors/mockMonitors";
 
 export interface HealthSnapshot {
@@ -25,6 +27,7 @@ export async function runAllMonitors(options: RunOptions = {}): Promise<HealthSn
 
   const live: [string, string, Promise<MonitorHealth>][] = [
     ["ecmwf", "ECMWF Cloud Forecast", checkEcmwf({ now, request: options.request })],
+    ["irca", "IRCA Roads", checkIrca({ now, request: options.request })],
   ];
 
   const settled = await Promise.allSettled(live.map(([, , promise]) => promise));

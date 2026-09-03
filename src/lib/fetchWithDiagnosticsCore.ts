@@ -44,6 +44,15 @@ export interface DiagnosticRequestOptions {
   timeoutMs?: number;
 }
 
+/**
+ * A diagnostics-returning request function. Production passes the server-only
+ * `fetchWithDiagnostics`; tests pass a stub, so monitors are fully testable offline.
+ */
+export type DiagnosticFetcher = <T>(
+  url: string,
+  options?: Omit<DiagnosticRequestOptions, "fetch">,
+) => Promise<DiagnosticResult<T>>;
+
 /** Never let a URL reach a log, a UI string or an error message with a secret still in it. */
 export function safeUrl(rawUrl: string) {
   try {
