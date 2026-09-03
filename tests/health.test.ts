@@ -68,3 +68,31 @@ test("stale wins over an info note", () => {
 test("degraded is reported even when data is fresh", () => {
   assert.equal(evaluateHealth({ ...base, ageSeconds: 1, staleAfter: 60, partialFailure: true }).status, "degraded");
 });
+
+test("an explicit stale flag is honoured when freshness is not an age threshold", () => {
+  const result = evaluateHealth({ ...base, stale: true, errorMessage: "behind schedule" });
+  assert.equal(result.status, "stale");
+  assert.equal(result.errorType, "STALE_DATA");
+  assert.equal(result.errorMessage, "behind schedule");
+  assert.equal(evaluateHealth({ ...base, stale: false }).status, "ok");
+});
+
+test("a fatal source error outranks partial failure and staleness", () => {
+  const fatalError = { type: "STALE_DATA" as const, message: "no usable frame remains" };
+  const result = evaluateHealth({ ...base, fatalError, partialFailure: true, stale: true });
+  assert.equal(result.status, "error");
+  assert.equal(result.errorType, "STALE_DATA");
+  assert.equal(result.errorMessage, "no usable frame remains");
+});
+
+test("a fatal source error never outranks a transport or schema failure", () => {
+  const fatalError = { type: "EMPTY_DATA" as const, message: "ignored" };
+  assert.equal(evaluateHealth({ ...base, networkOk: false, fatalError }).errorType, "NETWORK_ERROR");
+  assert.equal(evaluateHealth({ ...base, schemaOk: false, fatalError }).errorType, "SCHEMA_ERROR");
+});
+
+test("a schema failure can carry a more specific error type", () => {
+  const result = evaluateHealth({ ...base, schemaOk: false, errorType: "INVALID_TIMESTAMP", errorMessage: "bad run_at" });
+  assert.equal(result.status, "error");
+  assert.equal(result.errorType, "INVALID_TIMESTAMP");
+});

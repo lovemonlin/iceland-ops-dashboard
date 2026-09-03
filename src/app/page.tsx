@@ -1,6 +1,11 @@
 import { Dashboard } from "@/components/Dashboard";
-import { MOCK_BASELINE_CHECKED_AT } from "@/monitors/mockMonitors";
+import { fetchWithDiagnostics } from "@/lib/fetchWithDiagnostics";
+import { runAllMonitors } from "@/monitors";
 
-export default function Home() {
-  return <Dashboard initialCheckedAt={MOCK_BASELINE_CHECKED_AT} />;
+/** Every visit runs a fresh check; nothing here may be prerendered at build time. */
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const snapshot = await runAllMonitors({ request: fetchWithDiagnostics });
+  return <Dashboard initialSnapshot={snapshot} />;
 }

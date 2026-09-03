@@ -5,13 +5,11 @@ import { getMockMonitors, MOCK_BASELINE_CHECKED_AT } from "../src/monitors/mockM
 const monitors = getMockMonitors();
 const byId = (id: string) => monitors.find((monitor) => monitor.id === id)!;
 
-test("ECMWF mock is STALE with a readable manifest and full frame count", () => {
-  const ecmwf = byId("ecmwf");
-  assert.equal(ecmwf.status, "stale");
-  assert.equal(ecmwf.errorType, "STALE_DATA");
-  assert.equal(ecmwf.httpStatus, 200);
-  assert.equal(ecmwf.recordCount, 17);
-  assert.equal(ecmwf.fresh, false);
+test("ECMWF is no longer a mock; it is a live production monitor", () => {
+  assert.equal(
+    monitors.find((monitor) => monitor.id === "ecmwf"),
+    undefined,
+  );
 });
 
 test("IRCA mock is ERROR on zero records despite HTTP 200", () => {
@@ -40,8 +38,8 @@ test("IMO mock treats zero active warnings as INFO, not a failure", () => {
   assert.ok(imo.note);
 });
 
-test("all five display statuses are represented", () => {
-  assert.deepEqual(new Set(monitors.map((monitor) => monitor.status)), new Set(["ok", "info", "stale", "degraded", "error"]));
+test("the mock set still covers ok, info, degraded and error", () => {
+  assert.deepEqual(new Set(monitors.map((monitor) => monitor.status)), new Set(["ok", "info", "degraded", "error"]));
 });
 
 test("mock timestamps follow the supplied check time", () => {

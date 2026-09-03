@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StatusCard } from "@/components/StatusCard";
 import { getSystemStatus } from "@/health/evaluate";
 import type { HealthStatus, MonitorHealth } from "@/health/model";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
 import { formatClock, formatDateTime, formatShortClock, ICELAND_TIME_ZONE, TAIWAN_TIME_ZONE } from "@/lib/time";
-import { getMockMonitors } from "@/monitors/mockMonitors";
+import type { HealthSnapshot } from "@/monitors";
 
 /** Deliberately slow: this is a maintenance console, not a live ticker. */
 const AUTO_REFRESH_MS = 60_000;
@@ -22,39 +22,55 @@ const order: HealthStatus[] = ["ok", "info", "stale", "degraded", "error"];
 const dot: Record<HealthStatus, string> = { ok: "🟢", info: "🔵", stale: "🟡", degraded: "🟠", error: "🔴" };
 const severity: Record<HealthStatus, number> = { error: 0, degraded: 1, stale: 2, info: 3, ok: 4 };
 
-export function Dashboard({ initialCheckedAt }: { initialCheckedAt: string }) {
-  const [checkedAt, setCheckedAt] = useState(initialCheckedAt);
+export function Dashboard({ initialSnapshot }: { initialSnapshot: HealthSnapshot }) {
+  const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [requestError, setRequestError] = useState<string | undefined>();
 
-  const monitors = useMemo(() => getMockMonitors(checkedAt), [checkedAt]);
-
-  // Seeded from the same deterministic snapshot the server rendered, so hydration matches.
   const [events, setEvents] = useState<DashboardEvent[]>(() =>
-    recordCheck([], getMockMonitors(initialCheckedAt), null, initialCheckedAt),
+    recordCheck([], initialSnapshot.monitors, null, initialSnapshot.checkedAt),
   );
-  const lastStatuses = useRef<Record<string, HealthStatus>>(statusMap(getMockMonitors(initialCheckedAt)));
+  const lastStatuses = useRef<Record<string, HealthStatus>>(statusMap(initialSnapshot.monitors));
+  const inFlight = useRef(false);
+  const mounted = useRef(true);
 
-  /** `reseed` restarts the log; used once on mount to drop the hydration baseline. */
-  const runCheck = useCallback((reseed = false) => {
-    const at = new Date().toISOString();
-    const next = getMockMonitors(at);
-    setEvents((existing) => recordCheck(reseed ? [] : existing, next, reseed ? null : lastStatuses.current, at));
-    lastStatuses.current = statusMap(next);
-    setCheckedAt(at);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
-  // Leave the deterministic hydration baseline behind once mounted.
-  useEffect(() => {
-    const timer = setTimeout(() => runCheck(true), 0);
-    return () => clearTimeout(timer);
-  }, [runCheck]);
+  const runCheck = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setChecking(true);
+    try {
+      const response = await fetch("/api/health", { cache: "no-store" });
+      if (!response.ok) throw new Error(`health endpoint returned HTTP ${response.status}`);
+      const next = (await response.json()) as HealthSnapshot;
+      if (!mounted.current) return;
+      setEvents((existing) => recordCheck(existing, next.monitors, lastStatuses.current, next.checkedAt));
+      lastStatuses.current = statusMap(next.monitors);
+      setSnapshot(next);
+      setRequestError(undefined);
+    } catch (error) {
+      // The dashboard's own request failed; the previous snapshot stays on screen and says so.
+      if (mounted.current) setRequestError(error instanceof Error ? error.message : "unknown error");
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setChecking(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const timer = setInterval(() => runCheck(), AUTO_REFRESH_MS);
+    const timer = setInterval(runCheck, AUTO_REFRESH_MS);
     return () => clearInterval(timer);
   }, [autoRefresh, runCheck]);
 
+  const { monitors, checkedAt } = snapshot;
   const summary = order.map((status) => [status, monitors.filter((monitor) => monitor.status === status).length] as const);
   const systemStatus = getSystemStatus(monitors);
   const incidents = monitors
@@ -65,20 +81,21 @@ export function Dashboard({ initialCheckedAt }: { initialCheckedAt: string }) {
     <main>
       <header>
         <div>
-          <p className="eyebrow">READ-ONLY MONITOR · MOCK DATA · NO PRODUCTION ENDPOINT CONNECTED</p>
+          <p className="eyebrow">READ-ONLY MONITOR · ECMWF LIVE · OTHER SOURCES STILL MOCK DATA</p>
           <h1>ICELAND OPS DASHBOARD</h1>
           <p>
             Last check: {formatDateTime(checkedAt, "UTC")} UTC · {formatClock(checkedAt, ICELAND_TIME_ZONE)} Iceland ·{" "}
             {formatClock(checkedAt, TAIWAN_TIME_ZONE)} Taipei
           </p>
+          {requestError && <p className="error">Dashboard refresh failed ({requestError}); showing the last snapshot.</p>}
         </div>
         <div className="refresh">
           <span>
             Auto refresh: <strong className={autoRefresh ? "ok" : "stale"}>{autoRefresh ? "ON" : "OFF"}</strong> ({AUTO_REFRESH_MS / 1000}s)
           </span>
           <div className="refresh-buttons">
-            <button type="button" onClick={() => runCheck()}>
-              Refresh now
+            <button type="button" onClick={runCheck} disabled={checking}>
+              {checking ? "Checking…" : "Refresh now"}
             </button>
             <button type="button" onClick={() => setAutoRefresh((value) => !value)}>
               {autoRefresh ? "Pause auto refresh" : "Resume auto refresh"}

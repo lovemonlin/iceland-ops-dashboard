@@ -1,4 +1,5 @@
-import { freshnessThresholds, type MonitorId } from "@/config/freshness";
+import { freshnessThresholds } from "@/config/freshness";
+import type { AgeBasedMonitorId } from "@/config/monitors";
 import { evaluateHealth, type HealthInput } from "@/health/evaluate";
 import type { MonitorHealth } from "@/health/model";
 
@@ -9,7 +10,7 @@ import type { MonitorHealth } from "@/health/model";
 export const MOCK_BASELINE_CHECKED_AT = "2026-09-03T08:52:13.000Z";
 
 type MockSpec = Omit<HealthInput, "id" | "checkedAt" | "dataTime" | "lastSuccess" | "ageSeconds" | "staleAfter"> & {
-  id: MonitorId;
+  id: AgeBasedMonitorId;
   /** Age of the data itself at check time, in seconds. Omit when no data was obtained. */
   dataAgeSeconds?: number;
   /** Age of the last check that produced usable data, in seconds. */
@@ -17,7 +18,10 @@ type MockSpec = Omit<HealthInput, "id" | "checkedAt" | "dataTime" | "lastSuccess
 };
 
 /**
- * Deliberately covers all five display statuses: ok, info, stale, degraded, error.
+ * Placeholder data for the sources that are not wired to production yet.
+ * ECMWF is absent on purpose: it is a real monitor now (`src/monitors/ecmwf`).
+ *
+ * Deliberately covers ok, info, degraded and error.
  * Every status below is derived by `evaluateHealth`, never hand-written, so the
  * mock exercises the same rules a production monitor will.
  */
@@ -88,20 +92,6 @@ const specs: MockSpec[] = [
     errorType: "HTTP_ERROR",
     errorMessage: "29 coordinate records loaded; 3 forecast regions returned HTTP 404.",
     details: { successfulRegions: 29, failedRegions: 3 },
-  },
-  {
-    id: "ecmwf",
-    name: "ECMWF Cloud Forecast",
-    dataAgeSeconds: 64633,
-    lastSuccessAgeSeconds: 0,
-    latencyMs: 144,
-    httpStatus: 200,
-    networkOk: true,
-    parseOk: true,
-    schemaOk: true,
-    recordCount: 17,
-    errorMessage: "Manifest and all 17 frames are reachable, but the model run is older than the configured threshold.",
-    details: { modelRun: "2026-09-02 12Z", frameCount: 17, frameStepHours: 3 },
   },
   {
     id: "imo",

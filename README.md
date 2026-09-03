@@ -25,17 +25,30 @@ In particular, the Android project's Gradle, APK, emulator and Android Studio ru
 
 ## Data sources monitored
 
-Phase one covers seven sources. All of them are currently **mock data** — no production endpoint is wired up.
+Phase one covers seven sources. ECMWF is wired to live production data; the rest are still mock.
 
-| Section | Monitor | id |
-| --- | --- | --- |
-| Weather | MET Norway Weather | `metno` |
-| Roads | IRCA Roads | `irca` |
-| Aurora | NOAA Kp | `noaaKp` |
-| Aurora | NOAA Solar Wind | `solarWind` |
-| Aurora | NOAA OVATION | `ovation` |
-| Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` |
-| Forecast / Warnings | IMO Warnings | `imo` |
+| Section | Monitor | id | Data |
+| --- | --- | --- | --- |
+| Weather | MET Norway Weather | `metno` | mock |
+| Roads | IRCA Roads | `irca` | mock |
+| Aurora | NOAA Kp | `noaaKp` | mock |
+| Aurora | NOAA Solar Wind | `solarWind` | mock |
+| Aurora | NOAA OVATION | `ovation` | mock |
+| Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` | **live, read-only** |
+| Forecast / Warnings | IMO Warnings | `imo` | mock |
+
+### ECMWF monitor
+
+Reads the public GitHub Pages output of `iceland-aurora-cloud` — the manifest, plus a `HEAD` probe of
+the first and last frame. It never touches ECMWF Open Data, GRIB2, the cloud repository or GitHub Actions.
+
+Its freshness rule is **not** an age threshold. Model cycles are 00/06/12/18 UTC and each has a
+production publication deadline (00Z by 09:45, 06Z by 15:45, 12Z by 21:45, 18Z by 03:45 the next UTC
+day). At 09:30 UTC still being on the previous 18Z run is healthy; at 10:00 UTC without the 00Z run it
+is STALE. The schedule lives in `src/config/ecmwf.ts` and the comparison in `src/monitors/ecmwf/schedule.ts`.
+
+A STALE ECMWF card names the expected run, the published run and the deadline, so the maintainer can
+see at a glance that the API is fine and the cloud pipeline is behind.
 
 ## Status meanings
 
@@ -60,8 +73,9 @@ npm install
 npm run dev
 ```
 
-The dashboard renders a deterministic mock snapshot on the server, then switches to the real clock
-after mount and re-checks every 60 seconds. `Refresh now` and `Pause auto refresh` are in the header.
+The server renders the first real snapshot; the browser re-checks `/api/health` every 60 seconds.
+`Refresh now` and `Pause auto refresh` are in the header. Both `/` and `/api/health` are dynamic, so
+no check ever runs at build time.
 
 ## Checks
 
@@ -77,10 +91,11 @@ npm run build
 src/
   app/          Next.js App Router page, layout, dark stylesheet
   components/   Dashboard (client, holds refresh + session event log), StatusCard
-  config/       freshness thresholds, request timeout
+  app/api/      /api/health route: runs every monitor, returns a snapshot
+  config/       monitor ids, freshness thresholds, request timeout, ECMWF contract
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
   lib/          fetch diagnostics, session event log, time-zone formatting
-  monitors/     mock monitors, per-source validation helpers
+  monitors/     runAllMonitors, live ECMWF monitor, mock monitors, validation helpers
 tests/          offline Node test-runner suites
 ```
 
@@ -95,13 +110,18 @@ and UTC side by side, and the header adds Taipei.
 
 ## Freshness and safety
 
-Thresholds live in `src/config/freshness.ts` and are **conservative placeholders, not official source
-guarantees**. `TODO: confirm each production source's documented update cadence before enabling a live monitor.`
-`warningAfter` is reserved for a future warning band; only `staleAfter` affects status today.
+Age-based thresholds live in `src/config/freshness.ts` and are **conservative placeholders, not
+official source guarantees**. `TODO: confirm each production source's documented update cadence
+before enabling a live monitor.` ECMWF is deliberately absent from that file: its freshness comes
+from the model-cycle publication schedule instead.
 
 ## Network diagnostics
 
 `src/lib/fetchWithDiagnosticsCore.ts` is an offline-testable core with an injectable fetch. It accepts a
 `RequestInit`, owns its abort signal, forwards caller cancellation, and returns typed failures
 (`NETWORK_ERROR`, `TIMEOUT`, `HTTP_ERROR`, `PARSE_ERROR`) with redacted URLs and no response bodies.
-`src/lib/fetchWithDiagnostics.ts` is the server-only wrapper. **No production URL is wired to either.**
+`src/lib/fetchWithDiagnostics.ts` is the server-only wrapper used in production. Monitors take an
+injectable fetcher, so the whole test suite runs offline.
+
+The only outbound requests the dashboard makes are one `GET` for the ECMWF manifest and two `HEAD`
+probes for sampled frames, all to the public GitHub Pages host. No credential, no write request.

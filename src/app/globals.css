@@ -35,7 +35,7 @@ h1 { font-size: 24px; letter-spacing: .06em; }
 h2 { font-size: 13px; letter-spacing: .1em; color: var(--muted); margin: 24px 0 10px; }
 h3 { font-size: 15px; }
 
-.eyebrow, header p, dt, .details, .empty, .incident-meta, .events em {
+.eyebrow, header p, dt, .details dd, .empty, .incident-meta, .events em {
   color: var(--muted);
   font-size: 12px;
 }
@@ -77,7 +77,8 @@ dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
 dt { margin-bottom: 2px; }
 dd { margin: 0; font-variant-numeric: tabular-nums; }
 
-.details { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); word-break: break-word; }
+.details { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.details dd { font-size: 12px; word-break: break-word; }
 
 .bottom-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
 .bottom-grid h2 { margin-top: 28px; }

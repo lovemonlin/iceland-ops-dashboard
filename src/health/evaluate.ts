@@ -6,14 +6,25 @@ export type HealthInput = Omit<MonitorHealth, "status" | "errorType" | "errorMes
   /** Zero records is a legitimate answer for this source (e.g. IMO with no active warnings). */
   allowEmpty?: boolean;
   staleAfter?: number;
+  /**
+   * Caller-determined staleness, for sources whose freshness is not a plain age threshold.
+   * ECMWF uses it: "behind the production model-cycle schedule" cannot be expressed as an age.
+   */
+  stale?: boolean;
   /** Healthy, but worth telling the maintainer: promotes "ok" to "info". */
   infoNote?: string;
+  /**
+   * A source-specific fatal condition the generic rules cannot express — for example a forecast
+   * whose frames have all expired, or a source whose sampled assets are all unavailable.
+   * Checked after transport and schema, but before partial failure and freshness.
+   */
+  fatalError?: { type: MonitorErrorType; message: string };
   errorType?: MonitorErrorType;
   errorMessage?: string;
 };
 
 export function evaluateHealth(input: HealthInput): MonitorHealth {
-  const { partialFailure, allowEmpty, staleAfter, infoNote, ...base } = input;
+  const { partialFailure, allowEmpty, staleAfter, stale, infoNote, fatalError, ...base } = input;
 
   if (!input.networkOk) {
     return {
@@ -46,7 +57,7 @@ export function evaluateHealth(input: HealthInput): MonitorHealth {
     return {
       ...base,
       status: "error",
-      errorType: "SCHEMA_ERROR",
+      errorType: input.errorType ?? "SCHEMA_ERROR",
       errorMessage: input.errorMessage ?? "Required fields are missing.",
     };
   }
@@ -60,6 +71,10 @@ export function evaluateHealth(input: HealthInput): MonitorHealth {
     };
   }
 
+  if (fatalError) {
+    return { ...base, status: "error", errorType: fatalError.type, errorMessage: fatalError.message };
+  }
+
   if (partialFailure) {
     return {
       ...base,
@@ -69,7 +84,8 @@ export function evaluateHealth(input: HealthInput): MonitorHealth {
     };
   }
 
-  if (input.ageSeconds !== undefined && staleAfter !== undefined && input.ageSeconds > staleAfter) {
+  const tooOld = input.ageSeconds !== undefined && staleAfter !== undefined && input.ageSeconds > staleAfter;
+  if (stale || tooOld) {
     return {
       ...base,
       status: "stale",
