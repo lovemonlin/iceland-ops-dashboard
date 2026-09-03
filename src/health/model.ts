@@ -13,6 +13,8 @@ export type MonitorErrorType =
   | "WORKFLOW_FAILED"
   /** A scheduled workflow has not produced a run when one was due. */
   | "WORKFLOW_NOT_RUN"
+  /** The workflow exists but GitHub has it in a non-active state, so it cannot be triggered. */
+  | "WORKFLOW_DISABLED"
   | "UNKNOWN";
 
 export interface MonitorHealth {

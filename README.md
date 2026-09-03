@@ -100,11 +100,25 @@ No token is used, so GitHub allows 60 requests/hour/IP. GitHub is therefore poll
 Rate-limit headers are parsed and shown on the card; below 10 remaining the interval stretches to
 10 minutes.
 
-**A note on GitHub scheduling.** A sample of the last 10 runs of each workflow showed IRCA running
-every 105-277 minutes despite declaring a five-minute cron, and ECMWF every ~134-401 minutes against
-a three-hourly cron. GitHub drops most scheduled triggers on free public repositories, so a cron is
-an upper bound, never a promise — which is worth knowing before tuning any freshness threshold in
-this repository.
+The monitor also reads scheduler-side metadata hourly — workflow state, the repository's default
+branch, and the cron actually present in the workflow file on that branch — so a disabled workflow
+or a file missing from the default branch is named as such instead of appearing as a mystery gap.
+GitHub's platform status is shown as context and never changes any monitor's status.
+
+**A note on GitHub scheduling.**
+
+GitHub documents that scheduled events can be delayed during periods of high Actions load, and
+that queued scheduled jobs may be dropped. A cron expression is therefore a request, not a
+delivery guarantee.
+
+Separately — and this is an observation about this repository, not a statement about GitHub in
+general — the production history contains substantial gaps between scheduled runs. A read-only
+sample of the last 10 runs of each workflow on 2026-09-03 showed `update-road-info.yml` running
+every 105-277 minutes (median 147) against a five-minute cron, and `update-cloud-forecast.yml`
+every ~134-401 minutes against a three-hourly cron. Cron frequency must not be treated as an SLA.
+
+The card therefore shows the **configured schedule** and this dashboard's own **alerting rule**
+as two separate fields, and never presents a cron as an expected delivery interval.
 
 ## Status meanings
 
@@ -176,6 +190,10 @@ A monitor leaves that file when it goes live and gains its own policy: ECMWF use
 publication schedule (`src/config/ecmwf.ts`), IRCA uses a 45-minute STALE / 120-minute ERROR
 output-age policy (`src/config/irca.ts`). Both policies are dashboard operational choices, not
 upstream guarantees.
+
+The IRCA thresholds are deliberately **not** relaxed to match how often the publishing pipeline
+actually delivers. They state the freshness Iceland road information needs. If the dashboard stays
+red against them, that is the finding — the publishing architecture is not meeting the requirement.
 
 ## Network diagnostics
 

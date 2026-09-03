@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { GITHUB_API_BASE, MONITORED_WORKFLOWS, runJobsUrl, workflowRunsUrl } from "../src/config/github";
+import {
+  GITHUB_ALLOWED_HOSTS,
+  GITHUB_API_BASE,
+  GITHUB_STATUS_SUMMARY_URL,
+  MONITORED_WORKFLOWS,
+  repositoryUrl,
+  runJobsUrl,
+  workflowRunsUrl,
+  workflowUrl,
+} from "../src/config/github";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
 import { checkPipelines, createPipelineCache } from "../src/monitors/github/monitor";
 import { expectedRunSlot } from "../src/monitors/github/runs";
@@ -58,6 +67,12 @@ const jobsPayload = {
   ],
 };
 
+const IRCA_YML = ".github/workflows/update-road-info.yml";
+const ECMWF_YML = ".github/workflows/update-cloud-forecast.yml";
+
+const ircaWorkflowFile = ['on:', '  schedule:', '    - cron: "*/5 * * * *"', '  workflow_dispatch:', '', 'jobs:', '  publish:'].join("\n");
+const ecmwfWorkflowFile = ['on:', '  schedule:', '    - cron: "20 */3 * * *"', '  workflow_dispatch:'].join("\n");
+
 interface StubOptions {
   ircaRuns?: unknown[];
   ecmwfRuns?: unknown[];
@@ -67,6 +82,14 @@ interface StubOptions {
   body?: string;
   rateLimitRemaining?: number;
   calls?: { url: string; method: string; headers: Record<string, string> }[];
+  /** Scheduler metadata knobs. */
+  workflowState?: string;
+  workflowMetadataStatus?: number;
+  contentsStatus?: number;
+  ircaFileBody?: string;
+  defaultBranch?: string;
+  platformStatus?: unknown;
+  platformStatusCode?: number;
 }
 
 function stubRequest(options: StubOptions = {}): DiagnosticFetcher {
@@ -86,6 +109,42 @@ function stubRequest(options: StubOptions = {}): DiagnosticFetcher {
           "x-ratelimit-remaining": String(options.rateLimitRemaining ?? 55),
           "x-ratelimit-reset": "1788407581",
         };
+
+        if (target === GITHUB_STATUS_SUMMARY_URL) {
+          return new Response(
+            JSON.stringify(
+              options.platformStatus ?? {
+                status: { description: "All Systems Operational", indicator: "none" },
+                components: [{ name: "Actions", status: "operational" }],
+                incidents: [],
+              },
+            ),
+            { status: options.platformStatusCode ?? 200, headers },
+          );
+        }
+
+        if (target === repositoryUrl()) {
+          return new Response(JSON.stringify({ default_branch: options.defaultBranch ?? "main" }), { status: 200, headers });
+        }
+
+        if (target.includes("/contents/")) {
+          const status = options.contentsStatus ?? 200;
+          if (status !== 200) return new Response(JSON.stringify({ message: "Not Found" }), { status, headers });
+          const source = target.includes("update-road-info")
+            ? (options.ircaFileBody ?? ircaWorkflowFile)
+            : ecmwfWorkflowFile;
+          return new Response(
+            JSON.stringify({ content: Buffer.from(source, "utf8").toString("base64"), encoding: "base64" }),
+            { status: 200, headers },
+          );
+        }
+
+        if (target === workflowUrl(irca.file) || target === workflowUrl(ecmwf.file)) {
+          const status = options.workflowMetadataStatus ?? 200;
+          if (status !== 200) return new Response(JSON.stringify({ message: "boom" }), { status, headers });
+          const path = target.includes("update-road-info") ? IRCA_YML : ECMWF_YML;
+          return new Response(JSON.stringify({ state: options.workflowState ?? "active", path }), { status: 200, headers });
+        }
 
         if (target.includes("/jobs")) {
           const status = options.jobsStatus ?? 200;
@@ -247,7 +306,7 @@ test("18-19. the jobs endpoint is called for a failed run and never for a succes
   const successCalls: StubOptions["calls"] = [];
   await check({ calls: successCalls });
   assert.equal(successCalls.some((call) => call.url.includes("/jobs")), false);
-  assert.equal(successCalls.length, 2);
+  assert.equal(successCalls.filter((call) => call.url.includes("/runs")).length, 2);
 
   const failing = [run({ number: 901, conclusion: "failure", createdAt: new Date(NOW.getTime() - 5 * MINUTE).toISOString() })];
   const failureCalls: StubOptions["calls"] = [];
@@ -255,17 +314,20 @@ test("18-19. the jobs endpoint is called for a failed run and never for a succes
   assert.equal(failureCalls.filter((call) => call.url.includes("/jobs")).length, 1);
 });
 
-test("23-25. every request is an anonymous GET to api.github.com", async () => {
+test("23-25. every request is an anonymous GET to an allowed host", async () => {
   const failing = [run({ number: 901, conclusion: "failure", createdAt: new Date(NOW.getTime() - 5 * MINUTE).toISOString() })];
   const calls: StubOptions["calls"] = [];
   await check({ ircaRuns: failing, calls });
 
   assert.equal(calls.length > 0, true);
   for (const call of calls) {
-    assert.equal(call.method, "GET");
-    assert.equal(call.url.startsWith(`${GITHUB_API_BASE}/`), true);
+    assert.equal(call.method, "GET", `${call.url} should be a GET`);
+    assert.equal(GITHUB_ALLOWED_HOSTS.includes(new URL(call.url).host), true, `${call.url} is not an allowed host`);
     const headerNames = Object.keys(call.headers).map((name) => name.toLowerCase());
     assert.equal(headerNames.includes("authorization"), false);
+  }
+  // Everything that reaches the GitHub API carries the documented Accept header.
+  for (const call of calls.filter((entry) => entry.url.startsWith(`${GITHUB_API_BASE}/`))) {
     assert.equal(call.headers.accept, "application/vnd.github+json");
   }
 });
@@ -298,4 +360,114 @@ test("both monitored workflow files are the ones verified against the repository
   assert.equal(irca.file, "update-road-info.yml");
   assert.equal(ecmwf.file, "update-cloud-forecast.yml");
   assert.match(workflowRunsUrl(irca.file), /per_page=10$/);
+});
+
+// --- Step 8.1: scheduler metadata diagnosis ---
+
+test("8.1/1. an active workflow reports its state and default branch", async () => {
+  const pipeline = byId(await check(), "ircaPipeline");
+  assert.equal(pipeline.details?.workflowState, "ACTIVE");
+  assert.equal(pipeline.details?.defaultBranch, "main");
+  assert.equal(pipeline.details?.fileOnDefaultBranch, "yes");
+});
+
+test("8.1/2. a disabled workflow is ERROR and says it cannot be triggered", async () => {
+  const pipeline = byId(await check({ workflowState: "disabled_inactivity" }), "ircaPipeline");
+  assert.equal(pipeline.status, "error");
+  assert.equal(pipeline.errorType, "WORKFLOW_DISABLED");
+  assert.equal(pipeline.details?.workflowState, "DISABLED_INACTIVITY");
+  assert.match(String(pipeline.errorMessage), /cannot be triggered/);
+  assert.doesNotMatch(String(pipeline.errorMessage), /scheduler is broken/i);
+});
+
+test("8.1/3. unreadable workflow metadata does not block the run-based diagnosis", async () => {
+  const stale = [run({ number: 901, createdAt: new Date(NOW.getTime() - 90 * MINUTE).toISOString() })];
+  const pipeline = byId(await check({ ircaRuns: stale, workflowMetadataStatus: 500 }), "ircaPipeline");
+  assert.equal(pipeline.status, "stale");
+  assert.equal(pipeline.errorType, "WORKFLOW_NOT_RUN");
+  assert.match(String(pipeline.details?.schedulerMetadata), /^unavailable/);
+});
+
+test("8.1/4. a workflow file missing from the default branch is ERROR", async () => {
+  const pipeline = byId(await check({ contentsStatus: 404 }), "ircaPipeline");
+  assert.equal(pipeline.status, "error");
+  assert.equal(pipeline.errorType, "SCHEMA_ERROR");
+  assert.equal(pipeline.details?.fileOnDefaultBranch, "NO");
+  assert.match(String(pipeline.errorMessage), /was not found on the default branch \(main\)/);
+});
+
+test("8.1/5+7. the IRCA schedule is read from the file and reported as configured, not promised", async () => {
+  const pipeline = byId(await check(), "ircaPipeline");
+  assert.equal(pipeline.details?.configuredSchedule, "*/5 * * * * (every 5 minutes)");
+  assert.equal(pipeline.details?.alertingRule, "alert if no run for 45 min");
+  // The card must never claim the workflow runs exactly every five minutes.
+  assert.doesNotMatch(JSON.stringify(pipeline.details), /Expected every/i);
+});
+
+test("8.1/6. a workflow with no schedule never reports a missing scheduled run", async () => {
+  const noSchedule = ["on:", "  workflow_dispatch:", "", "jobs:", "  publish:"].join("\n");
+  const stale = [run({ number: 901, createdAt: new Date(NOW.getTime() - 400 * MINUTE).toISOString() })];
+  const pipeline = byId(await check({ ircaRuns: stale, ircaFileBody: noSchedule }), "ircaPipeline");
+  assert.equal(pipeline.details?.configuredSchedule, "none declared");
+  assert.equal(pipeline.status, "ok");
+  assert.equal(pipeline.errorType, undefined);
+});
+
+test("8.1/8. the ECMWF schedule is read from its own file", async () => {
+  const pipeline = byId(await check(), "ecmwfPipeline");
+  assert.equal(pipeline.details?.configuredSchedule, "20 */3 * * * (at :20 past every 3 hours)");
+});
+
+test("8.1/9. active with a schedule and no run states exactly what was verified", async () => {
+  const stale = [run({ number: 901, createdAt: new Date(NOW.getTime() - 90 * MINUTE).toISOString() })];
+  const pipeline = byId(await check({ ircaRuns: stale }), "ircaPipeline");
+  assert.equal(pipeline.status, "stale");
+  assert.equal(pipeline.errorType, "WORKFLOW_NOT_RUN");
+  assert.match(String(pipeline.errorMessage), /The workflow is active/);
+  assert.match(String(pipeline.errorMessage), /schedule exists on the default branch \(main\)/);
+  assert.match(String(pipeline.errorMessage), /has not created a recent run matching the configured schedule/);
+  assert.doesNotMatch(String(pipeline.errorMessage), /scheduler is broken/i);
+  assert.equal(pipeline.details?.lastObservedRunAge, "90 min ago");
+});
+
+test("8.1/11. GitHub platform status is reported as context", async () => {
+  const pipeline = byId(await check(), "ircaPipeline");
+  assert.equal(pipeline.details?.githubPlatformStatus, "All Systems Operational · Actions operational");
+});
+
+test("8.1/12. an unavailable platform status does not break the monitor", async () => {
+  const monitors = await check({ platformStatusCode: 503 });
+  const pipeline = byId(monitors, "ircaPipeline");
+  assert.equal(pipeline.status, "ok");
+  assert.equal(pipeline.details?.githubPlatformStatus, "unavailable");
+});
+
+test("8.1. a reported platform incident is context only and never changes a status", async () => {
+  const pipeline = byId(
+    await check({
+      platformStatus: {
+        status: { description: "Partial System Outage", indicator: "major" },
+        components: [{ name: "Actions", status: "degraded_performance" }],
+        incidents: [{ name: "Delays in Actions" }],
+      },
+    }),
+    "ircaPipeline",
+  );
+  assert.equal(pipeline.status, "ok");
+  assert.match(String(pipeline.details?.githubPlatformStatus), /Partial System Outage/);
+  assert.match(String(pipeline.details?.githubPlatformStatus), /1 open incident/);
+});
+
+test("8.1. scheduler metadata is cached for an hour, not refetched every five minutes", async () => {
+  const cache = createPipelineCache();
+  const first: StubOptions["calls"] = [];
+  await checkPipelines({ now: NOW, request: stubRequest({ calls: first }), cache });
+  assert.equal(first.some((call) => call.url === repositoryUrl()), true);
+
+  // Six minutes later the runs cache has expired but the metadata cache has not.
+  const second: StubOptions["calls"] = [];
+  await checkPipelines({ now: new Date(NOW.getTime() + 6 * MINUTE), request: stubRequest({ calls: second }), cache });
+  assert.equal(second.some((call) => call.url === repositoryUrl()), false);
+  assert.equal(second.some((call) => call.url.includes("/contents/")), false);
+  assert.equal(second.filter((call) => call.url.includes("/runs")).length, 2);
 });

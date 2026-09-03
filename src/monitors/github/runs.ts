@@ -98,10 +98,11 @@ export function isScheduleStale(latestRun: WorkflowRun | undefined, cadence: Wor
   return latestMs < slot.getTime();
 }
 
+/** Describes the alerting rule, not a claimed cadence: the real schedule comes from the workflow file. */
 export function describeCadence(cadence: WorkflowCadence) {
   return cadence.kind === "interval"
-    ? `about every ${cadence.expectedIntervalMinutes} min`
-    : `:${String(cadence.atMinute).padStart(2, "0")} past every ${cadence.everyHours}h UTC`;
+    ? `alert if no run for ${cadence.staleAfterMinutes} min`
+    : `alert if no run for a :${String(cadence.atMinute).padStart(2, "0")} slot every ${cadence.everyHours}h UTC`;
 }
 
 /** Validates the parts of the runs payload the monitor depends on. */

@@ -24,6 +24,18 @@ export const GITHUB_LOW_RATE_LIMIT_REMAINING = 10;
 export const GITHUB_LOW_RATE_LIMIT_INTERVAL_MS = 10 * 60_000;
 
 export const GITHUB_RUNS_PER_PAGE = 10;
+
+/**
+ * Workflow state, default branch and the cron in the workflow file change perhaps once a month,
+ * so they get their own long cache and barely touch the shared hourly budget.
+ */
+export const GITHUB_METADATA_CACHE_MS = 60 * 60_000;
+
+/** Platform status is diagnostic context only and never changes a monitor's status. */
+export const GITHUB_STATUS_SUMMARY_URL = "https://www.githubstatus.com/api/v2/summary.json";
+
+/** The only hosts this dashboard is allowed to talk to for pipeline diagnosis. */
+export const GITHUB_ALLOWED_HOSTS = ["api.github.com", "www.githubstatus.com"];
 export const GITHUB_REQUEST_TIMEOUT_MS = 10_000;
 
 /**
@@ -32,8 +44,13 @@ export const GITHUB_REQUEST_TIMEOUT_MS = 10_000;
  * `interval` is a plain age budget. `slots` asks the sharper question "should a run have happened
  * by now?" for cron-scheduled workflows, with a grace period for GitHub's queueing delay.
  */
+/**
+ * When to raise the alarm that no run has appeared. This is an alerting threshold, never a claim
+ * about how often the workflow is supposed to run — the configured schedule is read from the
+ * workflow file itself and reported separately.
+ */
 export type WorkflowCadence =
-  | { kind: "interval"; expectedIntervalMinutes: number; staleAfterMinutes: number }
+  | { kind: "interval"; staleAfterMinutes: number }
   | { kind: "slots"; everyHours: number; atMinute: number; graceMinutes: number };
 
 export interface MonitoredWorkflow {
@@ -45,22 +62,23 @@ export interface MonitoredWorkflow {
   cadence: WorkflowCadence;
 }
 
-// MEASURED REALITY (read-only sample of the last 10 runs, 2026-09-03):
+// GitHub documents that scheduled events can be delayed during periods of high Actions load, and
+// that queued jobs may be dropped, so a cron expression is not a delivery guarantee.
 //
-// `update-road-info.yml` declares a five-minute cron, but GitHub actually delivered runs every
-// 105-277 minutes (median 147). `update-cloud-forecast.yml` declares a cron at :20 past every third
-// hour and was delivered every ~134-401 minutes. GitHub drops most scheduled triggers on free public
-// repositories, so a workflow cron is an upper bound on frequency, never a promise.
+// Separately, THIS repository's observed history (read-only sample of the last 10 runs of each
+// workflow, 2026-09-03) contains substantial gaps: update-road-info.yml every 105-277 minutes
+// (median 147) against a five-minute cron, update-cloud-forecast.yml every ~134-401 minutes
+// against a three-hourly cron. That is an observation about this repository, not a statement
+// about GitHub in general.
 //
-// The values below are the agreed operational policy, deliberately tighter than observed delivery.
-// TODO: revisit against a longer sample. As written these report STALE often, which is a policy
-// decision about how loudly to complain, not a measurement.
+// The thresholds below are the operational alerting policy for Iceland road information. They are
+// deliberately NOT relaxed to match observed delivery: if they stay red, that is the finding.
 export const MONITORED_WORKFLOWS: MonitoredWorkflow[] = [
   {
     id: "ircaPipeline",
     name: "IRCA Road Publisher",
     file: "update-road-info.yml",
-    cadence: { kind: "interval", expectedIntervalMinutes: 30, staleAfterMinutes: 45 },
+    cadence: { kind: "interval", staleAfterMinutes: 45 },
   },
   {
     id: "ecmwfPipeline",
@@ -70,6 +88,19 @@ export const MONITORED_WORKFLOWS: MonitoredWorkflow[] = [
     cadence: { kind: "slots", everyHours: 3, atMinute: 20, graceMinutes: 45 },
   },
 ];
+
+export function repositoryUrl() {
+  return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
+}
+
+/** The workflow filename is accepted wherever the numeric id is, and survives a recreated workflow. */
+export function workflowUrl(file: string) {
+  return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${file}`;
+}
+
+export function workflowContentsUrl(path: string, ref: string) {
+  return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${encodeURIComponent(ref)}`;
+}
 
 export function workflowRunsUrl(file: string) {
   return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${file}/runs?per_page=${GITHUB_RUNS_PER_PAGE}`;

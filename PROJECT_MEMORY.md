@@ -5,7 +5,7 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 ## Status (2026-09-03)
 
 Phase one steps 1–5 are complete. **Four production monitors are live: ECMWF output (step 6),
-IRCA output (step 7), and the IRCA and ECMWF GitHub Actions pipelines (step 8).** The other five
+IRCA output (step 7), and the IRCA and ECMWF GitHub Actions pipelines (steps 8 and 8.1).** The other five
 sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind, NOAA OVATION, MET Norway or
 IMO without explicit approval.
 
@@ -278,6 +278,25 @@ issues no GitHub request at all.
 `53 / 60 requests remaining`. When remaining drops to 10 or below the poll interval stretches to
 10 minutes rather than burning the hourly budget.
 
+### Scheduler metadata (step 8.1)
+
+Answering "why is there no run?" needs more than the run list, so the monitor also reads, hourly:
+
+```
+GET /repos/{owner}/{repo}                                   -> default_branch
+GET /repos/{owner}/{repo}/actions/workflows/{file}          -> state, path
+GET /repos/{owner}/{repo}/contents/{path}?ref={branch}      -> the cron actually on that branch
+GET https://www.githubstatus.com/api/v2/summary.json        -> platform context only
+```
+
+The workflow filename is used rather than the numeric id: GitHub accepts either, and the filename
+survives a recreated workflow. The cron is extracted by walking the `on.schedule` block by
+indentation — no YAML dependency, and a stray `cron` word elsewhere in the file cannot leak in.
+
+Metadata is cached for **1 hour** (it changes perhaps monthly) so it costs ~5 requests/hour of the
+60-request budget, leaving the run listings their 24/hour. The status page is a different service
+and takes none of the GitHub API headers; it is **context only and never changes any status**.
+
 ### Run status rules
 
 | Status | Condition |
@@ -285,10 +304,21 @@ issues no GitHub request at all.
 | INFO | latest run is `queued` / `in_progress` — a run in flight is never a failure |
 | OK | latest completed run concluded `success` and a run happened recently enough |
 | STALE | no run when one was due (`WORKFLOW_NOT_RUN`) |
-| ERROR | latest completed run concluded failure / timed_out / cancelled / action_required / startup_failure (`WORKFLOW_FAILED`), or GitHub could not be reached |
+| ERROR | workflow state is not `active` (`WORKFLOW_DISABLED`); the workflow file is not on the default branch (`SCHEMA_ERROR`); the latest completed run concluded failure / timed_out / cancelled / action_required / startup_failure (`WORKFLOW_FAILED`); or GitHub could not be reached |
 
-Two error types were added to the shared model for this: `WORKFLOW_FAILED` and `WORKFLOW_NOT_RUN`.
-They are deliberately distinct — "the run failed" and "the run never happened" need different fixes.
+Three error types were added to the shared model: `WORKFLOW_FAILED`, `WORKFLOW_NOT_RUN` and
+`WORKFLOW_DISABLED`. They are deliberately distinct — "the run failed", "the run never happened"
+and "GitHub will not trigger this workflow at all" need completely different fixes. A workflow
+whose file declares no schedule never reports `WORKFLOW_NOT_RUN`.
+
+The card separates two things that must not be confused: **Configured schedule** (read from the
+file, e.g. `*/5 * * * * (every 5 minutes)`) and **Alerting rule** (this dashboard's own threshold,
+e.g. `alert if no run for 45 min`), plus **Last observed run age**. The cron is never presented as
+an expected delivery interval.
+
+The missing-run message states only what was verified — that the workflow is active, that its
+schedule exists on the default branch, and that GitHub has not created a matching run. It never
+says the GitHub scheduler is broken.
 
 Cadence is per workflow. IRCA uses a plain age budget (45 min). ECMWF uses cron slots (:20 past
 every third UTC hour, 45 min grace) so the question is "should a run have happened by now?" rather
@@ -320,23 +350,23 @@ that a single monitor cannot tell apart:
 
 None of these conclude that an upstream service is down; they report only what the two checks prove.
 
-### GitHub scheduling reality (measured, important)
+### GitHub scheduling: documented behaviour vs observed history
 
-A read-only sample of the last 10 runs of each workflow on 2026-09-03:
+GitHub documents that scheduled events can be delayed during periods of high Actions load, and
+that queued scheduled jobs may be dropped. A cron expression is therefore a request, not a
+delivery guarantee.
 
-- `update-road-info.yml` declares a five-minute cron. Observed delivery: every **105-277 minutes**,
-  median 147.
-- `update-cloud-forecast.yml` declares :20 past every third hour. Observed delivery: every
-  **~134-401 minutes**.
+Separately — and this is an observation about this repository, not a statement about GitHub in
+general — the production history contains substantial gaps between scheduled runs. A read-only
+sample of the last 10 runs of each workflow on 2026-09-03 showed `update-road-info.yml` running
+every 105-277 minutes (median 147) against a five-minute cron, and `update-cloud-forecast.yml`
+every ~134-401 minutes against a three-hourly cron. Cron frequency must not be treated as an SLA.
 
-GitHub drops most scheduled triggers on free public repositories, so a cron expression is an upper
-bound on frequency and never a promise. This matters beyond this monitor: the IRCA *output*
-freshness policy (45 min STALE / 120 min ERROR) assumes a 30-minute publish cadence that GitHub is
-not actually delivering, so IRCA will read STALE or ERROR most of the time.
-
-TODO: decide whether those thresholds describe the desired service level (keep, and treat the
-constant red as a real finding) or the expected one (relax them to match observed delivery). Both
-are one-line changes in `src/config/irca.ts` and `src/config/github.ts`.
+**Threshold policy decision (2026-09-03): the IRCA output thresholds stay at 45 min STALE /
+120 min ERROR and are NOT relaxed.** They express the operational freshness required for Iceland
+road information, not the historical average of GitHub's scheduler. If that means the monitor is
+red much of the time, the finding is that the current publishing architecture does not meet the
+service requirement — which is exactly what the dashboard exists to show.
 
 ## Health rule order (do not reorder casually)
 
@@ -412,7 +442,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 124 fully offline tests, no network access:
+`npm test` — 136 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -427,12 +457,14 @@ the header adds Taipei.
   incidents 404, two and three datasets down, manifest HTTP error, manifest parse error,
   download-only-on-manifest-change, cache reuse, read-only request shape), plus two priority
   tests proving a core outage is not hidden behind STALE
-- GitHub pipeline monitor: 20 cases covering the required 25 checks — success, failure, queued,
+- GitHub pipeline monitor: 32 cases covering the step 8 and step 8.1 checks — success, failure, queued,
   in_progress, jobs fetched only for a failed run, failed job and step detection, failure streaks
   of 1 and 4, streak reset, missing scheduled run, GitHub 403 and 500 leaving the workflow
   unverified, rate-limit header parsing, low-budget cache extension, cache hit and expiry, cron
-  slot boundaries, and a request-shape test asserting GET-only, api.github.com-only and no
-  Authorization header
+  slot boundaries, workflow active/disabled/metadata-unreadable, file missing from the default
+  branch, cron parsed from each workflow file, no-schedule files never reporting a missing run,
+  platform status present/unavailable/incident, metadata cached for an hour, and a request-shape
+  test asserting GET-only, allowed hosts only and no Authorization header
 - Incident correlation: 7 cases covering the four correlation outcomes, grouping a source with
   its pipeline into one incident, and severity ordering
 - mock monitor cases, time and session-event helpers, network diagnostics
@@ -444,6 +476,45 @@ No test depends on the wall clock, and no test reaches production or the GitHub 
 Do not proceed automatically. The remaining order is NOAA Kp → NOAA Solar Wind → NOAA OVATION →
 MET Norway → IMO, one at a time, each with a normal case and an error case tested and this file
 updated before the next one starts.
+
+## Scheduler diagnosis (2026-09-03 03:19 UTC, step 8.1)
+
+Read-only metadata for both workflows. **Everything on the repository side checks out; the runs
+simply are not being created.**
+
+| | IRCA | ECMWF |
+| --- | --- | --- |
+| Workflow id | 325350214 | 324527398 |
+| Path | `.github/workflows/update-road-info.yml` | `.github/workflows/update-cloud-forecast.yml` |
+| State | **active** | **active** |
+| Created / updated | 2026-08-02T02:44:09Z | 2026-07-31T14:22:04Z |
+| On default branch | yes | yes |
+| Configured cron | `*/5 * * * *` (every 5 minutes) | `20 */3 * * *` (:20 past every 3 hours) |
+| Latest run | #858, success, 2026-09-03T00:34:54Z | #235, success, 2026-09-02T23:21:30Z |
+| Gap at check time | 164 min | 237 min |
+
+Repository: `lovemonlin/iceland-aurora-cloud`, default branch **main**, public, not archived, not
+disabled, `pushed_at` 2026-09-03T00:41:08Z (the commit from run #858).
+
+GitHub platform status at the time of checking: All Systems Operational, Actions operational,
+0 unresolved incidents. Recorded as context only — it is not evidence about this repository.
+
+### IRCA cron history (read-only `git log` / `git blame`, plus the remote commit list)
+
+The engineering note that "IRCA schedule changed from every 5 minutes to every 30 minutes" is
+**not supported by this repository's history**:
+
+- The cron line traces to `026ac775` (2026-08-02, "Add IRCA road information publisher"), the
+  commit that created the file, with the value `*/5 * * * *`.
+- Only three commits have ever touched the file (`026ac77`, `ff99150`, `89f98a7`) and the cron is
+  `*/5 * * * *` in every one, confirmed against the authoritative remote commit list, not just the
+  local checkout.
+- `git log --all -S'*/30' -- .github/workflows/` returns nothing: no commit on any branch ever
+  introduced a 30-minute cron.
+
+So it was never changed to 30 minutes and never changed back. The "30 minute" figure used when the
+IRCA output monitor was written has no basis in the repository; the declared schedule has always
+been every 5 minutes. Nothing was modified to establish this.
 
 ## Production verification (2026-09-03 03:02 UTC, step 8)
 
