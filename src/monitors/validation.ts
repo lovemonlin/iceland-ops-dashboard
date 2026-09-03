@@ -1,13 +1,23 @@
-export function validateEcmwf(manifest: unknown, now = Date.now(), staleAfterSeconds?: number) {
-  if (!manifest || typeof manifest !== "object") return "PARSE_ERROR";
-  const value = manifest as { modelRun?: string; frames?: unknown[] };
-  const modelRunMs = value.modelRun ? Date.parse(value.modelRun) : Number.NaN;
-  if (Number.isNaN(modelRunMs)) return "INVALID_TIMESTAMP";
-  if (!Array.isArray(value.frames) || value.frames.length === 0) return "EMPTY_DATA";
-  if (value.frames.some((frame) => typeof frame !== "string" || !frame)) return "SCHEMA_ERROR";
-  if (staleAfterSeconds !== undefined && now - modelRunMs > staleAfterSeconds * 1000) return "STALE_DATA";
-  return "OK";
+/**
+ * Small per-source validation helpers shared by the mock monitors.
+ * Each one answers a single question and never assumes HTTP 200 means healthy.
+ */
+
+/** Non-empty array of records, or EMPTY_DATA. */
+export function validateIrca(data: unknown) {
+  return Array.isArray(data) && data.length > 0 ? "OK" : "EMPTY_DATA";
 }
-export function validateIrca(data: unknown) { return Array.isArray(data) && data.length > 0 ? "OK" : "EMPTY_DATA"; }
-export function validateMet(successes: number, total: number) { return successes === total ? "OK" : successes === 0 ? "ERROR" : "DEGRADED"; }
-export function validateNoaa(value: unknown, timestamp: unknown) { return typeof value === "number" && Number.isFinite(value) && typeof timestamp === "string" && !Number.isNaN(Date.parse(timestamp)) ? "OK" : "SCHEMA_ERROR"; }
+
+/** MET Norway queries many locations: all, some, or none may succeed. */
+export function validateMet(successes: number, total: number) {
+  if (successes === total) return "OK";
+  if (successes === 0) return "ERROR";
+  return "DEGRADED";
+}
+
+/** NOAA values must be finite numbers carrying a parseable timestamp. */
+export function validateNoaa(value: unknown, timestamp: unknown) {
+  const numeric = typeof value === "number" && Number.isFinite(value);
+  const dated = typeof timestamp === "string" && !Number.isNaN(Date.parse(timestamp));
+  return numeric && dated ? "OK" : "SCHEMA_ERROR";
+}

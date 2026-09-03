@@ -1,5 +1,37 @@
 export type HealthStatus = "ok" | "info" | "stale" | "degraded" | "error";
-export type MonitorErrorType = "NETWORK_ERROR" | "TIMEOUT" | "HTTP_ERROR" | "PARSE_ERROR" | "SCHEMA_ERROR" | "EMPTY_DATA" | "STALE_DATA" | "INVALID_TIMESTAMP" | "UNKNOWN";
+
+export type MonitorErrorType =
+  | "NETWORK_ERROR"
+  | "TIMEOUT"
+  | "HTTP_ERROR"
+  | "PARSE_ERROR"
+  | "SCHEMA_ERROR"
+  | "EMPTY_DATA"
+  | "STALE_DATA"
+  | "INVALID_TIMESTAMP"
+  | "UNKNOWN";
+
 export interface MonitorHealth {
-  id: string; name: string; status: HealthStatus; checkedAt: string; dataTime?: string; lastSuccess?: string; ageSeconds?: number; latencyMs?: number; httpStatus?: number; networkOk: boolean; parseOk: boolean; schemaOk?: boolean; fresh?: boolean; recordCount?: number; errorType?: MonitorErrorType; errorMessage?: string; details?: Record<string, unknown>;
+  id: string;
+  name: string;
+  status: HealthStatus;
+  /** ISO 8601. When this check ran. */
+  checkedAt: string;
+  /** ISO 8601. Timestamp carried by the data itself, never the browser clock. */
+  dataTime?: string;
+  /** ISO 8601. Last check that produced usable data. */
+  lastSuccess?: string;
+  ageSeconds?: number;
+  latencyMs?: number;
+  httpStatus?: number;
+  networkOk: boolean;
+  parseOk: boolean;
+  schemaOk?: boolean;
+  fresh?: boolean;
+  recordCount?: number;
+  errorType?: MonitorErrorType;
+  errorMessage?: string;
+  /** Healthy-but-worth-saying note that turns "ok" into "info" (see status INFO). */
+  note?: string;
+  details?: Record<string, unknown>;
 }

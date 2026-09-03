@@ -1,4 +1,72 @@
 import type { HealthStatus, MonitorHealth } from "@/health/model";
-const labels: Record<HealthStatus, string> = { ok:"OK", info:"INFO", stale:"STALE", degraded:"DEGRADED", error:"ERROR" };
-const time = (value?: string) => value ? `${new Intl.DateTimeFormat("en-GB", { hour:"2-digit", minute:"2-digit", timeZone:"Atlantic/Reykjavik" }).format(new Date(value))} Iceland` : "—";
-export function StatusCard({ monitor }: { monitor: MonitorHealth }) { return <article className="card"><div className="card-title"><h3>{monitor.name}</h3><span className={`status ${monitor.status}`}>{labels[monitor.status]}</span></div>{monitor.errorType && <p className="diagnostic"><strong>{monitor.errorType}</strong><br />{monitor.errorMessage}</p>}<dl><div><dt>Last data</dt><dd>{time(monitor.dataTime)}</dd></div><div><dt>Checked</dt><dd>{time(monitor.checkedAt)}</dd></div><div><dt>Latency</dt><dd>{monitor.latencyMs === undefined ? "—" : `${monitor.latencyMs} ms`}</dd></div><div><dt>Records</dt><dd>{monitor.recordCount ?? "—"}</dd></div></dl></article>; }
+import { formatAge, formatClock, formatShortClock, ICELAND_TIME_ZONE } from "@/lib/time";
+
+const labels: Record<HealthStatus, string> = { ok: "OK", info: "INFO", stale: "STALE", degraded: "DEGRADED", error: "ERROR" };
+const dot: Record<HealthStatus, string> = { ok: "🟢", info: "🔵", stale: "🟡", degraded: "🟠", error: "🔴" };
+
+/** Iceland local time plus UTC, so freshness is never read off a browser clock. */
+function bothZones(iso: string | undefined, seconds = false) {
+  if (!iso) return "—";
+  const format = seconds ? formatClock : formatShortClock;
+  return `${format(iso, ICELAND_TIME_ZONE)} IS · ${format(iso, "UTC")} UTC`;
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+export function StatusCard({ monitor }: { monitor: MonitorHealth }) {
+  const checks = [
+    `net ${monitor.networkOk ? "ok" : "fail"}`,
+    `parse ${monitor.parseOk ? "ok" : "fail"}`,
+    `schema ${monitor.schemaOk === undefined ? "n/a" : monitor.schemaOk ? "ok" : "fail"}`,
+    `fresh ${monitor.fresh === undefined ? "n/a" : monitor.fresh ? "ok" : "no"}`,
+  ].join(" · ");
+
+  return (
+    <article className="card">
+      <div className="card-title">
+        <h3>{monitor.name}</h3>
+        <span className={`status ${monitor.status}`}>
+          {dot[monitor.status]} {labels[monitor.status]}
+        </span>
+      </div>
+
+      <p className="diagnostic">
+        {monitor.errorType ? (
+          <>
+            <strong className={monitor.status}>{monitor.errorType}</strong>
+            <br />
+            {monitor.errorMessage}
+          </>
+        ) : (
+          monitor.note ?? "All checks passed."
+        )}
+      </p>
+
+      <dl>
+        <Row label="Last data" value={bothZones(monitor.dataTime)} />
+        <Row label="Data age" value={formatAge(monitor.ageSeconds)} />
+        <Row label="Last success" value={bothZones(monitor.lastSuccess)} />
+        <Row label="Checked" value={bothZones(monitor.checkedAt, true)} />
+        <Row label="HTTP" value={monitor.httpStatus === undefined ? "—" : String(monitor.httpStatus)} />
+        <Row label="Latency" value={monitor.latencyMs === undefined ? "—" : `${monitor.latencyMs} ms`} />
+        <Row label="Records" value={monitor.recordCount === undefined ? "—" : String(monitor.recordCount)} />
+        <Row label="Checks" value={checks} />
+      </dl>
+
+      {monitor.details && (
+        <p className="details">
+          {Object.entries(monitor.details)
+            .map(([key, value]) => `${key}: ${String(value)}`)
+            .join(" · ")}
+        </p>
+      )}
+    </article>
+  );
+}
