@@ -23,6 +23,8 @@ export interface SnapshotSource {
   errorMessage?: string;
   /** Healthy-but-worth-saying note from the latest attempt. */
   note?: string;
+  /** Where the data came from. Every published source is a real production endpoint. */
+  provenance?: { mode: "production"; provider?: string };
   /** Last successfully collected values. Absent only if the source has never succeeded. */
   data?: Record<string, unknown>;
   /** Diagnostics for the latest attempt, not for the stored data. */

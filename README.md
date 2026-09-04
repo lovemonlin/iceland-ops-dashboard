@@ -26,19 +26,43 @@ In particular, the Android project's Gradle, APK, emulator and Android Studio ru
 ## Data sources monitored
 
 Phase one covers seven data sources plus the two GitHub Actions workflows that publish them.
-ECMWF, IRCA and both pipelines are live; the rest are still mock.
+**Every one of them reads real production data — there is no mock data path in the runtime.**
 
-| Section | Monitor | id | Data |
+| Section | Monitor | id | Source |
 | --- | --- | --- | --- |
-| Weather | MET Norway Weather | `metno` | mock |
-| Roads | IRCA Roads | `irca` | **live, read-only** |
-| Pipelines | IRCA Road Publisher | `ircaPipeline` | **live, read-only** |
-| Pipelines | ECMWF Cloud Publisher | `ecmwfPipeline` | **live, read-only** |
-| Aurora | NOAA Kp | `noaaKp` | mock |
-| Aurora | NOAA Solar Wind | `solarWind` | mock |
-| Aurora | NOAA OVATION | `ovation` | mock |
-| Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` | **live, read-only** |
-| Forecast / Warnings | IMO Warnings | `imo` | mock |
+| Weather | MET Norway Weather | `metno` | `api.met.no` Locationforecast 2.0, the app's 32 curated sites |
+| Roads | IRCA Roads | `irca` | `iceland-aurora-cloud` GitHub Pages (IRCA DATEX) |
+| Pipelines | IRCA Road Publisher | `ircaPipeline` | GitHub Actions REST API |
+| Pipelines | ECMWF Cloud Publisher | `ecmwfPipeline` | GitHub Actions REST API |
+| Aurora | NOAA Kp | `noaaKp` | `services.swpc.noaa.gov` planetary K index |
+| Aurora | NOAA Solar Wind | `solarWind` | `services.swpc.noaa.gov` solar wind summaries |
+| Aurora | NOAA OVATION | `ovation` | `services.swpc.noaa.gov` aurora oval grid |
+| Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` | `iceland-aurora-cloud` GitHub Pages (ECMWF IFS Open Data) |
+| Forecast / Warnings | IMO Warnings | `imo` | `api.vedur.is` CAP broker |
+
+Every endpoint, coordinate and field name was read out of the Android app so the dashboard watches
+exactly what the app uses. A monitor pointed at a different endpoint would tell the maintainer
+nothing. `src/config/sources.ts` holds them all, and each snapshot entry records its `provenance`
+so "is this real?" is checkable rather than assumed.
+
+### Weather, aurora and warnings monitors
+
+**MET Norway** queries the app's 32 curated sites through Locationforecast 2.0, with a compliant
+User-Agent and coordinates trimmed to four decimals as MET's terms require. The snapshot records how
+many locations were checked, how many answered and which did not, so a partial outage is visible
+rather than averaged away. Set `METNO_USER_AGENT` to supply your own contact address; the default
+identifies this project by its public repository, and no private email is committed.
+
+**NOAA SWPC** is read through the same paths the app uses — the widely-copied
+`/products/solar-wind/...` paths now 404 and are deliberately absent. Kp comes from the one-minute
+planetary index, solar wind from the lightweight summary products (losing only the optional speed
+product is DEGRADED, not ERROR), and OVATION is summarised rather than stored whole: grid size, both
+timestamps, and the strongest probability over Icelandic latitudes.
+
+**IMO warnings** are read from the CAP broker with its required API-version header. The body is
+parsed as text, because the broker answers `204 No Content` when nothing is active — reading it as
+JSON would report a parse error for what is actually a healthy "no warnings". Zero active warnings
+is INFO, never EMPTY_DATA.
 
 ### ECMWF monitor
 
@@ -230,12 +254,12 @@ OVERDUE** banner at the top. That is the *scheduler's* freshness, not any source
 src/
   app/          page (reads the snapshot file at build time), layout, dark stylesheet
   components/   Dashboard (client, reloads the snapshot), StatusCard
-  config/       monitor ids and incident families, snapshot policy, mock freshness thresholds,
-                request timeout, ECMWF / IRCA / GitHub contracts
+  config/       monitor ids and incident families, snapshot policy, request timeout,
+                canonical source endpoints, ECMWF / IRCA / GitHub contracts
   health/       MonitorHealth model, MonitorErrorType, evaluateHealth, getSystemStatus
   lib/          fetch diagnostics, session event log, time-zone formatting, public path helpers
-  monitors/     runAllMonitors, live ECMWF / IRCA / pipeline monitors, incident correlation,
-                mock monitors, validation helpers
+  monitors/     runAllMonitors and every live monitor (metno, noaa, imo, ecmwf, irca, github),
+                incident correlation. No mock data path exists.
   snapshot/     schema, merge, build, atomic write, read
 scripts/        snapshot.ts - the scheduled collection entry point
 public/data/    latest-health.json - the snapshot the dashboard reads
@@ -251,14 +275,13 @@ and UTC side by side, and the header adds Taipei.
 
 ## Freshness and safety
 
-Mock thresholds live in `src/config/freshness.ts` and are **conservative placeholders, not
-official source guarantees**. `TODO: confirm each production source's documented update cadence
-before enabling a live monitor.`
+Each source owns its freshness policy: MET Norway, NOAA Kp, solar wind and OVATION use age
+thresholds in `src/config/sources.ts`; ECMWF uses the model-cycle publication schedule
+(`src/config/ecmwf.ts`); IRCA uses a 45-minute STALE / 120-minute ERROR output-age policy
+(`src/config/irca.ts`). IMO has no age policy at all — the broker lists what is active now, and
+an absence of warnings has no timestamp to age against.
 
-A monitor leaves that file when it goes live and gains its own policy: ECMWF uses the model-cycle
-publication schedule (`src/config/ecmwf.ts`), IRCA uses a 45-minute STALE / 120-minute ERROR
-output-age policy (`src/config/irca.ts`). Both policies are dashboard operational choices, not
-upstream guarantees.
+All of these are dashboard operational choices, not upstream guarantees.
 
 The IRCA thresholds are deliberately **not** relaxed to match how often the publishing pipeline
 actually delivers. They state the freshness Iceland road information needs. If the dashboard stays

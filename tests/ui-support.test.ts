@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { recordCheck, statusMap, MAX_SESSION_EVENTS } from "../src/lib/events";
 import { formatAge, formatClock, formatDateTime, ICELAND_TIME_ZONE } from "../src/lib/time";
-import { getMockMonitors } from "../src/monitors/mockMonitors";
+import { SNAPSHOT_ENTRIES } from "./fixtures/snapshotEntries";
 
-const monitors = getMockMonitors();
+const monitors = SNAPSHOT_ENTRIES;
 
 test("time formatting is time-zone explicit, never browser-local", () => {
   const winter = "2026-01-15T08:52:13.000Z";

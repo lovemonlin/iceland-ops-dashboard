@@ -97,7 +97,11 @@ async function checkWorkflow(
   metadata: MetadataSnapshot,
 ): Promise<{ health: MonitorHealth; rateLimit: GithubRateLimit }> {
   const checkedAt = now.toISOString();
-  const base = { id: workflow.id, name: workflow.name };
+  const base = {
+    id: workflow.id,
+    name: workflow.name,
+    provenance: { mode: "production" as const, provider: "GitHub Actions REST API" },
+  };
   const cadence = describeCadence(workflow.cadence);
   const scheduler: WorkflowMetadata = metadata.byWorkflow[workflow.id] ?? { cron: [], unavailable: "not read" };
   const schedulerDetails = schedulerDetailFields(scheduler, metadata);

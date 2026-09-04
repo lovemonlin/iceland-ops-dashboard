@@ -26,7 +26,11 @@ export interface EcmwfCheckOptions {
   manifestUrl?: string;
 }
 
-const base = { id: ECMWF_MONITOR_ID, name: ECMWF_MONITOR_NAME };
+const base = {
+  id: ECMWF_MONITOR_ID,
+  name: ECMWF_MONITOR_NAME,
+  provenance: { mode: "production" as const, provider: "iceland-aurora-cloud GitHub Pages (ECMWF IFS Open Data)" },
+};
 
 function utcMinute(date: Date) {
   return `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 16)} UTC`;

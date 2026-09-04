@@ -40,6 +40,11 @@ export interface MonitorHealth {
   /** Healthy-but-worth-saying note that turns "ok" into "info" (see status INFO). */
   note?: string;
   /**
+   * Where this monitor's numbers come from. Only production sources are ever published, so this
+   * exists to make that checkable rather than assumed.
+   */
+  provenance?: { mode: "production"; provider?: string };
+  /**
    * The values actually collected from the source this attempt, and nothing else.
    * Its presence is the definition of "this collection succeeded": a snapshot keeps the previous
    * `data` whenever a later attempt produces none. Diagnostics belong in `details`, not here.

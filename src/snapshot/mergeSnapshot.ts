@@ -35,6 +35,10 @@ export function mergeSource(
   const data = collected ? monitor.data : previous?.data;
   if (data) merged.data = data;
 
+  // Provenance describes the source itself, so the current attempt's answer wins when it has one.
+  const provenance = monitor.provenance ?? previous?.provenance;
+  if (provenance) merged.provenance = provenance;
+
   if (monitor.errorType) merged.errorType = monitor.errorType;
   if (monitor.errorMessage) merged.errorMessage = monitor.errorMessage;
   if (monitor.note) merged.note = monitor.note;

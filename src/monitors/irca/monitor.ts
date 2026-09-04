@@ -24,7 +24,11 @@ import { checkSanityFloors, validateIrcaManifest, type IrcaManifest } from "@/mo
 export const IRCA_MONITOR_ID = "irca";
 export const IRCA_MONITOR_NAME = "IRCA Roads";
 
-const base = { id: IRCA_MONITOR_ID, name: IRCA_MONITOR_NAME };
+const base = {
+  id: IRCA_MONITOR_ID,
+  name: IRCA_MONITOR_NAME,
+  provenance: { mode: "production" as const, provider: "iceland-aurora-cloud GitHub Pages (IRCA DATEX)" },
+};
 
 const defaultRequest: DiagnosticFetcher = (url, options) => fetchWithDiagnosticsCore(url, options);
 

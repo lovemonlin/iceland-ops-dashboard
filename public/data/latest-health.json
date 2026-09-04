@@ -1,36 +1,45 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-03T23:51:03.060Z",
-  "scheduledFor": "2026-09-04T00:51:03.060Z",
-  "overallStatus": "error",
+  "generatedAt": "2026-09-04T00:19:07.415Z",
+  "scheduledFor": "2026-09-04T01:19:07.415Z",
+  "overallStatus": "ok",
   "sources": {
     "metno": {
       "id": "metno",
       "name": "MET Norway Weather",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
-      "dataTime": "2026-09-03T22:58:50.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
+      "dataTime": "2026-09-03T23:19:33.000Z",
       "data": {
-        "locations": "4/4",
-        "temperatureC": 8,
-        "windMps": 6.4,
-        "lowCloudPercent": 42,
-        "mediumCloudPercent": 21,
-        "highCloudPercent": 9
+        "locations": "32 / 32 successful",
+        "locationsChecked": 32,
+        "locationsSuccessful": 32,
+        "locationsFailed": 0,
+        "forecastIssued": "2026-09-03 23:19 UTC",
+        "primarySite": "Reykjavík",
+        "temperatureC": 9.1,
+        "windMps": 4.3,
+        "cloudLowPercent": 100,
+        "cloudMediumPercent": 97.7,
+        "cloudHighPercent": 0
+      },
+      "provenance": {
+        "mode": "production",
+        "provider": "MET Norway Locationforecast 2.0"
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 432,
-        "recordCount": 4
+        "latencyMs": 1943,
+        "recordCount": 32
       }
     },
     "irca": {
       "id": "irca",
       "name": "IRCA Roads",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
       "dataTime": "2026-09-03T23:47:38.375Z",
       "data": {
         "lastPublished": "2026-09-03 23:47 UTC",
@@ -42,67 +51,93 @@
         "roadDataAt": "2026-09-03 23:47 UTC",
         "measurementDataAt": "2026-09-03 23:47 UTC"
       },
+      "provenance": {
+        "mode": "production",
+        "provider": "iceland-aurora-cloud GitHub Pages (IRCA DATEX)"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 351,
+        "latencyMs": 162,
         "recordCount": 701
       }
     },
     "noaaKp": {
       "id": "noaaKp",
       "name": "NOAA Kp",
-      "status": "error",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "errorType": "SCHEMA_ERROR",
-      "errorMessage": "HTTP 200, but the required numeric Kp field is missing from the response.",
+      "status": "ok",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
+      "dataTime": "2026-09-04T00:12:00.000Z",
+      "data": {
+        "kp": 0,
+        "observedAt": "2026-09-04 00:12 UTC",
+        "samples": 358,
+        "kpIndex": 0,
+        "kpLabel": "0Z"
+      },
+      "provenance": {
+        "mode": "production",
+        "provider": "NOAA SWPC"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 276
+        "latencyMs": 435,
+        "recordCount": 358
       }
     },
     "solarWind": {
       "id": "solarWind",
       "name": "NOAA Solar Wind",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
-      "dataTime": "2026-09-03T23:45:50.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
+      "dataTime": "2026-09-04T00:12:00.000Z",
       "data": {
-        "speedKms": 514,
-        "btNt": 6.8,
-        "bzNt": -3.1
+        "observedAt": "2026-09-04 00:12 UTC",
+        "speedKms": 374,
+        "btNt": 6,
+        "bzNt": -2
+      },
+      "provenance": {
+        "mode": "production",
+        "provider": "NOAA SWPC"
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 218,
+        "latencyMs": 454,
         "recordCount": 1
       }
     },
     "ovation": {
       "id": "ovation",
       "name": "NOAA OVATION",
-      "status": "degraded",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
-      "dataTime": "2026-09-03T22:58:50.060Z",
+      "status": "ok",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
+      "dataTime": "2026-09-04T00:10:00.000Z",
       "data": {
-        "successfulRegions": 29,
-        "failedRegions": 3
+        "gridCells": 65160,
+        "observationTime": "2026-09-04 00:10 UTC",
+        "forecastTime": "2026-09-04 01:20 UTC",
+        "icelandLatitudeCells": 1800,
+        "icelandPeakProbabilityPercent": 22
       },
-      "errorType": "HTTP_ERROR",
-      "errorMessage": "29 coordinate records loaded; 3 forecast regions returned HTTP 404.",
+      "provenance": {
+        "mode": "production",
+        "provider": "NOAA SWPC"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 361,
-        "recordCount": 29
+        "latencyMs": 779,
+        "recordCount": 65160
       }
     },
     "ecmwf": {
       "id": "ecmwf",
       "name": "ECMWF Cloud Forecast",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
       "dataTime": "2026-09-03T12:00:00.000Z",
       "data": {
         "modelRun": "2026-09-03 12Z",
@@ -114,9 +149,13 @@
         "model": "ECMWF IFS Open Data (0.25 degree)",
         "generatedAt": "2026-09-03 23:19 UTC"
       },
+      "provenance": {
+        "mode": "production",
+        "provider": "iceland-aurora-cloud GitHub Pages (ECMWF IFS Open Data)"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 383,
+        "latencyMs": 164,
         "recordCount": 17
       }
     },
@@ -124,16 +163,19 @@
       "id": "imo",
       "name": "IMO Warnings",
       "status": "info",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
-      "dataTime": "2026-09-03T23:43:50.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
       "data": {
         "activeWarnings": 0
       },
-      "note": "API healthy. Zero active warnings is a valid answer, not a failure.",
+      "provenance": {
+        "mode": "production",
+        "provider": "Icelandic Met Office CAP broker"
+      },
+      "note": "The warnings API is healthy and Iceland currently has no active weather warnings.",
       "diagnostics": {
-        "httpStatus": 200,
-        "latencyMs": 173,
+        "httpStatus": 204,
+        "latencyMs": 793,
         "recordCount": 0
       }
     }
@@ -143,8 +185,8 @@
       "id": "ircaPipeline",
       "name": "IRCA Road Publisher",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
       "dataTime": "2026-09-03T23:47:11Z",
       "data": {
         "consecutiveFailures": 0,
@@ -156,9 +198,13 @@
         "lastSuccessfulRun": "#865",
         "lastSuccessAt": "2026-09-03 23:47 UTC"
       },
+      "provenance": {
+        "mode": "production",
+        "provider": "GitHub Actions REST API"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 483,
+        "latencyMs": 47,
         "recordCount": 10
       }
     },
@@ -166,8 +212,8 @@
       "id": "ecmwfPipeline",
       "name": "ECMWF Cloud Publisher",
       "status": "ok",
-      "lastAttemptAt": "2026-09-03T23:51:03.060Z",
-      "lastSuccessAt": "2026-09-03T23:51:03.060Z",
+      "lastAttemptAt": "2026-09-04T00:19:07.415Z",
+      "lastSuccessAt": "2026-09-04T00:19:07.415Z",
       "dataTime": "2026-09-03T23:19:10Z",
       "data": {
         "consecutiveFailures": 0,
@@ -179,18 +225,22 @@
         "lastSuccessfulRun": "#240",
         "lastSuccessAt": "2026-09-03 23:20 UTC"
       },
+      "provenance": {
+        "mode": "production",
+        "provider": "GitHub Actions REST API"
+      },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 642,
+        "latencyMs": 45,
         "recordCount": 10
       }
     }
   },
   "summary": {
-    "ok": 6,
+    "ok": 8,
     "info": 1,
     "stale": 0,
-    "degraded": 1,
-    "error": 1
+    "degraded": 0,
+    "error": 0
   }
 }

@@ -13,13 +13,13 @@ export const MONITOR_IDS = [
 
 export type MonitorId = (typeof MONITOR_IDS)[number];
 
-/** Monitors wired to real production data. Each owns its freshness policy in `src/config/`. */
-export const LIVE_MONITOR_IDS = ["ecmwf", "irca", "ircaPipeline", "ecmwfPipeline"] as const;
+/**
+ * Monitors wired to real production data. Every monitor is: there is no mock data path left, so
+ * nothing the dashboard publishes can be a placeholder.
+ */
+export const LIVE_MONITOR_IDS = MONITOR_IDS;
 
 export type LiveMonitorId = (typeof LIVE_MONITOR_IDS)[number];
-
-/** Everything still on placeholder data, and the only ids `freshnessThresholds` covers. */
-export type MockMonitorId = Exclude<MonitorId, LiveMonitorId>;
 
 /** Monitors that describe a publishing pipeline rather than a data source. */
 export const PIPELINE_MONITOR_IDS = ["ircaPipeline", "ecmwfPipeline"] as const;

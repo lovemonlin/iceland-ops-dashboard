@@ -4,9 +4,9 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 
 ## Status (2026-09-03)
 
-The dashboard now runs on the **scheduled snapshot architecture** (step 9). **Four production
-monitors are live: ECMWF output (step 6), IRCA output (step 7), and the IRCA and ECMWF GitHub
-Actions pipelines (steps 8 and 8.1).** The other five
+The dashboard runs on the **scheduled snapshot architecture** (step 9), is published on GitHub
+Pages (step 10), and **every one of its nine monitors reads real production data** (step 11).
+There is no mock data path left in the runtime. The other five
 sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind, NOAA OVATION, MET Norway or
 IMO without explicit approval.
 
@@ -30,15 +30,15 @@ IMO without explicit approval.
 
 | Monitor | id | Source |
 | --- | --- | --- |
-| MET Norway Weather | `metno` | mock |
+| MET Norway Weather | `metno` | **live production (read-only)** |
 | IRCA Roads | `irca` | **live production (read-only)** |
 | IRCA Road Publisher | `ircaPipeline` | **live GitHub Actions (read-only)** |
-| NOAA Kp | `noaaKp` | mock |
-| NOAA Solar Wind | `solarWind` | mock |
-| NOAA OVATION | `ovation` | mock |
+| NOAA Kp | `noaaKp` | **live production (read-only)** |
+| NOAA Solar Wind | `solarWind` | **live production (read-only)** |
+| NOAA OVATION | `ovation` | **live production (read-only)** |
 | ECMWF Cloud Forecast | `ecmwf` | **live production (read-only)** |
 | ECMWF Cloud Publisher | `ecmwfPipeline` | **live GitHub Actions (read-only)** |
-| IMO Warnings | `imo` | mock |
+| IMO Warnings | `imo` | **live production (read-only)** |
 
 `MONITOR_IDS` in `src/config/monitors.ts` is the single list, and `LIVE_MONITOR_IDS` records which
 have gone live. A monitor leaves `freshnessThresholds` when it goes live and gains its own freshness
@@ -242,6 +242,56 @@ but road-conditions.geojson contains 699.`); the derived traffic-station count e
 
 Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
 outage is never hidden behind a STALE badge. Two tests pin that behaviour.
+
+## All sources productionized (2026-09-04)
+
+Every monitor now reads a real production endpoint. **The mock data path was deleted**, not disabled:
+`src/monitors/mockMonitors.ts` and `src/config/freshness.ts` are gone, `runAllMonitors()` imports
+nothing mock-shaped, and a test asserts the runtime carries no mock reference and that every
+published snapshot entry declares `provenance.mode === "production"`.
+
+### Canonical endpoints, read out of the Android app
+
+All of these were taken from `C:\dev\iceland-aurora` (read-only) so the dashboard watches exactly
+what the app uses, not a convenient substitute. They live in `src/config/sources.ts`.
+
+| Source | Endpoint |
+| --- | --- |
+| MET Norway | `https://api.met.no/weatherapi/locationforecast/2.0/complete` |
+| NOAA Kp | `https://services.swpc.noaa.gov/json/planetary_k_index_1m.json` |
+| Solar wind (field) | `https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json` |
+| Solar wind (speed) | `https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json` |
+| OVATION | `https://services.swpc.noaa.gov/json/ovation_aurora_latest.json` |
+| IMO warnings | `https://api.vedur.is/cap/capbroker/active/detailed/all` (header `x-vi-api-version: 2026-04-14`) |
+
+The app's 32 curated aurora sites were extracted verbatim from `IcelandAuroraSites.kt` — same ids,
+same coordinates. MET Norway forbids bulk point-fetching to build grids; a fixed curated list is what
+the app was designed around, so this stays in step with it. Requests are made six at a time.
+
+The app's own warning stands: the widely-copied `/products/solar-wind/mag-1-day.json` style paths now
+404. They must never come back; a test asserts their absence.
+
+### MET Norway User-Agent
+
+MET's terms require a User-Agent that identifies the caller and offers a way to reach them. The app
+builds one from `BuildConfig.CONTACT_EMAIL`. **That private email is deliberately not copied here** —
+this repository is public. The default identifies the project by its public repository URL, and
+`METNO_USER_AGENT` overrides it if a contact address is ever preferred.
+
+### Two real bugs the production run exposed
+
+1. **IMO answers `204 No Content`** when nothing is active. Reading the body as JSON reported
+   PARSE_ERROR for what is a perfectly healthy "no warnings". It is now read as text and parsed the
+   way the app does, treating an empty body, `""` and `[]` alike as zero warnings.
+2. **MET Norway aggregate carried no HTTP status**, so the shared evaluator saw `undefined` and
+   reported HTTP_ERROR even when every location answered. It now carries the status of a location
+   that actually replied.
+
+### Authenticity
+
+The snapshot file was **deleted and recollected from scratch** so that no value collected during the
+mock era could survive through the merge's failure-preservation rule. Everything now in
+`public/data/latest-health.json` was fetched from a real endpoint.
 
 ## Deployment decision (2026-09-03): published on GitHub Pages
 
@@ -508,10 +558,8 @@ the header adds Taipei.
 
 ## Known issues / open questions
 
-- MET Norway production requires a compliant User-Agent with contact details. Not configured, and no
-  private email may be hardcoded. Must be resolved before the MET monitor is wired.
-- Old NOAA solar wind endpoints are known to be dead. Use only endpoints confirmed by current
-  production documentation.
+- Old NOAA solar wind endpoints (`/products/solar-wind/...`) are dead and must never be used; the
+  monitors use the summary products the app uses, and a test guards against a regression.
 - If ECMWF is STALE, the dashboard says the cloud pipeline is behind — it cannot say *why*.
   Distinguishing "workflow failed" from "ECMWF Open Data was late" needs the GitHub Actions monitor,
   which is deliberately out of scope for this step.
@@ -525,7 +573,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 174 fully offline tests, no network access:
+`npm test` — 188 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -564,7 +612,12 @@ the header adds Taipei.
   snapshot, no browser-loaded file referencing a monitor or a production host, the export
   shipping the snapshot and `.nojekyll`, the workflow triggering on push with least-privilege
   permissions and no schedule, no credential, and no external host or scheduler introduced
-- mock monitor cases, time and session-event helpers, network diagnostics
+- Production sources: 21 cases across MET Norway, NOAA Kp, solar wind, OVATION and IMO — success,
+  network error, HTTP error, parse error, schema error, empty response, invalid timestamp, stale
+  data, partial outage, last-good-data preserved after a failure, the compliant User-Agent and
+  four-decimal coordinates, the IMO API-version header, plus a guard that the runtime holds no
+  mock reference and every published entry declares production provenance
+- time and session-event helpers, network diagnostics
 
 No test depends on the wall clock, and no test reaches production or the GitHub API.
 
@@ -572,16 +625,12 @@ No test depends on the wall clock, and no test reaches production or the GitHub 
 
 Do not proceed automatically.
 
-**Still blocking for hourly automation:** the repository and the site now exist, and pushing
-`public/data/latest-health.json` to `main` publishes new data. What is missing is a scheduler
-that runs `npm run snapshot` hourly and commits that one file, plus the write credential it
-would use — scoped to `iceland-ops-dashboard` only. None has been created; no token is stored
-anywhere in this project. Writing to `iceland-aurora`, `iceland-aurora-ios` or
-`iceland-aurora-cloud` remains forbidden.
+Every data source is now production, so the remaining work is the hourly scheduler itself.
 
-After that, the remaining source order is NOAA Kp → NOAA Solar Wind → NOAA OVATION → MET Norway
-→ IMO, one at a time, each with a normal case and an error case tested and this file updated
-before the next one starts.
+**Still needed:** something that runs `npm run snapshot` hourly and commits only
+`public/data/latest-health.json` to `main`, plus the write credential it would use — scoped to
+`iceland-ops-dashboard` only. None has been created; no token is stored anywhere in this project.
+Writing to `iceland-aurora`, `iceland-aurora-ios` or `iceland-aurora-cloud` remains forbidden.
 
 ## Scheduler diagnosis (2026-09-03 03:19 UTC, step 8.1)
 
