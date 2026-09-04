@@ -298,6 +298,107 @@ stay signed in - locking the screen and turning the monitor off are fine, and so
 wake setting is honoured, but signing out or shutting down stops it. For genuine 24/7, set sleep to
 Never while on mains power.
 
+### Triggering the upstream publishers from Windows
+
+The `iceland-aurora-cloud` repository publishes the road and cloud data this dashboard reads, and
+it had the same problem: its workflows always succeeded, but GitHub delivered their schedules
+erratically — a five-minute IRCA cron produced runs 97 to 304 minutes apart. So Windows becomes the
+clock there too.
+
+Nothing moves off GitHub. `generate_road_data.py` and `generate_cloud_frames.py` keep running as
+GitHub Actions exactly as before; Windows only asks them to run, on time:
+
+```
+Windows Task Scheduler -> gh workflow run -> workflow_dispatch
+-> iceland-aurora-cloud Actions -> the existing Python publishers -> GitHub Pages
+```
+
+`scripts\trigger-cloud-workflow.ps1` does the asking, and — importantly — checks what happened:
+
+```
+acquire lock -> verify gh auth -> gh workflow run (the request is retried 3x, 30s apart)
+-> identify the run this dispatch created -> poll until it completes -> record the conclusion
+```
+
+`gh workflow run` exiting 0 only means the request was accepted, so the run is identified by id and
+creation time: an id that already existed before the dispatch, or a run created before it, is never
+accepted as this one. A workflow that ran and *failed* is logged as `WORKFLOW FAILED` and left for
+the next scheduled occurrence — re-triggering it would only stack duplicate runs on one broken
+publish.
+
+It holds no credential; every call uses whatever `gh auth login` established on this machine. If
+`gh` is not authenticated the run aborts and dispatches nothing.
+
+Log: `logs/cloud-workflow-trigger.log`, rotated past 5 MB. Locks: `.runtime/irca-trigger.lock` and
+`.runtime/ecmwf-trigger.lock` — one per workflow, so a slow road trigger never blocks a cloud one.
+
+Run either by hand:
+
+```powershell
+.\scripts\trigger-cloud-workflow.ps1 -Workflow "update-road-info.yml" -TaskName "IRCA"
+.\scripts\trigger-cloud-workflow.ps1 -Workflow "update-cloud-forecast.yml" -TaskName "ECMWF"
+```
+
+Its safety behaviour is covered by `scripts\test-trigger-cloud-workflow.ps1`, which runs every
+scenario against a fake `gh` on a temporary PATH and dispatches nothing real:
+
+```powershell
+.\scripts\test-trigger-cloud-workflow.ps1
+```
+
+#### Registering the two publisher tasks
+
+IRCA every 15 minutes, on the quarter hour:
+
+```powershell
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\trigger-cloud-workflow.ps1" -Workflow "update-road-info.yml" -TaskName "IRCA"' `
+  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
+
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date `
+  -RepetitionInterval (New-TimeSpan -Minutes 15)
+
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 20) `
+  -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+
+Register-ScheduledTask -TaskName 'Iceland Cloud - IRCA Publisher' `
+  -Action $action -Trigger $trigger -Settings $settings -Force
+```
+
+ECMWF on the four model cycles rather than a blind three-hourly repeat. Each time is about ten
+minutes after that cycle's publication deadline, in Taipei time:
+
+| Taipei | UTC | ECMWF cycle |
+| --- | --- | --- |
+| 05:55 | 21:55 | 12Z |
+| 11:55 | 03:55 | 18Z |
+| 17:55 | 09:55 | 00Z |
+| 23:55 | 15:55 | 06Z |
+
+```powershell
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\trigger-cloud-workflow.ps1" -Workflow "update-cloud-forecast.yml" -TaskName "ECMWF"' `
+  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
+
+$triggers = @('05:55', '11:55', '17:55', '23:55') |
+  ForEach-Object { New-ScheduledTaskTrigger -Daily -At $_ }
+
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 20) `
+  -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+
+Register-ScheduledTask -TaskName 'Iceland Cloud - ECMWF Publisher' `
+  -Action $action -Trigger $triggers -Settings $settings -Force
+```
+
+Both run as the logged-on user, so no password is stored, with the same signed-in requirement as
+the snapshot task above.
+
+**The upstream GitHub crons are still in place.** They stay until these Windows triggers have
+proven themselves in production; only then is GitHub Actions demoted from scheduler to execution
+engine.
+
 ### The remaining GitHub triggers
 
 The hourly beat is the Windows task above and nothing else. GitHub used to hold a backup
