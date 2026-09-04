@@ -8,8 +8,14 @@ name: Deploy dashboard to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      # The AI scheduler touching the trigger file does not change the site; the snapshot commit
+      # that follows does, and Update Dashboard Snapshot calls this workflow for it.
+      - "automation/hourly-trigger.txt"
   # Lets a deployment be re-run by hand if one fails; it does not collect any data.
   workflow_dispatch:
+  # Called by Update Dashboard Snapshot once a new snapshot has been committed.
+  workflow_call:
 
 # The minimum needed to publish Pages, and nothing else: no contents: write, no packages, no actions.
 permissions:
@@ -26,7 +32,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # The branch tip, so a snapshot committed moments ago by the calling workflow is included.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@v4
         with:

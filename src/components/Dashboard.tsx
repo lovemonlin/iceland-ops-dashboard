@@ -113,7 +113,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
       <header>
         <div>
           <p className="eyebrow">
-            SCHEDULED SNAPSHOT · {LIVE_MONITOR_IDS.length} OF {MONITOR_IDS.length} SOURCES LIVE · REST STILL MOCK DATA
+            SCHEDULED SNAPSHOT · {LIVE_MONITOR_IDS.length} OF {MONITOR_IDS.length} SOURCES LIVE · ALL PRODUCTION DATA
           </p>
           <h1>ICELAND OPS DASHBOARD</h1>
           <p>

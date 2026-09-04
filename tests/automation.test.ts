@@ -1,0 +1,114 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import test from "node:test";
+
+const TRIGGER_FILE = "automation/hourly-trigger.txt";
+const SNAPSHOT_FILE = "public/data/latest-health.json";
+
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+
+/** Workflow YAML with comment lines removed, so prose about the config cannot satisfy a check. */
+function directives(path: string) {
+  return read(path)
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("#"))
+    .join("\n");
+}
+
+const snapshotWorkflow = () => directives(".github/workflows/update-dashboard-snapshot.yml");
+const pagesWorkflow = () => directives(".github/workflows/deploy-pages.yml");
+
+test("the trigger file exists and holds no production data", () => {
+  assert.equal(existsSync(resolve(process.cwd(), TRIGGER_FILE)), true);
+  const contents = read(TRIGGER_FILE);
+  assert.match(contents, /Hourly snapshot trigger/);
+  // It is a doorbell, not a payload: nothing here may look like collected data.
+  assert.equal(/\{|\}|"status"|"data"/.test(contents), false);
+});
+
+test("the snapshot workflow is triggered by the trigger file, never by a schedule", () => {
+  const workflow = snapshotWorkflow();
+
+  assert.match(workflow, /on:\s*\n\s*push:\s*\n\s*paths:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.equal(/^\s*schedule:/m.test(workflow), false, "this must never become a scheduled workflow");
+  assert.equal(/cron:/.test(workflow), false);
+});
+
+test("no workflow anywhere uses a GitHub schedule", () => {
+  for (const file of [".github/workflows/update-dashboard-snapshot.yml", ".github/workflows/deploy-pages.yml"]) {
+    const workflow = directives(file);
+    assert.equal(/^\s*schedule:/m.test(workflow), false, `${file} must not be scheduled`);
+    assert.equal(/cron:/.test(workflow), false, `${file} must not carry a cron`);
+  }
+});
+
+test("the collecting job holds the minimum permission it needs, and no credential", () => {
+  const workflow = snapshotWorkflow();
+
+  // contents: write is required to push the snapshot; nothing beyond it is granted to that job.
+  assert.match(workflow, /snapshot:\s*\n\s*runs-on: ubuntu-latest\s*\n\s*permissions:\s*\n\s*contents: write/);
+  assert.equal(/packages:|actions:\s*write|security-events:/.test(workflow), false);
+
+  // The built-in GITHUB_TOKEN only: no personal token, no stored secret.
+  assert.equal(/PERSONAL_ACCESS_TOKEN|\bPAT\b|secrets\./.test(workflow), false);
+  assert.equal(/token:\s*\$\{\{/.test(workflow), false);
+});
+
+test("recursion is impossible: the job writes a file its own trigger does not watch", () => {
+  const workflow = snapshotWorkflow();
+
+  // It commits exactly one path...
+  const staged = [...workflow.matchAll(/git add (\S+)/g)].map((match) => match[1]);
+  assert.deepEqual(staged, [SNAPSHOT_FILE]);
+  assert.equal(workflow.includes(`git add ${TRIGGER_FILE}`), false);
+  assert.equal(/git add \.|git add -A|git commit -a/.test(workflow), false, "a blanket add could sweep in the trigger file");
+
+  // ...and it is triggered by a different path, so its own commit cannot start it again.
+  const triggerPaths = workflow.match(/paths:\s*\n\s*- "([^"]+)"/)?.[1];
+  assert.equal(triggerPaths, TRIGGER_FILE);
+  assert.notEqual(triggerPaths, SNAPSHOT_FILE);
+
+  // A guard step fails the run if anything other than the snapshot changed.
+  assert.match(workflow, /Refusing to commit/);
+});
+
+test("the Pages deploy ignores the trigger commit but still publishes the snapshot commit", () => {
+  const workflow = pagesWorkflow();
+
+  // Touching the trigger file changes nothing on the site, so it must not cause a deployment.
+  assert.match(workflow, /paths-ignore:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
+  // Ordinary pushes still deploy.
+  assert.match(workflow, /push:\s*\n\s*branches: \[main\]/);
+  // And the snapshot workflow can call it directly, which is how a snapshot commit gets published:
+  // a push made with GITHUB_TOKEN does not start another workflow on its own.
+  assert.match(workflow, /workflow_call:/);
+  assert.match(snapshotWorkflow(), /uses: \.\/\.github\/workflows\/deploy-pages\.yml/);
+});
+
+test("the deploy builds the branch tip, so it includes a snapshot committed moments earlier", () => {
+  assert.match(pagesWorkflow(), /uses: actions\/checkout@v4\s*\n\s*with:\s*\n\s*ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+  // The collecting job must also start from the tip, not from the triggering commit.
+  assert.match(snapshotWorkflow(), /uses: actions\/checkout@v4\s*\n\s*with:\s*\n\s*ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+});
+
+test("the workflow refuses to publish a snapshot that is not valid production data", () => {
+  const workflow = snapshotWorkflow();
+  assert.match(workflow, /Refusing to publish an invalid snapshot/);
+  assert.match(workflow, /provenance\?\.mode !== "production"/);
+  assert.match(workflow, /Date\.parse\(snapshot\.generatedAt\)/);
+});
+
+test("collection happens in the workflow, never in the browser", () => {
+  assert.match(snapshotWorkflow(), /npm run snapshot/);
+  // The published page still reads only the snapshot file.
+  const dashboard = read("src/components/Dashboard.tsx");
+  assert.equal(/runAllMonitors|api\.met\.no|swpc|vedur\.is/i.test(dashboard), false);
+});
+
+test("the banner no longer claims any source is mock data", () => {
+  const dashboard = read("src/components/Dashboard.tsx");
+  assert.match(dashboard, /ALL PRODUCTION DATA/);
+  assert.equal(/MOCK/i.test(dashboard), false);
+});

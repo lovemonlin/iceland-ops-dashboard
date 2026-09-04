@@ -1,0 +1,101 @@
+# Collects production data and publishes the result.
+#
+# Triggered by an external AI scheduler touching automation/hourly-trigger.txt, NOT by a GitHub
+# schedule: scheduled triggers on this account were measured delivering every 2-4 hours against a
+# five-minute cron, so they are not trusted for this.
+name: Update Dashboard Snapshot
+
+on:
+  push:
+    paths:
+      - "automation/hourly-trigger.txt"
+  # Lets a collection be run by hand without waiting for the scheduler.
+  workflow_dispatch:
+
+# Never collect twice at once; a newer trigger supersedes one still running.
+concurrency:
+  group: dashboard-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      # The branch tip, not the triggering commit: monitors, endpoints and schemas may have moved on.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The only step that contacts production. Read-only: GET and HEAD.
+      - name: Collect production snapshot
+        run: npm run snapshot
+
+      - name: Validate the snapshot
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const snapshot = JSON.parse(readFileSync("public/data/latest-health.json", "utf8"));
+            const problems = [];
+            if (typeof snapshot.schemaVersion !== "number") problems.push("schemaVersion is not a number");
+            if (Number.isNaN(Date.parse(snapshot.generatedAt))) problems.push("generatedAt is not a valid timestamp");
+            const entries = [...Object.values(snapshot.sources ?? {}), ...Object.values(snapshot.pipelines ?? {})];
+            if (entries.length === 0) problems.push("snapshot contains no sources");
+            for (const entry of entries) {
+              if (entry.provenance?.mode !== "production") problems.push(`${entry.id} is not production data`);
+              if (!entry.lastAttemptAt) problems.push(`${entry.id} has no lastAttemptAt`);
+            }
+            if (problems.length > 0) {
+              console.error("Refusing to publish an invalid snapshot:\n  " + problems.join("\n  "));
+              process.exit(1);
+            }
+            console.log(`Snapshot valid: ${entries.length} entries, generated ${snapshot.generatedAt}, overall ${snapshot.overallStatus}`);
+          '
+
+      - name: Check that only the snapshot changed
+        run: |
+          changed=$(git status --porcelain | awk '{print $2}')
+          echo "Changed files: ${changed:-<none>}"
+          for file in $changed; do
+            if [ "$file" != "public/data/latest-health.json" ]; then
+              echo "Refusing to commit: this job may only change the snapshot, but $file also changed." >&2
+              exit 1
+            fi
+          done
+
+      - name: Commit the snapshot
+        id: commit
+        run: |
+          if git diff --quiet -- public/data/latest-health.json; then
+            echo "Snapshot is unchanged; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Only ever this one path: the trigger file is untouched, so this cannot re-trigger the job.
+          git add public/data/latest-health.json
+          git commit -m "Update production snapshot"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  # A push made with GITHUB_TOKEN does not start another workflow, so the Pages deploy is called
+  # here explicitly rather than left to fire on the snapshot commit.
+  deploy:
+    needs: snapshot
+    if: needs.snapshot.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy-pages.yml
