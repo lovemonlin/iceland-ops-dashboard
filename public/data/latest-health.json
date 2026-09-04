@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-04T02:05:59.504Z",
-  "scheduledFor": "2026-09-04T03:05:59.504Z",
+  "generatedAt": "2026-09-04T02:18:33.736Z",
+  "scheduledFor": "2026-09-04T03:18:33.736Z",
   "overallStatus": "stale",
   "sources": {
     "metno": {
       "id": "metno",
       "name": "MET Norway Weather",
       "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "dataTime": "2026-09-04T01:25:14.000Z",
       "data": {
         "locations": "32 / 32 successful",
@@ -30,16 +30,16 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 1383,
+        "latencyMs": 1465,
         "recordCount": 32
       }
     },
     "irca": {
       "id": "irca",
       "name": "IRCA Roads",
-      "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "status": "stale",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "dataTime": "2026-09-04T01:25:08.060Z",
       "data": {
         "lastPublished": "2026-09-04 01:25 UTC",
@@ -55,9 +55,11 @@
         "mode": "production",
         "provider": "iceland-aurora-cloud GitHub Pages (IRCA DATEX)"
       },
+      "errorType": "STALE_DATA",
+      "errorMessage": "The published files are readable, but the last successful publish was 53 min ago and the pipeline republishes about every 30 min, so at least one scheduled update did not reach production.",
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 692,
+        "latencyMs": 615,
         "recordCount": 701
       }
     },
@@ -65,12 +67,12 @@
       "id": "noaaKp",
       "name": "NOAA Kp",
       "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
-      "dataTime": "2026-09-04T02:01:00.000Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
+      "dataTime": "2026-09-04T02:13:00.000Z",
       "data": {
         "kp": 1,
-        "observedAt": "2026-09-04 02:01 UTC",
+        "observedAt": "2026-09-04 02:13 UTC",
         "samples": 358,
         "kpIndex": 1,
         "kpLabel": "1Z"
@@ -81,7 +83,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 729,
+        "latencyMs": 441,
         "recordCount": 358
       }
     },
@@ -89,14 +91,14 @@
       "id": "solarWind",
       "name": "NOAA Solar Wind",
       "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
-      "dataTime": "2026-09-04T01:58:00.000Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
+      "dataTime": "2026-09-04T02:10:00.000Z",
       "data": {
-        "observedAt": "2026-09-04 01:58 UTC",
-        "speedKms": 390,
+        "observedAt": "2026-09-04 02:10 UTC",
+        "speedKms": 395,
         "btNt": 6,
-        "bzNt": -2
+        "bzNt": 1
       },
       "provenance": {
         "mode": "production",
@@ -104,7 +106,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 723,
+        "latencyMs": 435,
         "recordCount": 1
       }
     },
@@ -112,13 +114,13 @@
       "id": "ovation",
       "name": "NOAA OVATION",
       "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
-      "dataTime": "2026-09-04T01:56:00.000Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
+      "dataTime": "2026-09-04T02:10:00.000Z",
       "data": {
         "gridCells": 65160,
-        "observationTime": "2026-09-04 01:56 UTC",
-        "forecastTime": "2026-09-04 03:04 UTC",
+        "observationTime": "2026-09-04 02:10 UTC",
+        "forecastTime": "2026-09-04 03:19 UTC",
         "icelandLatitudeCells": 1800,
         "icelandPeakProbabilityPercent": 19
       },
@@ -128,7 +130,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 736,
+        "latencyMs": 450,
         "recordCount": 65160
       }
     },
@@ -136,8 +138,8 @@
       "id": "ecmwf",
       "name": "ECMWF Cloud Forecast",
       "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "dataTime": "2026-09-03T12:00:00.000Z",
       "data": {
         "modelRun": "2026-09-03 12Z",
@@ -155,7 +157,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 763,
+        "latencyMs": 496,
         "recordCount": 17
       }
     },
@@ -163,8 +165,8 @@
       "id": "imo",
       "name": "IMO Warnings",
       "status": "info",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "data": {
         "activeWarnings": 0
       },
@@ -175,7 +177,7 @@
       "note": "The warnings API is healthy and Iceland currently has no active weather warnings.",
       "diagnostics": {
         "httpStatus": 204,
-        "latencyMs": 2006,
+        "latencyMs": 2613,
         "recordCount": 0
       }
     }
@@ -184,9 +186,9 @@
     "ircaPipeline": {
       "id": "ircaPipeline",
       "name": "IRCA Road Publisher",
-      "status": "ok",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "status": "stale",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "dataTime": "2026-09-04T01:24:35Z",
       "data": {
         "consecutiveFailures": 0,
@@ -202,9 +204,11 @@
         "mode": "production",
         "provider": "GitHub Actions REST API"
       },
+      "errorType": "WORKFLOW_NOT_RUN",
+      "errorMessage": "No recent scheduled workflow run was observed. The newest run is #866 from 2026-09-04 01:24 UTC. The workflow is active and its schedule exists on the default branch (main), but GitHub has not created a recent run matching the configured schedule. The run itself did not fail — it did not happen.",
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 346,
+        "latencyMs": 287,
         "recordCount": 10
       }
     },
@@ -212,8 +216,8 @@
       "id": "ecmwfPipeline",
       "name": "ECMWF Cloud Publisher",
       "status": "stale",
-      "lastAttemptAt": "2026-09-04T02:05:59.504Z",
-      "lastSuccessAt": "2026-09-04T02:05:59.504Z",
+      "lastAttemptAt": "2026-09-04T02:18:33.736Z",
+      "lastSuccessAt": "2026-09-04T02:18:33.736Z",
       "dataTime": "2026-09-03T23:19:10Z",
       "data": {
         "consecutiveFailures": 0,
@@ -233,15 +237,15 @@
       "errorMessage": "No recent scheduled workflow run was observed. The newest run is #240 from 2026-09-03 23:19 UTC. The workflow is active and its schedule exists on the default branch (main), but GitHub has not created a recent run matching the configured schedule. The run itself did not fail — it did not happen.",
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 340,
+        "latencyMs": 344,
         "recordCount": 10
       }
     }
   },
   "summary": {
-    "ok": 7,
+    "ok": 5,
     "info": 1,
-    "stale": 1,
+    "stale": 3,
     "degraded": 0,
     "error": 0
   }
