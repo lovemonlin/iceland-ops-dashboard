@@ -274,8 +274,13 @@ test("no road GeoJSON is requested, and MapLibre is not loaded, before the road 
   assert.match(roadMap, /import type \{ Map as MapLibreMap/);
   // Once created the map is kept, so collapsing does not throw the downloaded data away.
   assert.match(roadMap, /if \(!container \|\| mapRef\.current\) return;/);
-  // And it resizes when the container becomes visible, so it never renders blank or offset.
-  assert.match(roadMap, /new ResizeObserver\(\(\) => mapRef\.current\?\.resize\(\)\)/);
+  // And it resizes when the container becomes visible. Resizing alone is not enough: a map built
+  // at zero size has already fitted Iceland into nothing, so the bounds are fitted again too.
+  assert.match(roadMap, /new ResizeObserver/);
+  assert.match(roadMap, /map\.resize\(\)/);
+  assert.match(roadMap, /if \(width === 0 \|\| height === 0\) return;/);
+  assert.match(roadMap, /if \(!hadSize\) \{/);
+  assert.match(roadMap, /function frameIceland/);
 });
 
 test("the browser still reaches no upstream provider from anywhere in the UI", () => {

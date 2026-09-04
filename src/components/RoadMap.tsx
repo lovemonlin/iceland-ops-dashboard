@@ -31,6 +31,18 @@ import {
  * production GeoJSON files are all loaded on first expand and then kept, so toggling does not
  * re-download them. The dashboard's own hourly snapshot is unaffected either way.
  */
+/** The app fits the same corners; the bottom is generous because the detail card sits over it. */
+const CAMERA_PADDING = { padding: { top: 60, bottom: 120, left: 34, right: 34 } };
+
+/** The app wraps its own fit in runCatching and drops to a fixed centre and zoom; so does this. */
+function frameIceland(map: MapLibreMap) {
+  try {
+    map.fitBounds(ICELAND_CAMERA_BOUNDS, { ...CAMERA_PADDING, duration: 0 });
+  } catch {
+    map.jumpTo({ center: ICELAND_CAMERA_FALLBACK.center, zoom: ICELAND_CAMERA_FALLBACK.zoom });
+  }
+}
+
 export function RoadMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -61,9 +73,7 @@ export function RoadMap() {
           container,
           style: buildRoadStyle(getPublicAssetPath("/data/iceland.geojson")) as never,
           bounds: ICELAND_CAMERA_BOUNDS,
-          // The app fits the same corners with this padding; the bottom is generous because the
-          // detail card sits over the map there.
-          fitBoundsOptions: { padding: { top: 60, bottom: 120, left: 34, right: 34 } },
+          fitBoundsOptions: CAMERA_PADDING,
           attributionControl: false,
           // The app disables both; a rotated Iceland helps nobody.
           dragRotate: false,
@@ -85,6 +95,10 @@ export function RoadMap() {
           for (const id of ALL_MARKER_IDS) {
             const image = drawMarker(id, 2);
             if (image && !map.hasImage(id)) map.addImage(id, image, { pixelRatio: 2 });
+          }
+          if (container.clientWidth > 0 && container.clientHeight > 0) {
+            map.resize();
+            frameIceland(map);
           }
           setReady(true);
         });
@@ -117,12 +131,27 @@ export function RoadMap() {
     };
   }, [onSelect]);
 
-  // A map created while its container was display:none measures zero. Resizing once the element is
-  // actually laid out is what stops it rendering as a blank or offset canvas.
+  /**
+   * A map built while its container is `display: none` measures zero, and fitting Iceland into
+   * zero pixels lands the camera at maximum zoom over empty ocean. Resizing alone does not undo
+   * that — `resize` keeps the centre and zoom — so the bounds are fitted again the first time the
+   * container actually has a size.
+   */
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const observer = new ResizeObserver(() => mapRef.current?.resize());
+    let hadSize = container.clientWidth > 0 && container.clientHeight > 0;
+    const observer = new ResizeObserver(([entry]) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const { width, height } = entry.contentRect;
+      if (width === 0 || height === 0) return;
+      map.resize();
+      if (!hadSize) {
+        hadSize = true;
+        frameIceland(map);
+      }
+    });
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
