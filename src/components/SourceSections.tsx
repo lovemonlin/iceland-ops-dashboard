@@ -11,7 +11,10 @@ import {
   formatWarningsHeadline,
   TONE_DOT,
 } from "@/lib/display";
+import dynamic from "next/dynamic";
+import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
+import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
 import { dataAgeMinutes } from "@/monitors/correlate";
 import type { SnapshotSource } from "@/snapshot/types";
 
@@ -21,6 +24,16 @@ import type { SnapshotSource } from "@/snapshot/types";
  *
  * Every card reads the stored snapshot values and nothing else. No card recomputes health.
  */
+
+/**
+ * MapLibre and its stylesheet are ~800 KB. Loading them for a page whose whole point is a fast
+ * status summary would be indefensible, so the road map is a separate chunk fetched only when the
+ * disclosure mounts it. `ssr: false` because the library needs a real canvas.
+ */
+const RoadMap = dynamic(() => import("@/components/RoadMap").then((module) => module.RoadMap), {
+  ssr: false,
+  loading: () => <p className="muted-line">正在載入道路地圖…</p>,
+});
 
 const text = (value: unknown, fallback = "—") => (value === undefined || value === null ? fallback : String(value));
 
@@ -48,6 +61,8 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
   const data = entry.data ?? {};
   const site = text(data.primarySite, "Reykjavík");
   const healthy = entry.status === "ok" || entry.status === "info";
+  // Written by the MET Norway monitor from the same 32 responses the summary above came from.
+  const sites = Array.isArray(data.sites) ? (data.sites as WeatherMapSite[]) : [];
 
   return (
     <SourceCard
@@ -69,6 +84,11 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
         <Stat label="中層雲量" value={formatPercent(data.cloudMediumPercent)} />
         <Stat label="高層雲量" value={formatPercent(data.cloudHighPercent)} />
       </div>
+      {sites.length > 0 && (
+        <MapDisclosure label="展開全島天氣">
+          <WeatherMap sites={sites} />
+        </MapDisclosure>
+      )}
     </SourceCard>
   );
 }
@@ -138,6 +158,9 @@ export function RoadsSection({
             <Stat label="事件" value={formatNumber(data.incidents, "件")} />
             <Stat label="觀測站" value={formatNumber(data.stations, "站")} />
           </div>
+          <MapDisclosure label="展開全島道路">
+            <RoadMap />
+          </MapDisclosure>
         </SourceCard>
       </div>
     </section>

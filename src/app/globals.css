@@ -167,3 +167,129 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   .stats { gap: 12px 20px; }
   .card-title { flex-wrap: wrap; }
 }
+
+/* ── Maps ported from the Android app ─────────────────────────────────────── */
+
+.map-disclosure { margin-top: 14px; }
+.map-disclosure-toggle {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.map-disclosure-toggle:hover { color: var(--text); background: #1b2a3b; }
+.map-disclosure-toggle:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; color: var(--text); }
+.map-disclosure-panel { margin-top: 12px; }
+.map-disclosure-panel[hidden] { display: none !important; }
+
+/* Weather map. Sizes and colours come from src/lib/weatherMap.ts, which carries the app's values. */
+.weather-map { display: grid; gap: 10px; }
+.weather-map-canvas { position: relative; width: 100%; border-radius: 10px; overflow: hidden; user-select: none; }
+.weather-map-canvas svg { display: block; }
+.weather-map-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.weather-map-zoom {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.weather-map-zoom button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(20, 27, 45, 0.9);
+  color: #e8edf7;
+  font-size: 18px;
+  line-height: 1;
+}
+.weather-map-zoom button:disabled { opacity: .35; }
+.weather-map-zoom .weather-map-reset { width: auto; height: auto; padding: 4px 8px; font-size: 11px; }
+.weather-map-hint {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: #e6101a2d;
+  border: 1px solid rgba(103, 212, 255, 0.72);
+  color: #f2faff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.weather-focus-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.weather-focus-name { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.weather-focus-name strong { font-size: 14px; }
+.weather-focus-name span { color: var(--muted); font-size: 11px; }
+.weather-focus-metric { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.weather-focus-metric > strong { font-size: 14px; font-variant-numeric: tabular-nums; }
+.weather-focus-metric > span { color: var(--muted); font-size: 11px; }
+.wind-arrow { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 14px; }
+.wind-arrow span { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* Road map. The palette lives in the MapLibre style, which is the app's own. */
+.road-map { position: relative; display: grid; gap: 10px; }
+.road-map-canvas { width: 100%; height: 460px; border-radius: 10px; overflow: hidden; }
+.road-station-label { position: absolute; pointer-events: none; white-space: nowrap; font-weight: 600; }
+.road-legend {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  font-size: 12px;
+}
+.road-legend-rows { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.road-legend-rows span { display: inline-flex; align-items: center; gap: 5px; }
+.road-legend-rows i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.road-detail {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.road-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.road-detail-head strong { font-size: 15px; }
+.road-detail-head button { border: 0; background: transparent; color: var(--muted); font-size: 20px; padding: 0 4px; }
+.road-detail-updated {
+  background: #1b2a3b;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.road-detail-status { font-weight: 700; font-size: 13px; }
+.road-detail-label { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.road-detail-values { display: grid; gap: 4px; font-size: 13px; }
+
+@media (max-width: 820px) {
+  .road-map-canvas { height: 340px; }
+}

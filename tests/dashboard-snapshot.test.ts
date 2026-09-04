@@ -37,6 +37,9 @@ test("13. no page or component can reach a production monitor", async () => {
     "src/components/Dashboard.tsx",
     "src/components/StatusCard.tsx",
     "src/components/SourceSections.tsx",
+    "src/components/WeatherMap.tsx",
+    "src/components/RoadMap.tsx",
+    "src/components/MapDisclosure.tsx",
   ];
 
   for (const file of files) {

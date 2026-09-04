@@ -75,6 +75,9 @@ test("6. nothing the browser loads can reach a production API", () => {
     "src/components/Dashboard.tsx",
     "src/components/StatusCard.tsx",
     "src/components/SourceSections.tsx",
+    "src/components/WeatherMap.tsx",
+    "src/components/RoadMap.tsx",
+    "src/components/MapDisclosure.tsx",
   ]) {
     const source = read(file);
     for (const forbidden of [
