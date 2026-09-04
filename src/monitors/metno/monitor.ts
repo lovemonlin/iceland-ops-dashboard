@@ -39,6 +39,10 @@ interface SiteReading {
   cloudMediumPercent?: number;
   cloudHighPercent?: number;
   cloudTotalPercent?: number;
+  /** Degrees the wind blows *from*, the meteorological convention the app's arrow rotates by 180. */
+  windFromDirection?: number;
+  /** MET Norway's own condition code, e.g. "clearsky_night". Never derived here. */
+  symbolCode?: string;
 }
 
 type SiteResult = { ok: true; reading: SiteReading } | { ok: false; site: WeatherSite; detail: string };
@@ -76,7 +80,13 @@ function parseForecast(site: WeatherSite, raw: unknown, httpStatus?: number): Si
     return { ok: false, site, detail: `${site.id}: timeseries is empty` };
   }
 
-  const details = (timeseries[0] as { data?: { instant?: { details?: unknown } } })?.data?.instant?.details;
+  const first = timeseries[0] as {
+    data?: {
+      instant?: { details?: unknown };
+      next_1_hours?: { summary?: { symbol_code?: unknown } };
+    };
+  };
+  const details = first?.data?.instant?.details;
   if (!details || typeof details !== "object") {
     return { ok: false, site, detail: `${site.id}: first timeseries entry has no instant details` };
   }
@@ -100,6 +110,12 @@ function parseForecast(site: WeatherSite, raw: unknown, httpStatus?: number): Si
       cloudMediumPercent: number(values.cloud_area_fraction_medium),
       cloudHighPercent: number(values.cloud_area_fraction_high),
       cloudTotalPercent: number(values.cloud_area_fraction),
+      windFromDirection: number(values.wind_from_direction),
+      // The app reads the condition code from next_1_hours, not from the instant block.
+      symbolCode:
+        typeof first.data?.next_1_hours?.summary?.symbol_code === "string"
+          ? first.data.next_1_hours.summary.symbol_code
+          : undefined,
     },
   };
 }
@@ -185,6 +201,26 @@ export async function checkMetno(options: MetnoCheckOptions = {}): Promise<Monit
     cloudMediumPercent: primary.cloudMediumPercent,
     cloudHighPercent: primary.cloudHighPercent,
   };
+
+  // Every site that answered, so the dashboard can draw the app's map without a second request.
+  // Purely additive: the headline fields above are untouched and the summary card still reads them.
+  data.sites = readings.map((reading) => ({
+    id: reading.site.id,
+    name: reading.site.name,
+    nameIs: reading.site.nameIs,
+    nameZh: reading.site.nameZh,
+    lat: reading.site.lat,
+    lon: reading.site.lon,
+    region: reading.site.region,
+    temperatureC: reading.temperatureC,
+    windMps: reading.windMps,
+    windFromDirection: reading.windFromDirection,
+    cloudLowPercent: reading.cloudLowPercent,
+    cloudMediumPercent: reading.cloudMediumPercent,
+    cloudHighPercent: reading.cloudHighPercent,
+    cloudTotalPercent: reading.cloudTotalPercent,
+    symbolCode: reading.symbolCode,
+  }));
 
   const details: Record<string, unknown> = { ...data, endpoint: METNO_FORECAST_URL };
   if (failures.length > 0) {
