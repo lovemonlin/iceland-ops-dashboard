@@ -30,9 +30,11 @@ test("the trigger file exists and holds no production data", () => {
   assert.equal(/\{|\}|\[|"status"|"data"|"generatedAt"/.test(contents), false, "no collected data may live here");
 });
 
-test("the hourly schedule runs on the hour, in UTC", () => {
+test("the hourly schedule runs off the hour, in UTC", () => {
   const workflow = snapshotWorkflow();
-  assert.match(workflow, /schedule:\s*\n\s*- cron: "0 \* \* \* \*"/);
+  // Deliberately not on the hour: GitHub treats the top of the hour as a high-load window for
+  // scheduled Actions, where queued runs are likelier to be delayed or dropped.
+  assert.match(workflow, /schedule:\s*\n\s*- cron: "17 \* \* \* \*"/);
   // Exactly one cron entry: a second would double-collect.
   assert.equal([...workflow.matchAll(/cron:/g)].length, 1);
 });
