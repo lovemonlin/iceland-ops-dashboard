@@ -97,8 +97,18 @@ export const IMO_API_VERSION = "2026-04-14";
  * Operational policy for this dashboard, not a guarantee from any provider.
  */
 export const SOURCE_STALE_AFTER_SECONDS = {
-  /** Locationforecast is reissued roughly hourly. */
-  metno: 3 * 3600,
+  /**
+   * `meta.updated_at` is the model *issue* time, not the moment the response was refreshed, so it
+   * legitimately lags by hours. Measured 2026-09-04 04:30 UTC: 183-184 minutes, identical across
+   * Reykjavik, Akureyri, Vik and Isafjordur, while `Last-Modified` was 15 minutes old and the first
+   * timeseries entry was the current hour. An earlier 3-hour threshold therefore reported STALE on
+   * perfectly current data.
+   *
+   * TODO: refine against a longer observation. The authoritative "ask again" signal is MET's
+   * `Expires` header (~30 min), which the app uses for caching; adopting it here would be sharper
+   * than ageing `updated_at`.
+   */
+  metno: 8 * 3600,
   /** planetary_k_index_1m updates every minute. */
   noaaKp: 3600,
   /** The summary products update about once a minute. */

@@ -358,6 +358,17 @@ builds one from `BuildConfig.CONTACT_EMAIL`. **That private email is deliberatel
 this repository is public. The default identifies the project by its public repository URL, and
 `METNO_USER_AGENT` overrides it if a contact address is ever preferred.
 
+### MET Norway freshness recalibrated (2026-09-04)
+
+`meta.updated_at` is the model **issue** time, not when the response was refreshed. Measured at
+04:30 UTC it ran 183-184 minutes behind on Reykjavik, Akureyri, Vik and Isafjordur simultaneously,
+while `Last-Modified` was 15 minutes old and the first timeseries entry was the current hour. The
+3-hour threshold set in step 11 therefore reported STALE on perfectly current data. Raised to
+8 hours, with a regression test pinning that a ~3-hour lag stays OK.
+
+TODO: MET's `Expires` header (~30 min) is the authoritative "ask again" signal and would be a
+sharper freshness check than ageing `updated_at`.
+
 ### Two real bugs the production run exposed
 
 1. **IMO answers `204 No Content`** when nothing is active. Reading the body as JSON reported

@@ -82,6 +82,13 @@ const forecast = (updatedAt = RECENT) => ({
 
 const twoSites = WEATHER_SITES.filter((site) => site.id === "reykjavik" || site.id === "akureyri");
 
+test("MET: a normal few-hour model issue lag is not STALE", async () => {
+  // Measured against production: updated_at ran 183 minutes behind on every site at once.
+  const lagging = new Date(NOW.getTime() - 183 * 60_000).toISOString();
+  const health = await checkMetno({ now: NOW, sites: twoSites, request: stub({ [METNO_FORECAST_URL]: { body: forecast(lagging) } }) });
+  assert.equal(health.status, "ok");
+});
+
 test("MET: a successful collection records values, provenance and location counts", async () => {
   const health = await checkMetno({ now: NOW, sites: twoSites, request: stub({ [METNO_FORECAST_URL]: { body: forecast() } }) });
   assert.equal(health.status, "ok");
@@ -148,7 +155,9 @@ test("MET: HTTP 200 with a broken body is still a failure", async () => {
 });
 
 test("MET: an old forecast issue time is STALE", async () => {
-  const old = "2026-09-04T02:00:00Z";
+  // Well past the threshold: `updated_at` is the model issue time and normally lags a few hours,
+  // so only a genuinely stuck feed should trip this.
+  const old = "2026-09-03T22:00:00Z";
   const health = await checkMetno({ now: NOW, sites: twoSites, request: stub({ [METNO_FORECAST_URL]: { body: forecast(old) } }) });
   assert.equal(health.status, "stale");
   assert.equal(health.errorType, "STALE_DATA");
