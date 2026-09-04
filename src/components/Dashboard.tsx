@@ -125,6 +125,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
             Snapshot age: <strong className={overdue ? "error" : "ok"}>{ageMinutes ?? "—"} min</strong> · data
             collection target: every {SNAPSHOT_INTERVAL_MINUTES} min
             {snapshot.scheduledFor ? ` · next due ${formatShortClock(snapshot.scheduledFor, "UTC")} UTC` : ""}
+            {snapshot.trigger ? ` · started by ${snapshot.trigger}` : ""}
           </p>
           {reloadError && <p className="error">Could not re-read the snapshot ({reloadError}); showing the last one.</p>}
         </div>

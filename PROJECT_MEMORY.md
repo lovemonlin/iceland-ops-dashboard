@@ -245,23 +245,41 @@ outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
 ## Hourly update automation (2026-09-04)
 
-The hourly beat comes from an **external AI scheduler**, not from GitHub cron. There is no
-`schedule:` in any workflow in this repository, and a test asserts that.
+**Primary production scheduler: a GitHub Actions hourly schedule**, `cron: "0 * * * *"` (UTC),
+i.e. every hour on the hour, which is 08:00, 09:00, 10:00 ... Taipei.
 
 ```
-AI scheduler → automation/hourly-trigger.txt → push
-             → Update Dashboard Snapshot → npm run snapshot
-             → commits public/data/latest-health.json → calls the Pages deploy
+GitHub schedule (hourly)  →  Update Dashboard Snapshot  →  npm run snapshot
+                          →  commits public/data/latest-health.json  →  calls the Pages deploy
 ```
 
-The scheduler writes nothing but a timestamp into the trigger file. It must never touch source code,
-`package.json`, workflows, configuration or the snapshot itself.
+`automation/hourly-trigger.txt` is **kept** as a manual, external and emergency trigger: writing to
+it starts the same collection. Anything using it must write nothing but a timestamp, and must never
+touch source code, `package.json`, workflows, configuration or the snapshot itself.
+
+### Why this replaced the AI scheduler (2026-09-04 decision)
+
+The ChatGPT GitHub integration has read access only in this environment, so it cannot reliably write
+the trigger file. A GitHub schedule needs no credential and no machine of the user's to be switched on.
+
+**Known trade-off, accepted deliberately:** GitHub documents scheduled events as best-effort, and
+step 8.1 measured this account's other repository delivering a three-hourly cron every 134-401
+minutes. An hourly cron may therefore slip. That is precisely what the SCHEDULED UPDATE OVERDUE
+banner exists to show, so the 60-minute target and 90-minute threshold stay as they are. GitHub also
+disables scheduled workflows in public repositories after 60 days without repository activity — a
+snapshot commit every hour counts as activity, so this should not arise while the schedule works.
+
+### Trigger provenance
+
+The snapshot carries an optional `trigger` field (`schedule`, `workflow_dispatch`, `push`, or
+`local` for `npm run snapshot` on a workstation), set from `github.event_name` via the
+`SNAPSHOT_TRIGGER` environment variable. The header shows it. No other schema change was needed.
 
 ### Workflows
 
 | File | Trigger | Permissions |
 | --- | --- | --- |
-| `.github/workflows/update-dashboard-snapshot.yml` | push to `automation/hourly-trigger.txt`, `workflow_dispatch` | `contents: write` on the collecting job; `contents: read` + `pages: write` + `id-token: write` on the deploy call |
+| `.github/workflows/update-dashboard-snapshot.yml` | hourly `schedule`, push to `automation/hourly-trigger.txt`, `workflow_dispatch` | `contents: write` on the collecting job; `contents: read` + `pages: write` + `id-token: write` on the deploy call |
 | `.github/workflows/deploy-pages.yml` | push to `main` (ignoring the trigger file), `workflow_dispatch`, `workflow_call` | `contents: read`, `pages: write`, `id-token: write` |
 
 Built-in `GITHUB_TOKEN` only. No PAT, no secret, nothing stored.
@@ -283,6 +301,9 @@ Three independent layers, the first of which is structural:
 2. A guard step lists the working tree and fails the run if anything other than the snapshot changed.
    `git add` names exactly one path; a blanket `git add .` is never used.
 3. GitHub does not start workflows from `GITHUB_TOKEN` pushes anyway.
+
+Adding the schedule does not weaken any of this: a scheduled run writes the same single file and
+is not triggered by any file at all.
 
 Verified in production: a trigger push produced exactly one workflow run, and the bot's snapshot
 commit produced none.
@@ -632,7 +653,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 198 fully offline tests, no network access:
+`npm test` — 203 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -676,11 +697,13 @@ the header adds Taipei.
   data, partial outage, last-good-data preserved after a failure, the compliant User-Agent and
   four-decimal coordinates, the IMO API-version header, plus a guard that the runtime holds no
   mock reference and every published entry declares production provenance
-- Automation: 10 cases — the trigger file carries no data, the workflow is triggered by that file
-  and never by a schedule, no workflow anywhere carries a cron, least-privilege permissions with
-  no credential, recursion impossible by path and by guard, the Pages deploy ignoring the trigger
-  commit while still publishing the snapshot commit, both jobs building the branch tip, the
-  refusal to publish non-production data, and the banner no longer claiming any mock source
+- Automation: 15 cases — the hourly cron is exactly `0 * * * *` and there is only one of them, all
+  three triggers survive and share a single collecting job, the Pages workflow is never scheduled,
+  the trigger source is recorded, an unchanged snapshot ends the run cleanly, the trigger file
+  carries no data, least-privilege permissions with no credential, recursion impossible by path
+  and by guard, the Pages deploy ignoring the trigger commit while still publishing the snapshot
+  commit, both jobs building the branch tip, the refusal to publish non-production data, the
+  60/90 minute overdue policy, and the banner no longer claiming any mock source
 - time and session-event helpers, network diagnostics
 
 No test depends on the wall clock, and no test reaches production or the GitHub API.
@@ -689,11 +712,13 @@ No test depends on the wall clock, and no test reaches production or the GitHub 
 
 Do not proceed automatically.
 
-The pipeline is complete and verified end to end. **All that remains is pointing the external AI
-scheduler at the trigger file**: once an hour, write a new timestamp into
-`automation/hourly-trigger.txt` on `main`. Everything after that is automatic, needs no
-credential of its own beyond whatever the scheduler uses to commit that one file, and must not
-touch anything else.
+The pipeline is complete, scheduled and verified end to end. Nothing needs to be started or kept
+running: the hourly GitHub schedule collects, commits and publishes on its own.
+
+What is worth watching next is whether GitHub actually delivers the hourly schedule. The
+dashboard measures this itself — if the SCHEDULED UPDATE OVERDUE banner appears regularly, the
+schedule is slipping and an external trigger writing `automation/hourly-trigger.txt` becomes the
+fallback worth wiring up.
 
 Writing to `iceland-aurora`, `iceland-aurora-ios` or `iceland-aurora-cloud` remains forbidden.
 

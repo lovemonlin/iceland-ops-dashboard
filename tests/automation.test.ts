@@ -30,21 +30,50 @@ test("the trigger file exists and holds no production data", () => {
   assert.equal(/\{|\}|\[|"status"|"data"|"generatedAt"/.test(contents), false, "no collected data may live here");
 });
 
-test("the snapshot workflow is triggered by the trigger file, never by a schedule", () => {
+test("the hourly schedule runs on the hour, in UTC", () => {
+  const workflow = snapshotWorkflow();
+  assert.match(workflow, /schedule:\s*\n\s*- cron: "0 \* \* \* \*"/);
+  // Exactly one cron entry: a second would double-collect.
+  assert.equal([...workflow.matchAll(/cron:/g)].length, 1);
+});
+
+test("all three triggers survive: schedule, trigger-file push and manual dispatch", () => {
+  const workflow = snapshotWorkflow();
+  assert.match(workflow, /schedule:/);
+  assert.match(workflow, /push:\s*\n\s*paths:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
+  assert.match(workflow, /workflow_dispatch:/);
+});
+
+test("every trigger runs the same job; there is no second snapshot runner", () => {
   const workflow = snapshotWorkflow();
 
-  assert.match(workflow, /on:\s*\n\s*push:\s*\n\s*paths:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
-  assert.match(workflow, /workflow_dispatch:/);
-  assert.equal(/^\s*schedule:/m.test(workflow), false, "this must never become a scheduled workflow");
+  // One collecting job, one collection step, shared by all three triggers.
+  assert.equal([...workflow.matchAll(/npm run snapshot/g)].length, 1);
+  assert.equal([...workflow.matchAll(/^ {2}snapshot:$/gm)].length, 1);
+  // Nothing in the job branches on which event started it.
+  assert.equal(/if:\s*github\.event_name/.test(workflow), false);
+  // And no other workflow collects.
+  assert.equal(/npm run snapshot/.test(pagesWorkflow()), false);
+});
+
+test("only the snapshot workflow is scheduled; the Pages deploy never is", () => {
+  const workflow = pagesWorkflow();
+  assert.equal(/^\s*schedule:/m.test(workflow), false);
   assert.equal(/cron:/.test(workflow), false);
 });
 
-test("no workflow anywhere uses a GitHub schedule", () => {
-  for (const file of [".github/workflows/update-dashboard-snapshot.yml", ".github/workflows/deploy-pages.yml"]) {
-    const workflow = directives(file);
-    assert.equal(/^\s*schedule:/m.test(workflow), false, `${file} must not be scheduled`);
-    assert.equal(/cron:/.test(workflow), false, `${file} must not carry a cron`);
-  }
+test("the collection records which trigger started it", () => {
+  assert.match(snapshotWorkflow(), /SNAPSHOT_TRIGGER: \$\{\{ github\.event_name \}\}/);
+  assert.match(read("scripts/snapshot.ts"), /process\.env\.SNAPSHOT_TRIGGER/);
+});
+
+test("an unchanged snapshot ends the run cleanly rather than failing it", () => {
+  const workflow = snapshotWorkflow();
+  // The commit step exits 0 when there is nothing to commit...
+  assert.match(workflow, /Snapshot is unchanged; nothing to commit\./);
+  assert.match(workflow, /changed=false/);
+  // ...and the deploy is skipped rather than failing.
+  assert.match(workflow, /if: needs\.snapshot\.outputs\.changed == 'true'/);
 });
 
 test("the collecting job holds the minimum permission it needs, and no credential", () => {
@@ -114,4 +143,11 @@ test("the banner no longer claims any source is mock data", () => {
   const dashboard = read("src/components/Dashboard.tsx");
   assert.match(dashboard, /ALL PRODUCTION DATA/);
   assert.equal(/MOCK/i.test(dashboard), false);
+});
+
+test("the overdue policy stays at 60 minutes expected, 90 minutes overdue", () => {
+  const config = read("src/config/snapshot.ts");
+  assert.match(config, /SNAPSHOT_INTERVAL_MINUTES = 60/);
+  // Deliberately not relaxed because GitHub schedules can slip: slippage is the finding.
+  assert.match(config, /SNAPSHOT_OVERDUE_MINUTES = 90/);
 });

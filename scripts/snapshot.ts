@@ -26,7 +26,8 @@ async function main() {
   }
 
   const { monitors } = await runAllMonitors({ now });
-  const snapshot = buildSnapshot(existing.ok ? existing.snapshot : undefined, monitors, now);
+  // Set by the workflow to github.event_name; absent when run on a workstation.
+  const snapshot = buildSnapshot(existing.ok ? existing.snapshot : undefined, monitors, now, process.env.SNAPSHOT_TRIGGER);
   await writeSnapshot(path, snapshot);
 
   const width = Math.max(...allSnapshotEntries(snapshot).map((entry) => entry.name.length));
@@ -34,6 +35,7 @@ async function main() {
   console.log(`Generated:  ${snapshot.generatedAt}`);
   console.log(`Next due:   ${snapshot.scheduledFor}`);
   console.log(`Overall:    ${snapshot.overallStatus.toUpperCase()}`);
+  console.log(`Trigger:    ${snapshot.trigger}`);
   console.log(`Written to: ${path}\n`);
 
   for (const entry of allSnapshotEntries(snapshot)) {

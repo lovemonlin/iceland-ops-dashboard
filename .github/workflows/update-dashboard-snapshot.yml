@@ -1,15 +1,20 @@
 # Collects production data and publishes the result.
 #
-# Triggered by an external AI scheduler touching automation/hourly-trigger.txt, NOT by a GitHub
-# schedule: scheduled triggers on this account were measured delivering every 2-4 hours against a
-# five-minute cron, so they are not trusted for this.
+# The hourly beat is a GitHub schedule. Note that GitHub documents scheduled events as best-effort:
+# they can be delayed under load, and this account's other repository was measured delivering a
+# three-hourly cron every 134-401 minutes. The dashboard's own SCHEDULED UPDATE OVERDUE banner is
+# what makes any such slippage visible, so the 60/90 minute policy is deliberately not relaxed.
 name: Update Dashboard Snapshot
 
 on:
+  # Primary production trigger.
+  schedule:
+    - cron: "0 * * * *"
+  # Kept for manual and external triggering: writing to this file still starts a collection.
   push:
     paths:
       - "automation/hourly-trigger.txt"
-  # Lets a collection be run by hand without waiting for the scheduler.
+  # Lets a collection be run by hand without waiting for the next hour.
   workflow_dispatch:
 
 # Never collect twice at once; a newer trigger supersedes one still running.
@@ -39,6 +44,9 @@ jobs:
 
       # The only step that contacts production. Read-only: GET and HEAD.
       - name: Collect production snapshot
+        # Recorded in the snapshot so a reader can tell a scheduled round from a manual one.
+        env:
+          SNAPSHOT_TRIGGER: ${{ github.event_name }}
         run: npm run snapshot
 
       - name: Validate the snapshot

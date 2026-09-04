@@ -44,6 +44,11 @@ export interface DashboardSnapshot {
   generatedAt: string;
   /** ISO 8601. When the next scheduled collection is expected. */
   scheduledFor?: string;
+  /**
+   * What started this collection: "schedule" for the hourly GitHub job, "workflow_dispatch" for a
+   * manual run, "push" for the trigger file, "local" for `npm run snapshot` on a workstation.
+   */
+  trigger?: string;
   overallStatus: HealthStatus;
   sources: Record<string, SnapshotSource>;
   pipelines?: Record<string, SnapshotPipeline>;

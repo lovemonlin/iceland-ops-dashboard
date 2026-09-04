@@ -223,11 +223,19 @@ recovery. Nothing has to run on anyone's machine for the site to stay up.
 
 ### How the hourly update works
 
-The scheduler's only job is to write something new into `automation/hourly-trigger.txt` — a
-timestamp is enough. It never touches source code, configuration, the workflow or the snapshot.
+`.github/workflows/update-dashboard-snapshot.yml` runs on three triggers, all of which do exactly
+the same work:
 
-`.github/workflows/update-dashboard-snapshot.yml` picks that push up and, using only the built-in
-`GITHUB_TOKEN` with `contents: write`:
+| Trigger | When |
+| --- | --- |
+| `schedule` | every hour on the hour, UTC — the production mechanism |
+| `push` to `automation/hourly-trigger.txt` | manual or external triggering |
+| `workflow_dispatch` | a run started by hand from the Actions tab |
+
+Which one started a round is recorded in the snapshot as `trigger` and shown in the header, so a
+scheduled collection is distinguishable from a manual one after the fact.
+
+Using only the built-in `GITHUB_TOKEN` with `contents: write`, the job:
 
 1. checks out the branch tip, so a monitor or endpoint changed since the trigger is included;
 2. runs `npm run snapshot`;

@@ -15,6 +15,7 @@ export function buildSnapshot(
   previous: DashboardSnapshot | undefined,
   monitors: MonitorHealth[],
   now: Date,
+  trigger?: string,
 ): DashboardSnapshot {
   const generatedAt = now.toISOString();
 
@@ -28,6 +29,7 @@ export function buildSnapshot(
     schemaVersion: SNAPSHOT_SCHEMA_VERSION,
     generatedAt,
     scheduledFor: new Date(now.getTime() + SNAPSHOT_INTERVAL_MINUTES * 60_000).toISOString(),
+    trigger: trigger ?? "local",
     overallStatus: "ok",
     sources,
     pipelines,
