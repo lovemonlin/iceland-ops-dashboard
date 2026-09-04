@@ -221,14 +221,84 @@ that one file to `main` is what publishes new data: the Pages workflow rebuilds 
 `npm run snapshot` runs the same collection locally, for development, manual validation and
 recovery. Nothing has to run on anyone's machine for the site to stay up.
 
-### How the hourly update works
+### The Windows hourly runner
+
+`scripts\hourly-snapshot.ps1` is a single-shot, deliberately conservative collection:
+
+```
+acquire lock -> verify branch and clean tree -> push anything left unpushed
+-> pull --ff-only -> npm run snapshot -> validate -> guard changed files
+-> commit only the snapshot -> push -> log -> release lock
+```
+
+It never stashes, resets, checks out, cleans, merges, rebases or force-pushes, and it refuses to
+run at all if the working tree has your own uncommitted work in it. It holds no credential: pushing
+uses whatever Git credential helper the machine already has. Anything unexpected stops the run and
+leaves the previously published snapshot in place.
+
+Log: `logs/hourly-snapshot.log`, rotated to `.1` past 5 MB. Lock: `.runtime/hourly-snapshot.lock`,
+released on exit and treated as abandoned after 30 minutes so a crash cannot wedge every later run.
+Both directories are gitignored.
+
+Run it by hand at any time:
+
+```powershell
+.\scripts\hourly-snapshot.ps1          # skips if the snapshot is under 45 minutes old
+.\scripts\hourly-snapshot.ps1 -Force   # collect regardless
+```
+
+Its safety behaviour is covered by `scripts\test-hourly-snapshot.ps1`, which builds throwaway
+repositories with a fake collector and never touches this one:
+
+```powershell
+.\scripts\test-hourly-snapshot.ps1
+```
+
+### Registering the scheduled task
+
+Runs hourly at seven minutes past, deliberately off the hour so it does not compete with everything
+else that fires on the hour:
+
+```powershell
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
+  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\hourly-snapshot.ps1"' `
+  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
+
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(7) `
+  -RepetitionInterval (New-TimeSpan -Hours 1)
+
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
+  -RestartInterval (New-TimeSpan -Minutes 15) -RestartCount 2 -WakeToRun
+
+Register-ScheduledTask -TaskName 'Iceland Ops Dashboard Hourly Snapshot' `
+  -Action $action -Trigger $trigger -Settings $settings -Force
+```
+
+`-StartWhenAvailable` catches up a run missed while the machine was off; `IgnoreNew` means a run
+still going is never doubled up; `-WakeToRun` wakes a sleeping machine.
+
+To inspect or remove it:
+
+```powershell
+Get-ScheduledTask   -TaskName 'Iceland Ops Dashboard Hourly Snapshot'
+Get-ScheduledTaskInfo -TaskName 'Iceland Ops Dashboard Hourly Snapshot'
+Unregister-ScheduledTask -TaskName 'Iceland Ops Dashboard Hourly Snapshot' -Confirm:$false
+```
+
+The task runs as the logged-on user, so no password is stored anywhere. That means it needs you to
+stay signed in - locking the screen and turning the monitor off are fine, and so is sleep if the
+wake setting is honoured, but signing out or shutting down stops it. For genuine 24/7, set sleep to
+Never while on mains power.
+
+### The backup GitHub trigger
 
 `.github/workflows/update-dashboard-snapshot.yml` runs on three triggers, all of which do exactly
 the same work:
 
 | Trigger | When |
 | --- | --- |
-| `schedule` | every hour on the hour, UTC — the production mechanism |
+| `schedule` | hourly at :17 UTC — a backup for the Windows runner, not the primary |
 | `push` to `automation/hourly-trigger.txt` | manual or external triggering |
 | `workflow_dispatch` | a run started by hand from the Actions tab |
 
