@@ -273,6 +273,8 @@ try {
 
     Push-Location $RepositoryPath
     try {
+        # Recorded in the snapshot, so a Windows collection is distinguishable from GitHub's.
+        $env:SNAPSHOT_TRIGGER = 'windows'
         $run = Invoke-Native -Command 'npm' -Arguments @('run', 'snapshot')
     } finally {
         Pop-Location

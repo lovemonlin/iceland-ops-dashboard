@@ -118,12 +118,18 @@ test("the two schedulers cannot both collect within the same hour", () => {
   assert.match(script, /\[switch\] \$Force/);
 });
 
+test("a Windows collection is labelled so it can be told apart from GitHub's", () => {
+  assert.match(directives(), /\$env:SNAPSHOT_TRIGGER = 'windows'/);
+});
+
 test("the Task Scheduler registration is documented and reproducible", () => {
   const readme = read("README.md");
   assert.match(readme, /Iceland Ops Dashboard Hourly Snapshot/);
   assert.match(readme, /schtasks|Register-ScheduledTask/);
   assert.match(readme, /-NoProfile -ExecutionPolicy Bypass -File/);
   assert.match(readme, /hourly-snapshot\.ps1/);
+  // Task Scheduler skips a run on battery and kills one mid-flight when the mains go, by default.
+  assert.match(readme, /-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/);
 });
 
 test("the safety behaviour is covered by a harness that never uses the real repository", () => {

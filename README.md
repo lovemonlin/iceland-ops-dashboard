@@ -269,14 +269,18 @@ $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(7) `
 
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
   -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
-  -RestartInterval (New-TimeSpan -Minutes 15) -RestartCount 2 -WakeToRun
+  -RestartInterval (New-TimeSpan -Minutes 15) -RestartCount 2 -WakeToRun `
+  -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
 Register-ScheduledTask -TaskName 'Iceland Ops Dashboard Hourly Snapshot' `
+  -Description 'Collects the Iceland Ops Dashboard production snapshot once an hour and publishes it.' `
   -Action $action -Trigger $trigger -Settings $settings -Force
 ```
 
 `-StartWhenAvailable` catches up a run missed while the machine was off; `IgnoreNew` means a run
-still going is never doubled up; `-WakeToRun` wakes a sleeping machine.
+still going is never doubled up; `-WakeToRun` wakes a sleeping machine. The two battery flags are
+not optional on a laptop: Task Scheduler's defaults are to skip the run on battery and to kill one
+already going when the mains are pulled, which would silently drop hours.
 
 To inspect or remove it:
 
