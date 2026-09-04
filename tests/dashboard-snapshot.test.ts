@@ -36,6 +36,7 @@ test("13. no page or component can reach a production monitor", async () => {
     "src/app/layout.tsx",
     "src/components/Dashboard.tsx",
     "src/components/StatusCard.tsx",
+    "src/components/SourceSections.tsx",
   ];
 
   for (const file of files) {
@@ -107,8 +108,9 @@ test("17. the browser reload path reads the snapshot file, not a monitor endpoin
   assert.match(dashboard, /getSnapshotUrl/);
   assert.equal(dashboard.includes("/api/health"), false);
   assert.equal(SNAPSHOT_PUBLIC_PATH, "/data/latest-health.json");
-  // The button says what it does.
-  assert.match(dashboard, /Reload latest snapshot/);
+  // The button says what it does, and says it in the reader's language.
+  assert.match(dashboard, /重新讀取最新資料/);
+  assert.match(dashboard, /只重新讀取 Dashboard 已發布的資料，不會重新向來源網站抓取。/);
 });
 
 test("the snapshot the dashboard reads is the one the script writes", () => {

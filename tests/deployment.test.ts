@@ -69,7 +69,13 @@ test("5. only the snapshot request is cache-busted, not the whole site", () => {
 });
 
 test("6. nothing the browser loads can reach a production API", () => {
-  for (const file of ["src/app/page.tsx", "src/app/layout.tsx", "src/components/Dashboard.tsx", "src/components/StatusCard.tsx"]) {
+  for (const file of [
+    "src/app/page.tsx",
+    "src/app/layout.tsx",
+    "src/components/Dashboard.tsx",
+    "src/components/StatusCard.tsx",
+    "src/components/SourceSections.tsx",
+  ]) {
     const source = read(file);
     for (const forbidden of [
       "runAllMonitors",

@@ -30,18 +30,17 @@ test("the trigger file exists and holds no production data", () => {
   assert.equal(/\{|\}|\[|"status"|"data"|"generatedAt"/.test(contents), false, "no collected data may live here");
 });
 
-test("the hourly schedule runs off the hour, in UTC", () => {
+test("GitHub no longer schedules anything; the hourly beat is the Windows runner alone", () => {
   const workflow = snapshotWorkflow();
-  // Deliberately not on the hour: GitHub treats the top of the hour as a high-load window for
-  // scheduled Actions, where queued runs are likelier to be delayed or dropped.
-  assert.match(workflow, /schedule:\s*\n\s*- cron: "17 \* \* \* \*"/);
-  // Exactly one cron entry: a second would double-collect.
-  assert.equal([...workflow.matchAll(/cron:/g)].length, 1);
+  // The cron was removed on 2026-09-04 after it delivered one of six due occurrences. Leaving a
+  // second scheduler in place only reintroduces the double-collection question it was solving.
+  assert.equal(/^\s*schedule:/m.test(workflow), false);
+  assert.equal([...workflow.matchAll(/cron:/g)].length, 0);
+  assert.equal(/^\s*schedule:/m.test(pagesWorkflow()), false);
 });
 
-test("all three triggers survive: schedule, trigger-file push and manual dispatch", () => {
+test("both remaining triggers survive: trigger-file push and manual dispatch", () => {
   const workflow = snapshotWorkflow();
-  assert.match(workflow, /schedule:/);
   assert.match(workflow, /push:\s*\n\s*paths:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
   assert.match(workflow, /workflow_dispatch:/);
 });

@@ -20,13 +20,13 @@ export default async function Home() {
       <main>
         <header>
           <div>
-            <p className="eyebrow">SCHEDULED SNAPSHOT</p>
+            <p className="eyebrow">ALL PRODUCTION DATA</p>
             <h1>ICELAND OPS DASHBOARD</h1>
-            <p className="error">No snapshot is available yet.</p>
+            <p className="error">目前還沒有任何資料快照。</p>
           </div>
         </header>
         <section className="summary">
-          <h2>WAITING FOR THE FIRST SCHEDULED COLLECTION</h2>
+          <h2>等待第一次自動收集</h2>
           <p>{result.message}</p>
         </section>
       </main>

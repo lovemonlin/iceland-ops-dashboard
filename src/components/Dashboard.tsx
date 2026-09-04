@@ -1,25 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StatusCard } from "@/components/StatusCard";
-import { LIVE_MONITOR_IDS, MONITOR_IDS } from "@/config/monitors";
-import { SNAPSHOT_INTERVAL_MINUTES, SNAPSHOT_OVERDUE_MINUTES, SNAPSHOT_RELOAD_MS } from "@/config/snapshot";
+import { AuroraSection, PipelineSection, RoadsSection, WarningsSection, WeatherSection } from "@/components/SourceSections";
+import { StatusPill } from "@/components/StatusCard";
+import { LIVE_MONITOR_IDS, MONITOR_IDS, PIPELINE_MONITOR_IDS } from "@/config/monitors";
+import { SNAPSHOT_INTERVAL_MINUTES, SNAPSHOT_RELOAD_MS } from "@/config/snapshot";
 import type { HealthStatus } from "@/health/model";
+import {
+  formatHealthSummary,
+  formatRelativeAge,
+  formatSnapshotFreshness,
+  formatSourceStatus,
+  formatTaipeiTime,
+  formatTrigger,
+  TONE_DOT,
+} from "@/lib/display";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
 import { getSnapshotUrl } from "@/lib/publicPath";
-import { formatClock, formatDateTime, formatShortClock, ICELAND_TIME_ZONE, TAIWAN_TIME_ZONE } from "@/lib/time";
+import { formatShortClock, ICELAND_TIME_ZONE } from "@/lib/time";
 import { buildIncidents, dataAgeMinutes, type IncidentGroup } from "@/monitors/correlate";
 import { snapshotAgeMinutes, snapshotEntry, allSnapshotEntries, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
 
-const groups: [string, string[]][] = [
-  ["WEATHER", ["metno"]],
-  ["ROADS", ["irca"]],
-  ["AURORA", ["noaaKp", "solarWind", "ovation"]],
-  ["FORECAST / WARNINGS", ["ecmwf", "imo"]],
-  ["PIPELINES", ["ircaPipeline", "ecmwfPipeline"]],
-];
-
-const order: HealthStatus[] = ["ok", "info", "stale", "degraded", "error"];
 const dot: Record<HealthStatus, string> = { ok: "🟢", info: "🔵", stale: "🟡", degraded: "🟠", error: "🔴" };
 
 export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnapshot }) {
@@ -92,103 +93,119 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
   }, [autoReload, reloadSnapshot]);
 
   const entries = allSnapshotEntries(snapshot);
-  const summary = order.map((status) => [status, entries.filter((entry) => entry.status === status).length] as const);
   const incidents = buildIncidents(snapshot, now);
   const ageMinutes = snapshotAgeMinutes(snapshot, now);
-  const overdue = ageMinutes !== undefined && ageMinutes > SNAPSHOT_OVERDUE_MINUTES;
+  const freshness = formatSnapshotFreshness(ageMinutes);
+  const health = formatHealthSummary(entries);
+  const pipelines = PIPELINE_MONITOR_IDS.map((id) => snapshotEntry(snapshot, id)).filter(
+    (entry): entry is SnapshotSource => entry !== undefined,
+  );
 
   return (
     <main>
-      {overdue && (
+      {freshness.overdue && (
         <section className="overdue">
-          <strong>⚠ SCHEDULED UPDATE OVERDUE</strong>
-          <p>
-            The dashboard snapshot has not been refreshed for {ageMinutes} minutes. Collection is expected every{" "}
-            {SNAPSHOT_INTERVAL_MINUTES} minutes. Everything below is the last snapshot that was produced — the source
-            statuses may no longer reflect reality.
-          </p>
+          <strong>⚠ {freshness.title}</strong>
+          <p>{freshness.detail}</p>
+          <p className="eyebrow">snapshot 已超過 {ageMinutes} 分鐘沒有重新產生。</p>
         </section>
       )}
 
       <header>
         <div>
           <p className="eyebrow">
-            SCHEDULED SNAPSHOT · {LIVE_MONITOR_IDS.length} OF {MONITOR_IDS.length} SOURCES LIVE · ALL PRODUCTION DATA
+            ALL PRODUCTION DATA · {LIVE_MONITOR_IDS.length} / {MONITOR_IDS.length} 個來源皆為真實資料
           </p>
           <h1>ICELAND OPS DASHBOARD</h1>
-          <p>
-            Latest scheduled snapshot: {formatDateTime(snapshot.generatedAt, "UTC")} UTC ·{" "}
-            {formatClock(snapshot.generatedAt, ICELAND_TIME_ZONE)} Iceland ·{" "}
-            {formatClock(snapshot.generatedAt, TAIWAN_TIME_ZONE)} Taipei
+          <div className="header-facts">
+            <span>
+              最後更新：<strong>{formatTaipeiTime(snapshot.generatedAt)}</strong>
+            </span>
+            <span>
+              更新於：<strong>{formatRelativeAge(ageMinutes)}</strong>
+            </span>
+            {snapshot.scheduledFor && (
+              <span>
+                下一次更新：<strong>約 {formatTaipeiTime(snapshot.scheduledFor)}</strong>
+              </span>
+            )}
+            <span>
+              更新來源：<strong>{formatTrigger(snapshot.trigger)}</strong>
+            </span>
+          </div>
+          <p className="eyebrow">
+            時間為台北時間 · {formatShortClock(snapshot.generatedAt, "UTC")} UTC ·{" "}
+            {formatShortClock(snapshot.generatedAt, ICELAND_TIME_ZONE)} Iceland · 每 {SNAPSHOT_INTERVAL_MINUTES}{" "}
+            分鐘更新一次
           </p>
-          <p>
-            Snapshot age: <strong className={overdue ? "error" : "ok"}>{ageMinutes ?? "—"} min</strong> · data
-            collection target: every {SNAPSHOT_INTERVAL_MINUTES} min
-            {snapshot.scheduledFor ? ` · next due ${formatShortClock(snapshot.scheduledFor, "UTC")} UTC` : ""}
-            {snapshot.trigger ? ` · started by ${snapshot.trigger}` : ""}
-          </p>
-          {reloadError && <p className="error">Could not re-read the snapshot ({reloadError}); showing the last one.</p>}
+          {reloadError && <p className="error">無法重新讀取資料（{reloadError}），畫面顯示的是上一份資料。</p>}
         </div>
         <div className="refresh">
           <span>
-            Auto reload: <strong className={autoReload ? "ok" : "stale"}>{autoReload ? "ON" : "OFF"}</strong> (
-            {SNAPSHOT_RELOAD_MS / 60_000} min)
+            自動重新讀取：<strong className={autoReload ? "ok" : "warn"}>{autoReload ? "開啟" : "關閉"}</strong>（每{" "}
+            {SNAPSHOT_RELOAD_MS / 60_000} 分鐘）
           </span>
           <div className="refresh-buttons">
             <button type="button" onClick={reloadSnapshot} disabled={loading}>
-              {loading ? "Reading…" : "Reload latest snapshot"}
+              {loading ? "讀取中…" : "重新讀取最新資料"}
             </button>
             <button type="button" onClick={() => setAutoReload((value) => !value)}>
-              {autoReload ? "Pause auto reload" : "Resume auto reload"}
+              {autoReload ? "暫停自動讀取" : "恢復自動讀取"}
             </button>
           </div>
-          <span className="eyebrow">Reload reads the snapshot file only; it does not re-check production.</span>
+          <span className="eyebrow">只重新讀取 Dashboard 已發布的資料，不會重新向來源網站抓取。</span>
         </div>
       </header>
 
       <section className="summary">
-        <h2>SYSTEM HEALTH</h2>
-        <div>
-          <span className={`summary-item ${snapshot.overallStatus}`}>
-            {dot[snapshot.overallStatus]} OVERALL: {snapshot.overallStatus.toUpperCase()}
-          </span>
-          {summary.map(([status, count]) => (
-            <span key={status} className={`summary-item ${status}`}>
-              {dot[status]} {count} {status.toUpperCase()}
-            </span>
-          ))}
+        <h2>資料狀態</h2>
+        <p className={`summary-headline ${health.tone}`}>
+          {TONE_DOT[health.tone]} {health.headline}
+        </p>
+        <div className="summary-counts">
+          <StatusPill tone="ok" label={`正常 ${health.normal}`} />
+          <StatusPill tone="warn" label={`需注意 ${health.attention}`} />
+          <StatusPill tone="error" label={`異常 ${health.failing}`} />
         </div>
       </section>
 
-      {groups.map(([title, ids]) => (
-        <section key={title}>
-          <h2>{title}</h2>
-          <div className="cards">
-            {ids.map((id) => {
-              const entry = snapshotEntry(snapshot, id);
-              return entry ? <StatusCard key={id} entry={entry} /> : null;
-            })}
-          </div>
-        </section>
-      ))}
+      <WeatherSection
+        metno={snapshotEntry(snapshot, "metno")}
+        ecmwf={snapshotEntry(snapshot, "ecmwf")}
+        schemaVersion={snapshot.schemaVersion}
+      />
+      <RoadsSection irca={snapshotEntry(snapshot, "irca")} now={now} schemaVersion={snapshot.schemaVersion} />
+      {/* Paired on a wide screen so all four answers fit one look, stacked on a narrow one. */}
+      <div className="pair">
+        <AuroraSection
+          kp={snapshotEntry(snapshot, "noaaKp")}
+          solarWind={snapshotEntry(snapshot, "solarWind")}
+          ovation={snapshotEntry(snapshot, "ovation")}
+          now={now}
+          schemaVersion={snapshot.schemaVersion}
+        />
+        <WarningsSection imo={snapshotEntry(snapshot, "imo")} schemaVersion={snapshot.schemaVersion} />
+      </div>
+      <PipelineSection pipelines={pipelines} schemaVersion={snapshot.schemaVersion} />
 
-      <section className="bottom-grid">
-        <div>
-          <h2>ACTIVE INCIDENTS ({incidents.length})</h2>
+      <section>
+        <h2>診斷紀錄</h2>
+        <details className="technical">
+          <summary>需要處理的項目（{incidents.length}）</summary>
           {incidents.length === 0 ? (
-            <p className="empty">No stale, degraded, or failing source.</p>
+            <p className="empty">沒有過舊、降級或失敗的來源。</p>
           ) : (
             incidents.map((incident, index) => (
               <Incident key={incident.key} incident={incident} mostUrgent={index === 0} now={now} />
             ))
           )}
-        </div>
-        <div>
-          <h2>SNAPSHOT CHANGES (SESSION ONLY)</h2>
+        </details>
+        <details className="technical">
+          <summary>這次瀏覽期間的狀態變化（{events.length}）</summary>
           <ol className="events">
             {events.map((event) => (
               <li key={event.key}>
-                <time dateTime={event.at}>{formatShortClock(event.at, ICELAND_TIME_ZONE)}</time>
+                <time dateTime={event.at}>{formatTaipeiTime(event.at)}</time>
                 <span>
                   {event.label}
                   {event.detail && <em> · {event.detail}</em>}
@@ -197,7 +214,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
               </li>
             ))}
           </ol>
-        </div>
+        </details>
       </section>
     </main>
   );
@@ -212,25 +229,24 @@ function Incident({
   mostUrgent: boolean;
   now: Date;
 }) {
+  const status = formatSourceStatus({
+    status: incident.status,
+    errorType: incident.entries.find((entry) => entry.errorType)?.errorType,
+  });
   return (
     <article className={`incident ${incident.status}`}>
       <div className="incident-head">
         <strong>
           {dot[incident.status]} {incident.title}
         </strong>
-        <span className={`status ${incident.status}`}>
-          {incident.entries
-            .filter((entry) => entry.errorType)
-            .map((entry) => entry.errorType)
-            .join(" + ") || incident.status.toUpperCase()}
-        </span>
+        <StatusPill tone={status.tone} label={status.label} />
       </div>
       <p>{incident.summary}</p>
       <p className="incident-meta">
         {incident.entries.map((entry) => (
           <IncidentPart key={entry.id} entry={entry} now={now} />
         ))}
-        {mostUrgent && <strong className="urgent">HANDLE THIS FIRST</strong>}
+        {mostUrgent && <strong className="urgent">請優先處理</strong>}
       </p>
     </article>
   );
@@ -241,8 +257,8 @@ function IncidentPart({ entry, now }: { entry: SnapshotSource; now: Date }) {
   return (
     <span className="incident-part">
       <span className={entry.status}>{dot[entry.status]}</span> {entry.name}
-      {entry.dataTime ? ` · data ${formatShortClock(entry.dataTime, ICELAND_TIME_ZONE)}${age === undefined ? "" : ` (${age} min old)`}` : ""}
-      {entry.lastSuccessAt ? ` · collected ${formatShortClock(entry.lastSuccessAt, ICELAND_TIME_ZONE)}` : ""}
+      {entry.dataTime ? ` · 來源資料 ${formatTaipeiTime(entry.dataTime)}${age === undefined ? "" : `（${age} 分鐘前）`}` : ""}
+      {entry.lastSuccessAt ? ` · 最後成功取得 ${formatTaipeiTime(entry.lastSuccessAt)}` : ""}
     </span>
   );
 }

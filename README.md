@@ -194,7 +194,10 @@ npm run build
 Production public sources (ECMWF, IRCA, GitHub Actions, ...)
         |
         v
-Hourly scheduled collection  --  npm run snapshot
+Windows Task Scheduler, hourly at :07  --  scripts\hourly-snapshot.ps1
+        |
+        v
+npm run snapshot
         |
         v
 public/data/latest-health.json  --  the snapshot
@@ -295,19 +298,22 @@ stay signed in - locking the screen and turning the monitor off are fine, and so
 wake setting is honoured, but signing out or shutting down stops it. For genuine 24/7, set sleep to
 Never while on mains power.
 
-### The backup GitHub trigger
+### The remaining GitHub triggers
 
-`.github/workflows/update-dashboard-snapshot.yml` runs on three triggers, all of which do exactly
-the same work:
+The hourly beat is the Windows task above and nothing else. GitHub used to hold a backup
+`cron: "17 * * * *"`; it was removed on 2026-09-04, because scheduled events there are best-effort
+and measured badly — after that cron went live at 05:39 UTC, six occurrences were due by 11:17 and
+exactly **one** fired. A second scheduler that fires unpredictably is worse than no second
+scheduler, so `.github/workflows/update-dashboard-snapshot.yml` now runs only when asked:
 
 | Trigger | When |
 | --- | --- |
-| `schedule` | hourly at :17 UTC — a backup for the Windows runner, not the primary |
 | `push` to `automation/hourly-trigger.txt` | manual or external triggering |
 | `workflow_dispatch` | a run started by hand from the Actions tab |
 
-Which one started a round is recorded in the snapshot as `trigger` and shown in the header, so a
-scheduled collection is distinguishable from a manual one after the fact.
+Which one started a round is recorded in the snapshot as `trigger` and shown in the header as plain
+words ("Windows 自動更新", "GitHub 手動更新"), so a scheduled collection is distinguishable from a
+manual one after the fact.
 
 Using only the built-in `GITHUB_TOKEN` with `contents: write`, the job:
 
