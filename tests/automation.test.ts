@@ -22,9 +22,12 @@ const pagesWorkflow = () => directives(".github/workflows/deploy-pages.yml");
 test("the trigger file exists and holds no production data", () => {
   assert.equal(existsSync(resolve(process.cwd(), TRIGGER_FILE)), true);
   const contents = read(TRIGGER_FILE);
-  assert.match(contents, /Hourly snapshot trigger/);
-  // It is a doorbell, not a payload: nothing here may look like collected data.
-  assert.equal(/\{|\}|"status"|"data"/.test(contents), false);
+
+  // Its wording is deliberately not asserted: the scheduler overwrites it every hour, typically
+  // with nothing but a timestamp. What matters is that it stays a doorbell and never a payload.
+  assert.equal(contents.length > 0, true);
+  assert.equal(contents.length < 500, true, "the trigger file should stay a one-liner");
+  assert.equal(/\{|\}|\[|"status"|"data"|"generatedAt"/.test(contents), false, "no collected data may live here");
 });
 
 test("the snapshot workflow is triggered by the trigger file, never by a schedule", () => {
