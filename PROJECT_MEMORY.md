@@ -243,6 +243,65 @@ but road-conditions.geojson contains 699.`); the derived traffic-station count e
 Priority is deliberate: transport, core-dataset and emptiness failures all outrank age, so a real
 outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
+## Hourly update automation (2026-09-04)
+
+The hourly beat comes from an **external AI scheduler**, not from GitHub cron. There is no
+`schedule:` in any workflow in this repository, and a test asserts that.
+
+```
+AI scheduler → automation/hourly-trigger.txt → push
+             → Update Dashboard Snapshot → npm run snapshot
+             → commits public/data/latest-health.json → calls the Pages deploy
+```
+
+The scheduler writes nothing but a timestamp into the trigger file. It must never touch source code,
+`package.json`, workflows, configuration or the snapshot itself.
+
+### Workflows
+
+| File | Trigger | Permissions |
+| --- | --- | --- |
+| `.github/workflows/update-dashboard-snapshot.yml` | push to `automation/hourly-trigger.txt`, `workflow_dispatch` | `contents: write` on the collecting job; `contents: read` + `pages: write` + `id-token: write` on the deploy call |
+| `.github/workflows/deploy-pages.yml` | push to `main` (ignoring the trigger file), `workflow_dispatch`, `workflow_call` | `contents: read`, `pages: write`, `id-token: write` |
+
+Built-in `GITHUB_TOKEN` only. No PAT, no secret, nothing stored.
+
+### Why the deploy is called explicitly
+
+A push made with `GITHUB_TOKEN` deliberately does not start another workflow run. The snapshot commit
+would therefore land in the repository and never deploy. Rather than reach for a PAT, the Pages
+workflow gained `workflow_call` and the collecting workflow invokes it directly. Both jobs check out
+`github.event.repository.default_branch` rather than the triggering SHA, so the deploy builds the
+snapshot that was just committed instead of the state before it.
+
+### Recursion prevention
+
+Three independent layers, the first of which is structural:
+
+1. The workflow is triggered by `automation/hourly-trigger.txt` and writes
+   `public/data/latest-health.json`. Different paths, so its own commit cannot re-trigger it.
+2. A guard step lists the working tree and fails the run if anything other than the snapshot changed.
+   `git add` names exactly one path; a blanket `git add .` is never used.
+3. GitHub does not start workflows from `GITHUB_TOKEN` pushes anyway.
+
+Verified in production: a trigger push produced exactly one workflow run, and the bot's snapshot
+commit produced none.
+
+### Verified end to end (2026-09-04 02:14 UTC)
+
+Trigger commit `114e9b3` changed only the trigger file. One run started; it collected all nine
+monitors, validated the result ("Snapshot valid: 9 entries"), confirmed "Changed files:
+public/data/latest-health.json", committed `2920334 Update production snapshot`, and deployed.
+The public snapshot advanced from `2026-09-04T02:05:59Z` to `2026-09-04T02:18:33Z`. No further run
+was created.
+
+### A test that broke the build, and why
+
+The first end-to-end attempt failed the deploy: a test asserted the trigger file's *initial* wording,
+which the scheduler is supposed to overwrite every hour. It was asserting exactly the thing the
+design requires to change. The test now checks that the file stays small and never carries collected
+data, and says nothing about its wording.
+
 ## All sources productionized (2026-09-04)
 
 Every monitor now reads a real production endpoint. **The mock data path was deleted**, not disabled:
@@ -573,7 +632,7 @@ the header adds Taipei.
 
 ## Tests
 
-`npm test` — 188 fully offline tests, no network access:
+`npm test` — 198 fully offline tests, no network access:
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
@@ -617,6 +676,11 @@ the header adds Taipei.
   data, partial outage, last-good-data preserved after a failure, the compliant User-Agent and
   four-decimal coordinates, the IMO API-version header, plus a guard that the runtime holds no
   mock reference and every published entry declares production provenance
+- Automation: 10 cases — the trigger file carries no data, the workflow is triggered by that file
+  and never by a schedule, no workflow anywhere carries a cron, least-privilege permissions with
+  no credential, recursion impossible by path and by guard, the Pages deploy ignoring the trigger
+  commit while still publishing the snapshot commit, both jobs building the branch tip, the
+  refusal to publish non-production data, and the banner no longer claiming any mock source
 - time and session-event helpers, network diagnostics
 
 No test depends on the wall clock, and no test reaches production or the GitHub API.
@@ -625,11 +689,12 @@ No test depends on the wall clock, and no test reaches production or the GitHub 
 
 Do not proceed automatically.
 
-Every data source is now production, so the remaining work is the hourly scheduler itself.
+The pipeline is complete and verified end to end. **All that remains is pointing the external AI
+scheduler at the trigger file**: once an hour, write a new timestamp into
+`automation/hourly-trigger.txt` on `main`. Everything after that is automatic, needs no
+credential of its own beyond whatever the scheduler uses to commit that one file, and must not
+touch anything else.
 
-**Still needed:** something that runs `npm run snapshot` hourly and commits only
-`public/data/latest-health.json` to `main`, plus the write credential it would use — scoped to
-`iceland-ops-dashboard` only. None has been created; no token is stored anywhere in this project.
 Writing to `iceland-aurora`, `iceland-aurora-ios` or `iceland-aurora-cloud` remains forbidden.
 
 ## Scheduler diagnosis (2026-09-03 03:19 UTC, step 8.1)

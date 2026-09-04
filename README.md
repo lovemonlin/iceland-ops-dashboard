@@ -218,8 +218,32 @@ The scheduled collection is only ever allowed to change one file: `public/data/l
 It must not touch source code, `package.json`, the workflow, configuration or this README. Pushing
 that one file to `main` is what publishes new data: the Pages workflow rebuilds and redeploys.
 
-`npm run snapshot` is a local development, manual validation and recovery tool. It is not something
-that has to run on anyone's Windows machine for the site to stay up.
+`npm run snapshot` runs the same collection locally, for development, manual validation and
+recovery. Nothing has to run on anyone's machine for the site to stay up.
+
+### How the hourly update works
+
+The scheduler's only job is to write something new into `automation/hourly-trigger.txt` — a
+timestamp is enough. It never touches source code, configuration, the workflow or the snapshot.
+
+`.github/workflows/update-dashboard-snapshot.yml` picks that push up and, using only the built-in
+`GITHUB_TOKEN` with `contents: write`:
+
+1. checks out the branch tip, so a monitor or endpoint changed since the trigger is included;
+2. runs `npm run snapshot`;
+3. refuses to continue unless the result is a valid snapshot whose every entry declares
+   production provenance;
+4. refuses to commit if anything other than the snapshot changed;
+5. commits `public/data/latest-health.json` alone and pushes;
+6. calls the Pages workflow to publish it.
+
+**Recursion is structurally impossible.** The workflow watches `automation/hourly-trigger.txt`
+and writes `public/data/latest-health.json`; those are different paths, so its own commit cannot
+start it again. A blanket `git add` is never used, and a guard step fails the run if any other
+file changed.
+
+Step 6 of that list exists because a push made with `GITHUB_TOKEN` deliberately does not start
+another workflow. Without the explicit call, the snapshot commit would land but never deploy.
 
 ### Deployment
 
