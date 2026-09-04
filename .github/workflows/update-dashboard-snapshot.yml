@@ -7,11 +7,8 @@
 name: Update Dashboard Snapshot
 
 on:
-  # Primary production trigger. Deliberately off the hour: GitHub documents the start of the hour
-  # as a high-load window for scheduled Actions, where runs are more likely to be delayed or
-  # dropped from the queue.
-  schedule:
-    - cron: "17 * * * *"
+
+
   # Kept for manual and external triggering: writing to this file still starts a collection.
   push:
     paths:
