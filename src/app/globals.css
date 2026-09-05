@@ -426,7 +426,9 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .aurora-oval { position: relative; margin-top: 12px; }
 .aurora-oval-canvas {
   width: 100%;
-  height: 380px;
+  /* The app's card covers roughly the bottom 47% of a phone screen; this keeps a similar share
+     of the map visible above it rather than letting the card take over a short container. */
+  height: 440px;
   border-radius: 10px;
   overflow: hidden;
   background: #07162b;

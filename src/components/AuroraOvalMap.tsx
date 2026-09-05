@@ -86,6 +86,9 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
   const mapRef = useRef<MapLibreMap | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [selected, setSelected] = useState<SiteSelection | null>(null);
+  // The map is created asynchronously, so the contour layers cannot simply be added in an effect
+  // that runs at mount -- there is no map yet. This is what tells them the style is up.
+  const [ready, setReady] = useState(false);
 
   const grid = useMemo(() => decodeOvationGrid(ovation.grid), [ovation.grid]);
   // The contour walk is the expensive part, so it runs once per stored grid, not once per render.
@@ -139,6 +142,7 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
             map.resize();
             frameOval(map, container.clientWidth, container.clientHeight);
           }
+          setReady(true);
         });
 
         // A 7 px dot is hard to hit exactly, so the click is queried through a tolerance box
@@ -174,6 +178,7 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
       disposed = true;
       mapRef.current?.remove();
       mapRef.current = null;
+      setReady(false);
     };
   }, []);
 
@@ -186,7 +191,7 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
    */
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || bands.length === 0) return;
+    if (!map || !ready || bands.length === 0) return;
 
     const apply = () => {
       let anchor = AURORA_LAYER_ANCHOR;
@@ -211,9 +216,8 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
       if (map.getLayer("site-circles")) map.moveLayer("site-circles");
     };
 
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-  }, [bands]);
+    apply();
+  }, [bands, ready]);
 
   /**
    * A map built while its container is `display: none` measures zero, and fitting the northern

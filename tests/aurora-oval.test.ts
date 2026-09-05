@@ -496,6 +496,20 @@ test("nothing in the aurora map reaches NOAA, on any interaction", () => {
   assert.match(map, /decodeOvationGrid\(ovation\.grid\)/);
 });
 
+test("the contour layers are added after the map exists, not before", () => {
+  const map = read("src/components/AuroraOvalMap.tsx");
+  // The map is created inside an async effect, so an effect keyed only on the bands would run
+  // once at mount -- with no map yet -- and never again, leaving the aurora undrawn.
+  assert.match(map, /const \[ready, setReady\] = useState\(false\)/);
+  assert.match(map, /setReady\(true\)/);
+  assert.match(map, /if \(!map \|\| !ready \|\| bands\.length === 0\) return;/);
+  assert.match(map, /\}, \[bands, ready\]\);/);
+  // The bands are anchored above the detailed Iceland fill, and the markers stay on top.
+  assert.match(map, /map\.getLayer\(anchor\) \? anchor : undefined/);
+  assert.match(map, /map\.moveLayer\("site-circles"\)/);
+  assert.match(map, /"fill-antialias": false/);
+});
+
 test("the map cannot be rotated or tilted", () => {
   const map = read("src/components/AuroraOvalMap.tsx");
   assert.match(map, /dragRotate: false/);
