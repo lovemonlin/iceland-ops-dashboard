@@ -137,6 +137,21 @@ export async function checkEcmwf(options: EcmwfCheckOptions = {}): Promise<Monit
   };
   if (manifest.generatedAt) data.generatedAt = utcMinute(manifest.generatedAt);
 
+  /**
+   * The frame list the viewer draws from, taken from the manifest this check already fetched
+   * and validated. No further request is made here, and every field above is unchanged.
+   *
+   * `leadHours` is derived from the run rather than parsed out of the file name, so a publisher
+   * that renames its images still lines up. The browser loads only the frame it is showing.
+   */
+  data.forecastFrames = frames.map((frame) => ({
+    leadHours: Math.round((frame.validAt.getTime() - manifest.runAt.getTime()) / 3_600_000),
+    validAt: frame.validAt.toISOString(),
+    imageUrl: frame.imageUrl,
+  }));
+  data.forecastRunAt = manifest.runAt.toISOString();
+  if (manifest.generatedAt) data.forecastGeneratedAt = manifest.generatedAt.toISOString();
+
   const details: Record<string, unknown> = {
     ...data,
     expectedBy: scheduleDetails.expectedBy,

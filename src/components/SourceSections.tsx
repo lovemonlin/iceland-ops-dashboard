@@ -17,6 +17,7 @@ import { AuroraModes } from "@/components/AuroraModes";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
 import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
+import type { CloudFrame } from "@/lib/cloudForecast";
 import { decodeSiteForecast } from "@/lib/forecastCodec";
 import { dataAgeMinutes } from "@/monitors/correlate";
 import type { SnapshotSource } from "@/snapshot/types";
@@ -38,6 +39,12 @@ const RoadMap = dynamic(() => import("@/components/RoadMap").then((module) => mo
   loading: () => <p className="muted-line">正在載入道路地圖…</p>,
 });
 
+/** Same reasoning for the cloud forecast: MapLibre only arrives once the viewer is opened. */
+const CloudForecastMap = dynamic(
+  () => import("@/components/CloudForecastMap").then((module) => module.CloudForecastMap),
+  { ssr: false, loading: () => <p className="muted-line">正在載入雲層預報…</p> },
+);
+
 const text = (value: unknown, fallback = "—") => (value === undefined || value === null ? fallback : String(value));
 
 export function WeatherSection({
@@ -54,7 +61,7 @@ export function WeatherSection({
       <h2>天氣</h2>
       <div className="cards">
         {metno && <WeatherCard entry={metno} schemaVersion={schemaVersion} />}
-        {ecmwf && <CloudForecastCard entry={ecmwf} schemaVersion={schemaVersion} />}
+        {ecmwf && <CloudForecastCard entry={ecmwf} metno={metno} schemaVersion={schemaVersion} />}
       </div>
     </section>
   );
@@ -101,9 +108,26 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
   );
 }
 
-function CloudForecastCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVersion: number }) {
+function CloudForecastCard({
+  entry,
+  metno,
+  schemaVersion,
+}: {
+  entry: SnapshotSource;
+  metno?: SnapshotSource;
+  schemaVersion: number;
+}) {
   const data = entry.data ?? {};
   const healthy = entry.status === "ok" || entry.status === "info";
+  const frames = Array.isArray(data.forecastFrames) ? (data.forecastFrames as CloudFrame[]) : [];
+
+  // The viewer colours each site from the weather monitor's own hourly series -- the same data
+  // the weather card draws -- so there is no second forecast and no second detail dialog.
+  const weather = metno?.data ?? {};
+  const sites = (Array.isArray(weather.sites) ? weather.sites : []).map((entry) => {
+    const site = entry as Record<string, unknown> & { forecast?: unknown };
+    return { ...site, hours: decodeSiteForecast(weather.forecastTimes, site.forecast) };
+  }) as React.ComponentProps<typeof CloudForecastMap>["sites"];
 
   return (
     <SourceCard
@@ -111,7 +135,9 @@ function CloudForecastCard({ entry, schemaVersion }: { entry: SnapshotSource; sc
       title="雲層預報"
       entry={entry}
       schemaVersion={schemaVersion}
-      headline={healthy ? "未來兩天的雲層預報已備妥。" : describeCollection(entry)}
+      // The old wording described the publisher's 48-hour coverage, which is not what the viewer
+      // below shows; the coverage stat still carries that for whoever is watching the pipeline.
+      headline={healthy ? "ECMWF 雲層預報資料正常更新。" : describeCollection(entry)}
       dataTimeLabel="來源資料時間"
     >
       <div className="stats">
@@ -119,6 +145,16 @@ function CloudForecastCard({ entry, schemaVersion }: { entry: SnapshotSource; sc
         <Stat label="預報涵蓋" value={text(data.coverage)} />
         <Stat label="預報時段" value={text(data.frames)} />
       </div>
+      {frames.length > 0 && (
+        <MapDisclosure label="展開雲層預報">
+          <CloudForecastMap
+            frames={frames}
+            runAt={typeof data.forecastRunAt === "string" ? data.forecastRunAt : undefined}
+            generatedAt={typeof data.forecastGeneratedAt === "string" ? data.forecastGeneratedAt : undefined}
+            sites={sites}
+          />
+        </MapDisclosure>
+      )}
     </SourceCard>
   );
 }

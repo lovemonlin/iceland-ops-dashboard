@@ -516,3 +516,52 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   font-size: 12px;
 }
 .aurora-oval-site button:hover { color: var(--text); background: #1b2a3b; }
+
+/* ── ECMWF cloud forecast viewer (MapScreen.kt forecast mode) ────────────────
+   The app's control panel sits below the map in a rounded surface; the same order is kept:
+   title, selected time, slider, timing, legend, frame state, note, attribution. */
+.cloud-forecast { margin-top: 12px; }
+.cloud-forecast-canvas {
+  width: 100%;
+  height: 340px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #294d61;
+}
+.cloud-forecast-panel {
+  margin-top: 10px;
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(19, 30, 45, 0.92);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cloud-forecast-panel strong { font-size: 13px; }
+.cloud-forecast-offset { margin: 0; font-size: 13px; font-weight: 600; }
+.cloud-forecast-panel input[type="range"] { width: 100%; accent-color: var(--info); }
+.cloud-forecast-missing { margin: 0; font-size: 11px; color: var(--muted); }
+
+/* The app groups the three timestamps in their own surface so they read as one block. */
+.cloud-forecast-timing {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  color: var(--muted);
+}
+.cloud-forecast-generated { font-weight: 600; color: var(--info); }
+
+.cloud-forecast-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+.cloud-forecast-legend span { display: flex; align-items: center; font-size: 11px; color: var(--muted); }
+.cloud-forecast-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50px;
+  margin-right: 4px;
+  flex: none;
+}
