@@ -16,6 +16,7 @@ import { AuroraGauges } from "@/components/AuroraGauges";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
 import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
+import { decodeSiteForecast } from "@/lib/forecastCodec";
 import { dataAgeMinutes } from "@/monitors/correlate";
 import type { SnapshotSource } from "@/snapshot/types";
 
@@ -63,7 +64,12 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
   const site = text(data.primarySite, "Reykjavík");
   const healthy = entry.status === "ok" || entry.status === "info";
   // Written by the MET Norway monitor from the same 32 responses the summary above came from.
-  const sites = Array.isArray(data.sites) ? (data.sites as WeatherMapSite[]) : [];
+  // The forecast is stored positionally against a shared time axis to keep the hourly commit
+  // small; decoding here means everything below this line sees ordinary named fields.
+  const sites: WeatherMapSite[] = (Array.isArray(data.sites) ? data.sites : []).map((entry) => {
+    const site = entry as WeatherMapSite & { forecast?: unknown };
+    return { ...site, hours: decodeSiteForecast(data.forecastTimes, site.forecast) };
+  });
 
   return (
     <SourceCard

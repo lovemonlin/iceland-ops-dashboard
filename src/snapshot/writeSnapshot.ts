@@ -1,5 +1,6 @@
 import { mkdir, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { serializeSnapshot } from "@/snapshot/serializeSnapshot";
 import type { DashboardSnapshot } from "@/snapshot/types";
 
 /**
@@ -11,7 +12,7 @@ export async function writeSnapshot(path: string, snapshot: DashboardSnapshot) {
   const temporary = `${path}.tmp`;
   await mkdir(dirname(path), { recursive: true });
   try {
-    await writeFile(temporary, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
+    await writeFile(temporary, serializeSnapshot(snapshot), "utf8");
     await rename(temporary, path);
   } catch (error) {
     // Never leave a stray temp file behind to be mistaken for a snapshot.

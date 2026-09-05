@@ -11,6 +11,7 @@ import {
 import { evaluateHealth } from "@/health/evaluate";
 import type { MonitorHealth } from "@/health/model";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "@/lib/fetchWithDiagnosticsCore";
+import { buildForecastTimes, encodeSiteForecast } from "@/lib/forecastCodec";
 
 /**
  * How far the stored hourly series reaches, in hours.
@@ -265,6 +266,16 @@ export async function checkMetno(options: MetnoCheckOptions = {}): Promise<Monit
     cloudHighPercent: primary.cloudHighPercent,
   };
 
+  /**
+   * The shared time axis for every site's forecast, written once instead of on all 1,568 records.
+   *
+   * MET issues each point on its own schedule, so a site can start an hour off its neighbours;
+   * this is the union of what the sites actually returned, and a site simply has no tuple at a
+   * time it did not publish. See `@/lib/forecastCodec` for the tuple's field order.
+   */
+  const forecastTimes = buildForecastTimes(readings.map((reading) => reading.hours));
+  data.forecastTimes = forecastTimes;
+
   // Every site that answered, so the dashboard can draw the app's map without a second request.
   // Purely additive: the headline fields above are untouched and the summary card still reads them.
   data.sites = readings.map((reading) => ({
@@ -283,7 +294,7 @@ export async function checkMetno(options: MetnoCheckOptions = {}): Promise<Monit
     cloudHighPercent: reading.cloudHighPercent,
     cloudTotalPercent: reading.cloudTotalPercent,
     symbolCode: reading.symbolCode,
-    hours: reading.hours,
+    forecast: encodeSiteForecast(reading.hours, forecastTimes),
   }));
 
   const details: Record<string, unknown> = { ...data, endpoint: METNO_FORECAST_URL };

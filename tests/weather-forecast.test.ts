@@ -14,6 +14,7 @@ import {
   nextHours,
   type WeatherHour,
 } from "../src/lib/weatherMap";
+import { decodeSiteForecast } from "../src/lib/forecastCodec";
 import { checkMetno } from "../src/monitors/metno/monitor";
 import { mergeSource } from "../src/snapshot/mergeSnapshot";
 
@@ -71,8 +72,8 @@ test("the hourly series is stored without adding a single MET request", async ()
   const sites = health.data?.sites as Record<string, unknown>[];
   assert.equal(sites.length, 32);
   for (const site of sites) {
-    const hours = site.hours as Record<string, unknown>[];
-    assert.equal(Array.isArray(hours), true, `${site.id} has no hourly series`);
+    // Stored compactly, read back as ordinary hours — see tests/forecast-codec.test.ts.
+    const hours = decodeSiteForecast(health.data?.forecastTimes, site.forecast);
     // 0..48 inclusive is 49 hourly entries; the rest of the response is dropped.
     assert.equal(hours.length, 49, `${site.id} stored ${hours.length} hours`);
   }
@@ -81,7 +82,7 @@ test("the hourly series is stored without adding a single MET request", async ()
 test("the stored hours reach +48h and carry the response's own timestamps", async () => {
   const health = await checkMetno({ now: NOW, request: stub() });
   const site = (health.data?.sites as Record<string, unknown>[])[0];
-  const hours = site.hours as { time: string; symbolCode?: string; temperatureC?: number }[];
+  const hours = decodeSiteForecast(health.data?.forecastTimes, site.forecast);
 
   const first = Date.parse(hours[0].time);
   const last = Date.parse(hours[hours.length - 1].time);
@@ -128,7 +129,8 @@ test("a failed collection keeps the hourly series the last good one stored", () 
     parseOk: true,
     data: {
       primarySite: "Reykjavík",
-      sites: [{ id: "reykjavik", hours: [{ time: RECENT, temperatureC: 8.4 }] }],
+      forecastTimes: [RECENT],
+      sites: [{ id: "reykjavik", forecast: [[8.4, null, null, null, null, null, null, "cloudy"]] }],
     },
     provenance: { mode: "production" as const },
   };
@@ -142,8 +144,12 @@ test("a failed collection keeps the hourly series the last good one stored", () 
 
   const after = mergeSource(mergeSource(undefined, good), failed);
   assert.equal(after.status, "error");
-  const sites = after.data?.sites as { hours: unknown[] }[];
-  assert.equal(sites[0].hours.length, 1, "the stored forecast must survive a failed collection");
+  // Both halves of the compact form must survive: a row of tuples is unreadable without its axis.
+  assert.deepEqual(after.data?.forecastTimes, [RECENT], "forecastTimes must survive a failed collection");
+  const sites = after.data?.sites as { forecast: unknown[] }[];
+  assert.equal(sites[0].forecast.length, 1, "the stored forecast must survive a failed collection");
+  const restored = decodeSiteForecast(after.data?.forecastTimes, sites[0].forecast);
+  assert.deepEqual(restored, [{ time: RECENT, temperatureC: 8.4, symbolCode: "cloudy" }]);
 });
 
 // ── The timeline ──────────────────────────────────────────────────────────────
