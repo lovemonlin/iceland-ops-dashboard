@@ -92,7 +92,10 @@ button:disabled { opacity: .6; cursor: default; }
 .pill.warn { color: var(--warn); }
 .pill.error { color: var(--error); }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+/* `align-items: start` so a card is only as tall as it needs to be. Without it a short card is
+   stretched to match an expanded neighbour -- the cloud forecast next to an open weather map was
+   1020px tall for 156px of content -- which reads as a card that failed to load something. */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; align-items: start; }
 /* Aurora and warnings answer one question each, so they share a row rather than a screen. */
 .pair { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; align-items: start; }
 .card { padding: 16px 20px; border-left: 3px solid var(--line); }

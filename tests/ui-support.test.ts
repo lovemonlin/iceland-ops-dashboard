@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import test from "node:test";
 import { recordCheck, statusMap, MAX_SESSION_EVENTS } from "../src/lib/events";
 import { formatAge, formatClock, formatDateTime, ICELAND_TIME_ZONE } from "../src/lib/time";
@@ -60,4 +62,17 @@ test("event keys are unique so the list renders without collisions", () => {
   const seeded = recordCheck([], monitors, null, "2026-09-03T08:52:13.000Z");
   const next = recordCheck(seeded, monitors, statusMap(monitors), "2026-09-03T08:53:13.000Z");
   assert.equal(new Set(next.map((event) => event.key)).size, next.length);
+});
+
+test("a card is only as tall as its own content", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+  // A grid row stretches its items by default, so a short card sitting beside an expanded one --
+  // the cloud forecast next to an open weather map -- grew to its neighbour's height and showed a
+  // few hundred pixels of nothing, which reads as content that failed to load.
+  const cards = css.match(/^\.cards \{[^}]*\}/m)?.[0] ?? "";
+  assert.match(cards, /display: grid/);
+  assert.match(cards, /align-items: start/);
+  // The pair grid already did this; both card grids must agree.
+  const pair = css.match(/^\.pair \{[^}]*\}/m)?.[0] ?? "";
+  assert.match(pair, /align-items: start/);
 });
