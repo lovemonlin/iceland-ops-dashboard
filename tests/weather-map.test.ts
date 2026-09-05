@@ -382,7 +382,28 @@ test("zoom is interpolated rather than snapped, without moving where it zooms to
   assert.equal(/zoomToScale\(scale \* \(event\.deltaY < 0 \? ZOOM_STEP/.test(map), false);
 
   // The app's own anchor for the buttons is unchanged: the selected site, moved to the centre.
-  assert.match(map, /const anchor = focused \? projectBase\(projection, focused\.lon, focused\.lat\) : centre;/);
+  // The base coordinate is cached so animation frames do not repeatedly recompute geometry.
+  assert.match(map, /const anchor = focused \? baseSites\.get\(focused\.id\) \?\? centre : centre;/);
+});
+
+test("weather overview has the app's LIST and MAP modes, with LIST as the default", () => {
+  const map = read("src/components/WeatherMap.tsx");
+  assert.match(map, /type WeatherViewMode = "LIST" \| "MAP"/);
+  assert.match(map, /useState<WeatherViewMode>\("LIST"\)/);
+  assert.match(map, /☷ 清單/);
+  assert.match(map, /🗺 地圖/);
+  assert.match(map, /aria-label="天氣檢視模式"/);
+});
+
+test("weather interaction draws through one canvas instead of React-rendering the island every frame", () => {
+  const map = read("src/components/WeatherMap.tsx");
+  assert.match(map, /const canvasRef = useRef<HTMLCanvasElement>/);
+  assert.match(map, /viewRef = useRef<ViewState>/);
+  assert.match(map, /requestAnimationFrame/);
+  assert.match(map, /context\.lineTo/);
+  assert.match(map, /drawCanvasWeatherIcon/);
+  assert.equal(/setScale\(/.test(map), false);
+  assert.equal(/setPan\(/.test(map), false);
 });
 
 test("smoothing did not move a single site or change the zoom limits", () => {
