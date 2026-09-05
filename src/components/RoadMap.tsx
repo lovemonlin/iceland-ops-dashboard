@@ -241,7 +241,7 @@ export function RoadMap() {
         </span>
       </div>
 
-      {selected && <RoadDetailCard item={selected} onClose={() => setSelected(null)} />}
+      {selected && <RoadDetailDialog item={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
@@ -332,18 +332,60 @@ function StationLabels({ map, ready }: { map: MapLibreMap | null; ready: boolean
   );
 }
 
-/** RoadInfoScreen.kt `RoadDetailCard`. */
-function RoadDetailCard({ item, onClose }: { item: RoadFeatureItem; onClose: () => void }) {
+/**
+ * RoadInfoScreen.kt `RoadDetailCard`, shown in the same modal the weather forecast uses.
+ *
+ * It was rendered inline under the legend, where a station's full set of measurements pushed the
+ * whole Dashboard down and left the map scrolled off screen. The interaction is deliberately the
+ * one `SiteForecastDialog` already established — backdrop click, Escape, focus on the close
+ * control — because two different modal behaviours on one page is a worse answer than either.
+ *
+ * Opening and closing only sets React state; the map effect keys on `onSelect`, which is stable,
+ * so nothing here rebuilds MapLibre, refetches the GeoJSON or moves the camera.
+ */
+function RoadDetailDialog({ item, onClose }: { item: RoadFeatureItem; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Escape closes it, and focus starts on the close control so the keyboard is not trapped.
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="road-dialog-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="road-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label={roadDisplayTitle(item)}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="road-dialog-head">
+          <div>
+            <strong>{roadDisplayTitle(item)}</strong>
+          </div>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="關閉">
+            ×
+          </button>
+        </div>
+        <div className="road-dialog-body">
+          <RoadDetailBody item={item} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The detail fields themselves, unchanged from the inline card — only its shell became a dialog. */
+function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
   const isStation = item.type === "STATION";
   return (
-    <div className="road-detail">
-      <div className="road-detail-head">
-        <strong>{roadDisplayTitle(item)}</strong>
-        <button type="button" onClick={onClose} aria-label="關閉">
-          ×
-        </button>
-      </div>
-
+    <>
       {isStation && item.updatedAt && <p className="road-detail-updated">此筆資料更新於 {item.updatedAt}</p>}
 
       <p className="road-detail-status" style={{ color: roadStatusColor(item.status) }}>
@@ -365,7 +407,7 @@ function RoadDetailCard({ item, onClose }: { item: RoadFeatureItem; onClose: () 
       )}
 
       <p className="muted-line">{ROAD_ATTRIBUTION}</p>
-    </div>
+    </>
   );
 }
 

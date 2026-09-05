@@ -376,3 +376,106 @@ test("the map switches mode by opacity and keeps the loaded data", () => {
   assert.match(roadMap, /aria-pressed=\{entry\.mode === mode\}/);
   assert.match(roadMap, /role="group"/);
 });
+
+test("a clicked road, incident or station opens one modal dialog", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+
+  // All three feature kinds go through the same selection path, so one dialog serves them all.
+  assert.match(roadMap, /const type = layer === "incident-markers" \? "INCIDENT" : layer === "station-markers" \? "STATION" : "ROAD";/);
+  assert.match(roadMap, /onSelect\(readFeature\(hit\.properties \?\? \{\}, type\)\);/);
+  assert.match(roadMap, /const onSelect = useCallback\(\(item: RoadFeatureItem\) => setSelected\(item\), \[\]\);/);
+
+  // The detail is a dialog, not the inline panel that used to push the Dashboard down.
+  assert.match(roadMap, /\{selected && <RoadDetailDialog item=\{selected\} onClose=\{\(\) => setSelected\(null\)\} \/>\}/);
+  assert.equal(roadMap.includes("<RoadDetailCard"), false, "the inline detail card must be gone");
+  assert.equal(roadMap.includes('className="road-detail"'), false, "the inline detail shell must be gone");
+  assert.equal([...roadMap.matchAll(/<RoadDetailDialog/g)].length, 1, "exactly one dialog");
+});
+
+test("the road dialog behaves exactly like the weather one", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+  const dialog = roadMap.split("function RoadDetailDialog")[1]?.split("function RoadDetailBody")[0] ?? "";
+  assert.notEqual(dialog, "", "RoadDetailDialog must exist");
+
+  // Backdrop closes; the dialog itself does not, so a click on the content stays open.
+  assert.match(dialog, /className="road-dialog-backdrop" role="presentation" onClick=\{onClose\}/);
+  assert.match(dialog, /onClick=\{\(event\) => event\.stopPropagation\(\)\}/);
+  // The accessibility contract the weather dialog already sets.
+  assert.match(dialog, /role="dialog"/);
+  assert.match(dialog, /aria-modal="true"/);
+  assert.match(dialog, /aria-label=\{roadDisplayTitle\(item\)\}/);
+  // Escape closes, and focus lands on the close control.
+  assert.match(dialog, /if \(event\.key === "Escape"\) onClose\(\);/);
+  assert.match(dialog, /window\.addEventListener\("keydown", onKey\)/);
+  assert.match(dialog, /return \(\) => window\.removeEventListener\("keydown", onKey\)/);
+  assert.match(dialog, /closeRef\.current\?\.focus\(\)/);
+  assert.match(dialog, /<button ref=\{closeRef\} type="button" onClick=\{onClose\} aria-label="關閉">/);
+
+  // Same interaction as SiteForecastDialog: the source of the pattern is left untouched.
+  const weather = read("src/components/SiteForecastDialog.tsx");
+  for (const contract of ['role="dialog"', 'aria-modal="true"', 'role="presentation" onClick={onClose}']) {
+    assert.equal(weather.includes(contract), true, `the weather dialog lost ${contract}`);
+  }
+});
+
+test("opening or closing the road dialog cannot rebuild the map", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+
+  // The map is built once, in an effect keyed only on the stable onSelect callback. `selected`
+  // is not a dependency, so opening and closing the dialog never re-runs it — the camera, the
+  // loaded GeoJSON and the current mode all survive.
+  assert.match(roadMap, /\}, \[onSelect\]\);/);
+  assert.equal(/\}, \[[^\]]*\bselected\b[^\]]*\]\);/.test(roadMap), false, "no effect may depend on `selected`");
+  assert.match(roadMap, /if \(!container \|\| mapRef\.current\) return;/);
+
+  // The dialog itself touches neither the map nor the network.
+  const dialog = roadMap.split("function RoadDetailDialog")[1]?.split("function RoadDetailBody")[0] ?? "";
+  assert.equal(/fetch\(|mapRef|flyTo|fitBounds|setPaintProperty|new maplibre/.test(dialog), false);
+});
+
+test("the road dialog still shows every field the inline card did", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+  const body = roadMap.split("function RoadDetailBody")[1] ?? "";
+
+  // Station: the measurements, the caveat and the attribution.
+  assert.match(body, /此筆資料更新於 \{item\.updatedAt\}/);
+  assert.match(body, /roadStatusLabel\(item\.status\)/);
+  assert.match(body, /<StationDetails item=\{item\} \/>/);
+  assert.match(body, /測站數值由官方量測，僅供參考。/);
+  // Road / incident: the English source text and both descriptions.
+  assert.match(body, /英文原文/);
+  assert.match(body, /\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}/);
+  assert.match(body, /\{item\.descriptionEnglish && <p className="muted-line">\{item\.descriptionEnglish\}<\/p>\}/);
+  assert.match(body, /\{item\.descriptionIcelandic && <p className="muted-line">\{item\.descriptionIcelandic\}<\/p>\}/);
+  assert.match(body, /\{ROAD_ATTRIBUTION\}/);
+
+  // The station values themselves are untouched.
+  const values = roadMap.split("function StationDetails")[1] ?? "";
+  for (const field of ["氣溫", "路面溫度", "風（來向）", "陣風", "濕度", "車流"]) {
+    assert.equal(values.includes(field), true, `StationDetails lost ${field}`);
+  }
+});
+
+test("the road dialog is presented by the same rules as the weather dialog", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+
+  // Shared by grouping the selectors, so the two can never drift into different presentations.
+  assert.match(css, /\.forecast-dialog-backdrop,\s*\n\.road-dialog-backdrop \{/);
+  assert.match(css, /\.forecast-dialog,\s*\n\.road-dialog \{/);
+  assert.match(css, /\.forecast-dialog-head,\s*\n\.road-dialog-head \{/);
+  // Centred over a full-screen backdrop, never full width, and capped so it always fits.
+  const backdrop = css.match(/\.forecast-dialog-backdrop,\s*\n\.road-dialog-backdrop \{[^}]*\}/)?.[0] ?? "";
+  assert.match(backdrop, /position: fixed/);
+  assert.match(backdrop, /inset: 0/);
+  assert.match(backdrop, /align-items: center/);
+  assert.match(backdrop, /justify-content: center/);
+  const shell = css.match(/\.forecast-dialog,\s*\n\.road-dialog \{[^}]*\}/)?.[0] ?? "";
+  assert.match(shell, /width: min\(420px, 100%\)/);
+  assert.match(shell, /max-height: min\(78vh, 620px\)/);
+  // Long content scrolls inside the dialog rather than growing it.
+  assert.match(css, /\.road-dialog-body \{[^}]*overflow-y: auto/);
+  // The narrow-screen height applies to both.
+  assert.match(css, /\.forecast-dialog,\s*\n  \.road-dialog \{ max-height: 86vh; \}/);
+  // The inline card's own shell is gone with it.
+  assert.equal(/^\.road-detail \{/m.test(css), false, "the inline .road-detail shell must be removed");
+});
