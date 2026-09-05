@@ -102,6 +102,13 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
   const [focusedId, setFocusedId] = useState(DEFAULT_SITE_ID);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
+  // Mirrors of the committed view, so a tween always starts from what is actually on screen.
+  const scaleRef = useRef(scale);
+  const panRef = useRef(pan);
+  useEffect(() => {
+    scaleRef.current = scale;
+    panRef.current = pan;
+  }, [scale, pan]);
 
   // The outline is a static asset of this site; it is never fetched from a production API.
   useEffect(() => {
@@ -141,29 +148,96 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
 
   const focused = sites.find((site) => site.id === focusedId) ?? sites[0];
 
-  const zoomToScale = useCallback(
-    (target: number) => {
-      if (!projection) return;
-      const next = Math.min(MAX_SCALE, Math.max(1, target));
-      const centre = { x: projection.viewportWidth / 2, y: projection.viewportHeight / 2 };
-      const anchor = focused ? projectBase(projection, focused.lon, focused.lat) : centre;
-      setScale(next);
-      setPan(
-        clampPan(
-          { x: centre.x - anchor.x * next, y: centre.y - anchor.y * next },
-          next,
+  /**
+   * Zoom is eased rather than snapped.
+   *
+   * The app steps straight to the new scale, which is fine on a phone where the press and the
+   * result are the same gesture; on a desktop map a 1.8x jump between two renders reads as a
+   * glitch, and it is the one thing here that felt worse than the road map beside it. The
+   * geometry is untouched — only the path between two states is interpolated.
+   */
+  const animation = useRef<{ frame: number; timeout: number } | null>(null);
+
+  const stopAnimation = useCallback(() => {
+    if (animation.current) {
+      cancelAnimationFrame(animation.current.frame);
+      clearTimeout(animation.current.timeout);
+      animation.current = null;
+    }
+  }, []);
+
+  const animateTo = useCallback(
+    (target: { scale: number; pan: Point }, duration = 260) => {
+      stopAnimation();
+      const fromScale = scaleRef.current;
+      const fromPan = panRef.current;
+      const started = performance.now();
+
+      const settle = () => {
+        setScale(target.scale);
+        setPan(target.pan);
+      };
+
+      const step = (now: number) => {
+        const t = Math.min(1, (now - started) / duration);
+        // cubic ease-in-out: fast in the middle, settled at both ends.
+        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        setScale(fromScale + (target.scale - fromScale) * eased);
+        setPan({
+          x: fromPan.x + (target.pan.x - fromPan.x) * eased,
+          y: fromPan.y + (target.pan.y - fromPan.y) * eased,
+        });
+        if (t < 1 && animation.current) {
+          animation.current.frame = requestAnimationFrame(step);
+        }
+      };
+
+      // A timer backs the frames up. A browser that is not painting — a background tab, a
+      // hidden pane — delivers no animation frames at all, and without this the press would
+      // land on nothing rather than simply arriving without the in-between motion.
+      animation.current = {
+        frame: requestAnimationFrame(step),
+        timeout: window.setTimeout(settle, duration + 80),
+      };
+    },
+    [stopAnimation],
+  );
+
+  useEffect(() => stopAnimation, [stopAnimation]);
+
+  /** Anchors on a point in unscaled map space and keeps it under the same screen position. */
+  const viewAnchoredAt = useCallback(
+    (nextScale: number, anchorBase: Point, screenPoint: Point) => {
+      if (!projection) return null;
+      const bounded = Math.min(MAX_SCALE, Math.max(1, nextScale));
+      return {
+        scale: bounded,
+        pan: clampPan(
+          { x: screenPoint.x - anchorBase.x * bounded, y: screenPoint.y - anchorBase.y * bounded },
+          bounded,
           projection.viewportWidth,
           projection.viewportHeight,
         ),
-      );
+      };
     },
-    [projection, focused],
+    [projection],
+  );
+
+  /** The +/- buttons and double-tap keep the app's anchor: the site currently selected. */
+  const zoomToScale = useCallback(
+    (target: number) => {
+      if (!projection) return;
+      const centre = { x: projection.viewportWidth / 2, y: projection.viewportHeight / 2 };
+      const anchor = focused ? projectBase(projection, focused.lon, focused.lat) : centre;
+      const view = viewAnchoredAt(target, anchor, centre);
+      if (view) animateTo(view);
+    },
+    [projection, focused, viewAnchoredAt, animateTo],
   );
 
   const reset = useCallback(() => {
-    setScale(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+    animateTo({ scale: 1, pan: { x: 0, y: 0 } });
+  }, [animateTo]);
 
   const placed = useMemo(() => {
     if (!projection) return [];
@@ -196,6 +270,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "touch" && scale <= 1) return;
+    stopAnimation();
     drag.current = { x: event.clientX, y: event.clientY, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
@@ -226,7 +301,16 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
   const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
     if (!projection) return;
     event.preventDefault();
-    zoomToScale(scale * (event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP));
+    // Continuous rather than stepped: a trackpad sends many small deltas and a mouse sends few
+    // large ones, and an exponential factor turns both into the same smooth motion.
+    stopAnimation();
+    const at = localPoint(event);
+    const factor = Math.exp(-event.deltaY * 0.0022);
+    const anchorBase = { x: (at.x - pan.x) / scale, y: (at.y - pan.y) / scale };
+    const view = viewAnchoredAt(scale * factor, anchorBase, at);
+    if (!view) return;
+    setScale(view.scale);
+    setPan(view.pan);
   };
 
   const touchDistance = (touches: React.TouchList) =>
@@ -235,6 +319,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
   const onTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
     if (event.touches.length < 2 || !projection) return;
     event.preventDefault();
+    stopAnimation();
     const distance = touchDistance(event.touches);
     const centre = localPoint({
       clientX: (event.touches[0].clientX + event.touches[1].clientX) / 2,

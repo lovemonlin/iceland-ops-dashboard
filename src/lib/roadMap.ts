@@ -521,11 +521,38 @@ export function roadDisplayTitle(item: RoadFeatureItem): string {
   return "道路區段";
 }
 
+/**
+ * The app's two road screens (RoadInfoScreen.kt:146, MainActivity.kt:367-380).
+ *
+ * Both always draw the road conditions; they differ in what is laid over them. The app reaches
+ * them as two separate destinations from its menu, and the dashboard offers the same choice as a
+ * toggle inside the one expanded map.
+ */
+export type RoadInfoMode = "EVENTS" | "STATIONS";
+
+export const ROAD_MODES: { mode: RoadInfoMode; label: string }[] = [
+  { mode: "EVENTS", label: "道路狀況＋封路與施工" },
+  { mode: "STATIONS", label: "道路狀況＋車流與氣象" },
+];
+
+/** RoadInfoScreen.kt:120-124 — roads are always on; the overlay is what the mode selects. */
+export function roadLayerVisibility(mode: RoadInfoMode) {
+  return {
+    showRoads: true,
+    showIncidents: mode === "EVENTS",
+    showStations: mode === "STATIONS",
+  };
+}
+
 /** RoadInfoScreen.kt:207-216 — the legend rows, in the app's order. */
 export const ROAD_LEGEND: { color: string; label: string }[] = [
   { color: "#16A34A", label: "未回報通行限制" },
   { color: "#E53935", label: "封閉／無法通行" },
   { color: "#8E44AD", label: "僅限高性能越野車" },
+];
+
+/** The app adds these two rows, plus a marker sample, only on the events screen. */
+export const EVENT_LEGEND: { color: string; label: string }[] = [
   { color: "#F59E0B", label: "限制／注意通行" },
   { color: "#64748B", label: "道路狀況未知" },
 ];

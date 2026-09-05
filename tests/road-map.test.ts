@@ -10,9 +10,12 @@ import {
   incidentIconId,
   MARKER_IDS,
   readFeature,
+  EVENT_LEGEND,
   ROAD_CASING,
   ROAD_COAST,
   ROAD_LAND,
+  ROAD_LEGEND,
+  ROAD_MODES,
   ROAD_OCEAN,
   ROAD_QUERY_ORDER,
   ROAD_SOURCE_URLS,
@@ -20,10 +23,12 @@ import {
   ROAD_STATUS_LINE_COLORS,
   ROAD_TAP_TOLERANCE,
   roadDisplayTitle,
+  roadLayerVisibility,
   roadStatusColor,
   roadStatusEnglish,
   roadStatusLabel,
   STATION_LABEL,
+  STATION_LEGEND,
   STATION_TRAFFIC_COLOR,
   STATION_WEATHER_COLOR,
 } from "../src/lib/roadMap";
@@ -308,4 +313,66 @@ test("the browser still reaches no upstream provider from anywhere in the UI", (
       assert.equal(source.includes(forbidden), false, `${file} must not reference ${forbidden}`);
     }
   }
+});
+
+// ── The app's two road display modes ──────────────────────────────────────────
+
+test("both of the app's road screens exist, under the app's own names", () => {
+  assert.deepEqual(ROAD_MODES, [
+    { mode: "EVENTS", label: "道路狀況＋封路與施工" },
+    { mode: "STATIONS", label: "道路狀況＋車流與氣象" },
+  ]);
+});
+
+test("the mode names are the app's strings, not a paraphrase", { skip: !hasAndroid }, () => {
+  const strings = read("../iceland-aurora/app/src/main/res/values-zh-rTW/strings.xml");
+  for (const entry of ROAD_MODES) {
+    assert.equal(strings.includes(`>${entry.label}<`), true, `${entry.label} is not an app string`);
+  }
+  // And the app really does define exactly these two.
+  const screen = read("../iceland-aurora/app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoScreen.kt");
+  assert.match(screen, /enum class RoadInfoMode \{ EVENTS, STATIONS \}/);
+});
+
+test("both modes always draw the roads; only the overlay changes", () => {
+  // RoadInfoScreen.kt:120-124 — showRoads is unconditional in the app too.
+  assert.deepEqual(roadLayerVisibility("EVENTS"), {
+    showRoads: true,
+    showIncidents: true,
+    showStations: false,
+  });
+  assert.deepEqual(roadLayerVisibility("STATIONS"), {
+    showRoads: true,
+    showIncidents: false,
+    showStations: true,
+  });
+});
+
+test("the legend changes with the mode, as the app's does", () => {
+  // The three road colours are shown in both modes...
+  assert.equal(ROAD_LEGEND.length, 3);
+  assert.deepEqual(ROAD_LEGEND.map((entry) => entry.color), ["#16A34A", "#E53935", "#8E44AD"]);
+  // ...then events adds restriction/unknown plus a marker sample, and stations adds its two dots.
+  assert.deepEqual(EVENT_LEGEND.map((entry) => entry.color), ["#F59E0B", "#64748B"]);
+  assert.deepEqual(STATION_LEGEND.map((entry) => entry.color), [STATION_TRAFFIC_COLOR, STATION_WEATHER_COLOR]);
+});
+
+test("the map switches mode by opacity and keeps the loaded data", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+
+  // The app's own mechanism (RoadInfoScreen.kt:409-413): paint properties, not a style rebuild.
+  assert.match(roadMap, /setPaintProperty\("road-casing", "line-opacity", showRoads \? 0\.82 : 0\)/);
+  assert.match(roadMap, /setPaintProperty\("road-lines", "line-opacity", showRoads \? 1 : 0\)/);
+  assert.match(roadMap, /setPaintProperty\("incident-markers", "icon-opacity", showIncidents \? 1 : 0\)/);
+  assert.match(roadMap, /setPaintProperty\("station-markers", "circle-opacity", showStations \? 1 : 0\)/);
+  // Nothing re-creates the map or its sources when the mode changes.
+  assert.equal(/setStyle\(|new maplibre\.Map\(/.test(roadMap.split("useEffect(() => {\n    modeRef.current")[1] ?? ""), false);
+
+  // A feature hidden by the current mode must not be selectable.
+  assert.match(roadMap, /if \(layer === "incident-markers" && !visible\.showIncidents\) continue;/);
+  assert.match(roadMap, /if \(layer === "station-markers" && !visible\.showStations\) continue;/);
+
+  // The toggle is a real control, not a decorative div.
+  assert.match(roadMap, /aria-pressed=\{entry\.mode === mode\}/);
+  assert.match(roadMap, /role="group"/);
 });

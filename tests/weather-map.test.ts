@@ -358,3 +358,48 @@ test("labels are placed greedily, and the focused site always gets one", () => {
   const zoomedLabelled = zoomed.filter((marker) => marker.labelSide !== null);
   assert.equal(zoomedLabelled.length <= onScreen.length, true, "off-screen points never get a label");
 });
+
+// ── Zoom smoothness ───────────────────────────────────────────────────────────
+
+test("zoom is interpolated rather than snapped, without moving where it zooms to", () => {
+  const map = read("src/components/WeatherMap.tsx");
+
+  // The buttons, double-tap and reset all hand their target to one eased transition.
+  assert.match(map, /const animateTo = useCallback\(/);
+  assert.match(map, /requestAnimationFrame\(step\)/);
+  assert.match(map, /animateTo\(\{ scale: 1, pan: \{ x: 0, y: 0 \} \}\);/);
+  assert.match(map, /if \(view\) animateTo\(view\)/);
+
+  // A gesture always wins over a running tween, so dragging never fights the animation.
+  assert.equal([...map.matchAll(/stopAnimation\(\)/g)].length >= 4, true);
+  assert.match(map, /cancelAnimationFrame/);
+  // A browser that is not painting delivers no frames, so a timer guarantees the end state.
+  assert.match(map, /timeout: window\.setTimeout\(settle, duration \+ 80\)/);
+  assert.match(map, /clearTimeout\(animation\.current\.timeout\)/);
+
+  // The wheel is continuous and anchored under the cursor, not a fixed 1.8x step.
+  assert.match(map, /Math\.exp\(-event\.deltaY \* 0\.0022\)/);
+  assert.equal(/zoomToScale\(scale \* \(event\.deltaY < 0 \? ZOOM_STEP/.test(map), false);
+
+  // The app's own anchor for the buttons is unchanged: the selected site, moved to the centre.
+  assert.match(map, /const anchor = focused \? projectBase\(projection, focused\.lon, focused\.lat\) : centre;/);
+});
+
+test("smoothing did not move a single site or change the zoom limits", () => {
+  // The pure geometry the map is drawn from is untouched by the animation work.
+  assert.equal(MAX_SCALE, 6);
+  assert.equal(ZOOM_STEP, 1.8);
+
+  const projection = createProjection(outline.bounds, 600);
+  const reykjavik = WEATHER_SITES.find((site) => site.id === "reykjavik")!;
+  const base = projectBase(projection, reykjavik.lon, reykjavik.lat);
+
+  // The end state of a button press is still exactly the app's: anchor site at the centre.
+  const target = zoomTo(3, projection, reykjavik);
+  assert.equal(Math.abs(base.x * target.scale + target.pan.x - projection.viewportWidth / 2) < 1, true);
+  assert.equal(Math.abs(base.y * target.scale + target.pan.y - projection.viewportHeight / 2) < 1, true);
+
+  // And the limits still hold at both ends.
+  assert.equal(zoomTo(99, projection, reykjavik).scale, MAX_SCALE);
+  assert.equal(zoomTo(0.1, projection, reykjavik).scale, 1);
+});

@@ -10,18 +10,23 @@ import {
   drawMarker,
   ICELAND_CAMERA_BOUNDS,
   ICELAND_CAMERA_FALLBACK,
+  MARKER_IDS,
   readFeature,
+  EVENT_LEGEND,
   ROAD_ATTRIBUTION,
   ROAD_LEGEND,
+  ROAD_MODES,
   ROAD_QUERY_ORDER,
   ROAD_TAP_TOLERANCE,
   roadDisplayTitle,
   roadStatusColor,
   roadStatusEnglish,
   roadStatusLabel,
+  roadLayerVisibility,
   STATION_LABEL,
   STATION_LEGEND,
   type RoadFeatureItem,
+  type RoadInfoMode,
 } from "@/lib/roadMap";
 
 /**
@@ -49,6 +54,9 @@ export function RoadMap() {
   // Also held in state: the labels overlay renders from it, and a ref must not be read during render.
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [selected, setSelected] = useState<RoadFeatureItem | null>(null);
+  // The app reaches these as two separate screens; here they are one map with a toggle.
+  const [mode, setMode] = useState<RoadInfoMode>("EVENTS");
+  const modeRef = useRef<RoadInfoMode>(mode);
   const [failure, setFailure] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -108,8 +116,12 @@ export function RoadMap() {
             [event.point.x - ROAD_TAP_TOLERANCE, event.point.y - ROAD_TAP_TOLERANCE],
             [event.point.x + ROAD_TAP_TOLERANCE, event.point.y + ROAD_TAP_TOLERANCE],
           ];
-          // Queried in the app's order, so a marker always wins over the road underneath it.
+          // Queried in the app's order, so a marker always wins over the road underneath it —
+          // and only among the layers the current mode is showing.
+          const visible = roadLayerVisibility(modeRef.current);
           for (const layer of ROAD_QUERY_ORDER) {
+            if (layer === "incident-markers" && !visible.showIncidents) continue;
+            if (layer === "station-markers" && !visible.showStations) continue;
             if (!map.getLayer(layer)) continue;
             const hit: MapGeoJSONFeature | undefined = map.queryRenderedFeatures(box, { layers: [layer] })[0];
             if (!hit) continue;
@@ -130,6 +142,28 @@ export function RoadMap() {
       setMap(null);
     };
   }, [onSelect]);
+
+  /**
+   * The mode is applied as layer opacity rather than by rebuilding the style, which is what the
+   * app does (RoadInfoScreen.kt:409-413) — the data stays loaded, so switching back is instant.
+   *
+   * One addition: the app sets only `circleOpacity` on the station dots, which leaves their white
+   * stroke drawn over the roads. That reads as a stray ring rather than a hidden station, so the
+   * stroke is faded with the fill here.
+   */
+  useEffect(() => {
+    modeRef.current = mode;
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const { showRoads, showIncidents, showStations } = roadLayerVisibility(mode);
+    map.setPaintProperty("road-casing", "line-opacity", showRoads ? 0.82 : 0);
+    map.setPaintProperty("road-lines", "line-opacity", showRoads ? 1 : 0);
+    map.setPaintProperty("incident-markers", "icon-opacity", showIncidents ? 1 : 0);
+    map.setPaintProperty("station-markers", "circle-opacity", showStations ? 1 : 0);
+    map.setPaintProperty("station-markers", "circle-stroke-opacity", showStations ? 1 : 0);
+    // A selection made in the other mode would otherwise stay open over an invisible feature.
+    setSelected(null);
+  }, [mode, ready]);
 
   /**
    * A map built while its container is `display: none` measures zero, and fitting Iceland into
@@ -158,6 +192,19 @@ export function RoadMap() {
 
   return (
     <div className="road-map">
+      <div className="road-modes" role="group" aria-label="道路地圖顯示模式">
+        {ROAD_MODES.map((entry) => (
+          <button
+            key={entry.mode}
+            type="button"
+            className={entry.mode === mode ? "active" : undefined}
+            aria-pressed={entry.mode === mode}
+            onClick={() => setMode(entry.mode)}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
       <div ref={containerRef} className="road-map-canvas" />
       {!ready && !failure && <p className="muted-line">正在載入道路地圖…</p>}
       {failure && (
@@ -166,7 +213,7 @@ export function RoadMap() {
         </p>
       )}
 
-      <StationLabels map={map} ready={ready} />
+      <StationLabels map={map} ready={ready && roadLayerVisibility(mode).showStations} />
 
       <div className="road-legend">
         <strong>道路狀態</strong>
@@ -179,18 +226,48 @@ export function RoadMap() {
           ))}
         </div>
         <div className="road-legend-rows">
-          {STATION_LEGEND.map((entry) => (
+          {(mode === "EVENTS" ? EVENT_LEGEND : STATION_LEGEND).map((entry) => (
             <span key={entry.label}>
               <i style={{ background: entry.color }} />
               {entry.label}
             </span>
           ))}
+          {mode === "EVENTS" && <MarkerSample />}
         </div>
-        <span className="muted-line">點擊道路、事件標記或測站可查看官方詳細內容。</span>
+        <span className="muted-line">
+          {mode === "EVENTS"
+            ? "點擊道路或事件標記可查看官方詳細內容。"
+            : "放大地圖後可看到站名。點選站點可查看完整測量值。"}
+        </span>
       </div>
 
       {selected && <RoadDetailCard item={selected} onClose={() => setSelected(null)} />}
     </div>
+  );
+}
+
+/**
+ * The app's `MarkerLegendItem`: the actual roadworks marker bitmap at 24dp beside its label, so
+ * the legend and the map can never show different artwork.
+ */
+function MarkerSample() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Painted straight onto the canvas: the same generator the map installs its icons from.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const image = drawMarker(MARKER_IDS.ROADWORKS, 2);
+    if (!canvas || !image) return;
+    canvas.width = image.width;
+    canvas.height = image.height;
+    canvas.getContext("2d")?.putImageData(image, 0, 0);
+  }, []);
+
+  return (
+    <span>
+      <canvas ref={canvasRef} style={{ width: 20, height: 20 }} aria-hidden="true" />
+      道路事件
+    </span>
   );
 }
 

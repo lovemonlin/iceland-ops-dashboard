@@ -293,3 +293,57 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 820px) {
   .road-map-canvas { height: 340px; }
 }
+
+/* Road display modes — the app's two road screens, as one toggle. */
+.road-modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.road-modes button {
+  flex: 1 1 auto;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.road-modes button:hover { color: var(--text); background: #1b2a3b; }
+.road-modes button.active { color: var(--text); background: #1b2a3b; border-color: #49617c; font-weight: 600; }
+.road-modes button:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+.road-legend-rows canvas { display: block; }
+
+/* Aurora gauges, ported from the app's GaugeDial. Sizes come from src/lib/auroraGauge.ts. */
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  justify-items: center;
+  gap: 10px 4px;
+  margin-top: 16px;
+}
+.gauge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.gauge-face { position: relative; }
+.gauge-face svg { display: block; }
+/* The glass readout panel at the bottom of the dial face. */
+.gauge-readout {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: linear-gradient(#182940, #0A1424);
+  border: 1px solid rgba(118, 221, 235, 0.25);
+  white-space: nowrap;
+}
+.gauge-readout strong { font-size: 14px; font-weight: 700; color: #F4F8FF; font-variant-numeric: tabular-nums; }
+.gauge-readout span { font-size: 7px; line-height: 8px; font-weight: 500; color: rgba(145, 169, 204, 0.72); }
+.gauge-status {
+  font-size: 9px;
+  line-height: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 999px;
+  border: 1px solid;
+  background: rgba(8, 17, 31, 0.82);
+}
