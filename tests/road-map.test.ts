@@ -438,20 +438,20 @@ test("the road dialog still shows every field the inline card did", () => {
   const body = roadMap.split("function RoadDetailBody")[1] ?? "";
 
   // Station: the measurements, the caveat and the attribution.
-  assert.match(body, /此筆資料更新於 \{item\.updatedAt\}/);
+  assert.match(body, /此筆資料更新於 <strong>\{item\.updatedAt\}<\/strong>/);
   assert.match(body, /roadStatusLabel\(item\.status\)/);
   assert.match(body, /<StationDetails item=\{item\} \/>/);
   assert.match(body, /測站數值由官方量測，僅供參考。/);
   // Road / incident: the English source text and both descriptions.
   assert.match(body, /英文原文/);
   assert.match(body, /\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}/);
-  assert.match(body, /\{item\.descriptionEnglish && <p className="muted-line">\{item\.descriptionEnglish\}<\/p>\}/);
-  assert.match(body, /\{item\.descriptionIcelandic && <p className="muted-line">\{item\.descriptionIcelandic\}<\/p>\}/);
+  assert.match(body, /\{item\.descriptionEnglish && <p className="road-note">\{item\.descriptionEnglish\}<\/p>\}/);
+  assert.match(body, /\{item\.descriptionIcelandic && <p className="road-note">\{item\.descriptionIcelandic\}<\/p>\}/);
   assert.match(body, /\{ROAD_ATTRIBUTION\}/);
 
-  // The station values themselves are untouched.
+  // Every station measurement still has a row, now one label each rather than a run of prose.
   const values = roadMap.split("function StationDetails")[1] ?? "";
-  for (const field of ["氣溫", "路面溫度", "風（來向）", "陣風", "濕度", "車流"]) {
+  for (const field of ["氣溫", "路面溫度", "風速", "風向", "陣風", "濕度", "車流", "最近", "今日"]) {
     assert.equal(values.includes(field), true, `StationDetails lost ${field}`);
   }
 });
@@ -478,4 +478,119 @@ test("the road dialog is presented by the same rules as the weather dialog", () 
   assert.match(css, /\.forecast-dialog,\s*\n  \.road-dialog \{ max-height: 86vh; \}/);
   // The inline card's own shell is gone with it.
   assert.equal(/^\.road-detail \{/m.test(css), false, "the inline .road-detail shell must be removed");
+});
+
+test("station measurements are label/value rows, not a run of prose", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+  const station = roadMap.split("function StationDetails")[1]?.split("function Measurement")[0] ?? "";
+
+  // A definition list: each value is bound to its own label rather than sitting in a sentence.
+  assert.match(station, /<dl className="road-values">/);
+  assert.match(station, /<Measurement label="氣溫" value=\{`\$\{item\.temperature\}°C`\} \/>/);
+  assert.match(station, /<Measurement label="路面溫度" value=\{`\$\{item\.roadTemperature\}°C`\} tone="surface" \/>/);
+  assert.match(station, /<Measurement label="風速" value=\{`\$\{item\.windSpeed\} m\/s`\} tone="wind" \/>/);
+  assert.match(station, /<Measurement label="風向" value=\{`\$\{item\.windDirection\}°`\} tone="wind" \/>/);
+  assert.match(station, /<Measurement label="陣風" value=\{`\$\{item\.windGust\} m\/s`\} tone="wind" \/>/);
+  assert.match(station, /<Measurement label="濕度" value=\{`\$\{item\.humidity\}%`\} tone="humidity" \/>/);
+  // Traffic is its own section, behind a divider and a heading.
+  assert.match(station, /<hr className="road-rule" \/>\s*<p className="road-subhead">車流<\/p>/);
+  assert.match(station, /<Measurement label="最近" value=\{item\.trafficRecent \|\| "—"\} tone="recent" \/>/);
+  assert.match(station, /<Measurement label="今日" value=\{item\.trafficToday \|\| "—"\} tone="today" \/>/);
+  assert.match(station, /此站沒有車流計數器/);
+  // The old prose rows are gone.
+  assert.equal(/氣溫: \{item\.temperature\}|風（來向）/.test(station), false);
+
+  // The label is always rendered as text, so a tint is never the only thing carrying meaning.
+  const row = roadMap.split("function Measurement")[1] ?? "";
+  assert.match(row, /<dt>\{label\}<\/dt>/);
+  assert.match(row, /className=\{tone \? `road-value tone-\$\{tone\}` : "road-value"\}/);
+});
+
+test("the detail body steps down from title to attribution", () => {
+  const roadMap = read("src/components/RoadMap.tsx");
+  const body = roadMap.split("function RoadDetailBody")[1]?.split("function StationDetails")[0] ?? "";
+
+  // The timestamp is the emphasised part of the banner, not the whole sentence.
+  assert.match(body, /此筆資料更新於 <strong>\{item\.updatedAt\}<\/strong>/);
+  // The status keeps the authoritative semantic colour.
+  assert.match(body, /style=\{\{ color: roadStatusColor\(item\.status\) \}\}/);
+  // A divider before the disclaimer, and before the attribution on the road/incident branch.
+  assert.equal([...body.matchAll(/<hr className="road-rule" \/>/g)].length, 2);
+  // Note and attribution are their own steps, no longer both `muted-line`.
+  assert.match(body, /<p className="road-note">測站數值由官方量測，僅供參考。<\/p>/);
+  assert.match(body, /<p className="road-primary">\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}<\/p>/);
+  assert.match(body, /<p className="road-attribution">\{ROAD_ATTRIBUTION\}<\/p>/);
+  assert.equal(body.includes('className="muted-line"'), false, "the flat muted-line pass is gone");
+});
+
+test("the road detail palette is applied where it was specified", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+  // Scanned rather than matched: these selectors carry dots and brackets, and escaping them for
+  // a RegExp is more ways to be wrong than reading to the next closing brace.
+  // The LAST declaration, not the first: several of these selectors also appear in the rule the
+  // road dialog shares with the weather one, and at equal specificity the later one is what the
+  // reader actually sees. Checking the first would pass while the page showed something else.
+  const rule = (selector: string) => {
+    const start = css.lastIndexOf(`\n${selector} {`);
+    if (start < 0) return "";
+    const end = css.indexOf("}", start);
+    return end < 0 ? "" : css.slice(start + 1, end + 1);
+  };
+
+  assert.match(rule(".road-value-row dt"), /color: #94A3B8/);
+  assert.match(rule(".road-value"), /color: #F8FAFC/);
+  assert.match(rule(".road-subhead"), /color: #38BDF8/);
+  assert.match(rule(".road-value.tone-surface"), /color: #FDBA74/);
+  assert.match(rule(".road-value.tone-wind"), /color: #7DD3FC/);
+  assert.match(rule(".road-value.tone-humidity"), /color: #5EEAD4/);
+  assert.match(rule(".road-value.tone-recent"), /color: #4ADE80/);
+  assert.match(rule(".road-value.tone-today"), /color: #FACC15/);
+  assert.match(rule(".road-note"), /color: #94A3B8/);
+  assert.match(rule(".road-attribution"), /color: #64748B/);
+  // The station name stays the largest, whitest thing in the dialog — and the override must sit
+  // after the rule it shares with the weather dialog, or the shared 15px would win instead.
+  assert.match(rule(".road-dialog-head strong"), /color: #F8FAFC/);
+  assert.match(rule(".road-dialog-head strong"), /font-size: 16px/);
+  assert.equal(
+    css.lastIndexOf("\n.road-dialog-head strong {") > css.indexOf("\n.road-dialog-head strong { font-size: 15px"),
+    true,
+    "the road title override must come after the shared dialog-head rule",
+  );
+  // The banner's sentence is normal weight; only the timestamp is bold.
+  assert.match(rule(".road-detail-updated"), /font-weight: 400/);
+  assert.match(rule(".road-detail-updated strong"), /font-weight: 700/);
+  // Cards inside cards were not introduced: the rows carry no border or panel background,
+  // and none of the road detail rules reaches for a gradient.
+  assert.equal(/border|background/.test(rule(".road-value-row")), false);
+  const roadRules = [...css.matchAll(/^\.road-[\w.-]*[^{]*\{[^}]*\}/gm)].map((match) => match[0]);
+  assert.equal(roadRules.length > 8, true, "the road detail rules should have been found");
+  assert.equal(roadRules.some((declaration) => declaration.includes("gradient")), false);
+});
+
+test("every road detail colour stays readable on the dialog background", () => {
+  const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+  const panel = css.match(/--panel: (#[0-9a-fA-F]{6});/)?.[1] ?? "";
+  assert.equal(panel, "#121923");
+
+  const channel = (hex: string, at: number) => {
+    const v = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = (hex: string) =>
+    0.2126 * channel(hex, 1) + 0.7152 * channel(hex, 3) + 0.0722 * channel(hex, 5);
+  const contrast = (a: string, b: string) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  // Values, labels and headings are body text, so they carry the 4.5:1 bar.
+  for (const colour of ["#F8FAFC", "#94A3B8", "#38BDF8", "#FDBA74", "#7DD3FC", "#5EEAD4", "#4ADE80", "#FACC15"]) {
+    const ratio = contrast(colour, panel);
+    assert.equal(ratio >= 4.5, true, `${colour} is only ${ratio.toFixed(2)}:1 on ${panel}`);
+  }
+  // The attribution is deliberately the quietest line. It clears the 3:1 floor but not 4.5:1 --
+  // recorded here so the trade-off is visible rather than discovered later.
+  const attribution = contrast("#64748B", panel);
+  assert.equal(attribution >= 3, true, `attribution is only ${attribution.toFixed(2)}:1`);
+  assert.equal(attribution < 4.5, true, "attribution now clears 4.5:1 -- tighten this test");
 });

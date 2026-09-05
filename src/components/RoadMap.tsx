@@ -386,8 +386,14 @@ function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
   const isStation = item.type === "STATION";
   return (
     <>
-      {isStation && item.updatedAt && <p className="road-detail-updated">此筆資料更新於 {item.updatedAt}</p>}
+      {isStation && item.updatedAt && (
+        <p className="road-detail-updated">
+          此筆資料更新於 <strong>{item.updatedAt}</strong>
+        </p>
+      )}
 
+      {/* The status keeps `roadStatusColor` — the semantic colour stays authoritative, and for a
+          station that colour is already the cyan this dialog uses for its section headings. */}
       <p className="road-detail-status" style={{ color: roadStatusColor(item.status) }}>
         {roadStatusLabel(item.status)}
       </p>
@@ -395,43 +401,65 @@ function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
       {isStation ? (
         <>
           <StationDetails item={item} />
-          <p className="muted-line">測站數值由官方量測，僅供參考。</p>
+          <hr className="road-rule" />
+          <p className="road-note">測站數值由官方量測，僅供參考。</p>
         </>
       ) : (
         <>
           <p className="road-detail-label">英文原文</p>
-          <p>{item.titleEnglish || roadStatusEnglish(item.status)}</p>
-          {item.descriptionEnglish && <p className="muted-line">{item.descriptionEnglish}</p>}
-          {item.descriptionIcelandic && <p className="muted-line">{item.descriptionIcelandic}</p>}
+          <p className="road-primary">{item.titleEnglish || roadStatusEnglish(item.status)}</p>
+          {item.descriptionEnglish && <p className="road-note">{item.descriptionEnglish}</p>}
+          {item.descriptionIcelandic && <p className="road-note">{item.descriptionIcelandic}</p>}
+          <hr className="road-rule" />
         </>
       )}
 
-      <p className="muted-line">{ROAD_ATTRIBUTION}</p>
+      <p className="road-attribution">{ROAD_ATTRIBUTION}</p>
     </>
   );
 }
 
+/**
+ * The station's measurements, as label/value rows rather than one run of prose.
+ *
+ * Everything used to be the same colour in the same sentence shape, so finding the road
+ * temperature meant reading every line. Each value now carries a restrained tint for what it
+ * measures — but the written label stays beside it, so the colour is an aid and never the only
+ * thing saying what a number is.
+ */
 function StationDetails({ item }: { item: RoadFeatureItem }) {
-  const wind = item.windSpeed
-    ? [
-        `${item.windSpeed} m/s`,
-        item.windDirection ? `${item.windDirection}°` : "",
-        item.windGust ? `陣風 ${item.windGust} m/s` : "",
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : "";
+  const hasTraffic = Boolean(item.trafficRecent || item.trafficToday);
   return (
-    <div className="road-detail-values">
-      {item.temperature && <span>氣溫: {item.temperature}°C</span>}
-      {item.roadTemperature && <span>路面溫度: {item.roadTemperature}°C</span>}
-      {wind && <span>風（來向）: {wind}</span>}
-      {item.humidity && <span>濕度: {item.humidity}%</span>}
-      <span>
-        {item.trafficRecent || item.trafficToday
-          ? `車流: 最近 ${item.trafficRecent || "—"} · 今日 ${item.trafficToday || "—"}`
-          : "此站沒有車流計數器"}
-      </span>
+    <>
+      <dl className="road-values">
+        {item.temperature && <Measurement label="氣溫" value={`${item.temperature}°C`} />}
+        {item.roadTemperature && <Measurement label="路面溫度" value={`${item.roadTemperature}°C`} tone="surface" />}
+        {item.windSpeed && <Measurement label="風速" value={`${item.windSpeed} m/s`} tone="wind" />}
+        {item.windDirection && <Measurement label="風向" value={`${item.windDirection}°`} tone="wind" />}
+        {item.windGust && <Measurement label="陣風" value={`${item.windGust} m/s`} tone="wind" />}
+        {item.humidity && <Measurement label="濕度" value={`${item.humidity}%`} tone="humidity" />}
+      </dl>
+
+      <hr className="road-rule" />
+      <p className="road-subhead">車流</p>
+      {hasTraffic ? (
+        <dl className="road-values">
+          <Measurement label="最近" value={item.trafficRecent || "—"} tone="recent" />
+          <Measurement label="今日" value={item.trafficToday || "—"} tone="today" />
+        </dl>
+      ) : (
+        <p className="road-note">此站沒有車流計數器</p>
+      )}
+    </>
+  );
+}
+
+/** One label/value row. The label is text, always, whatever the value is tinted. */
+function Measurement({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <div className="road-value-row">
+      <dt>{label}</dt>
+      <dd className={tone ? `road-value tone-${tone}` : "road-value"}>{value}</dd>
     </div>
   );
 }

@@ -275,11 +275,39 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   border-radius: 8px;
   padding: 7px 10px;
   font-size: 12px;
-  font-weight: 600;
+  /* Softer than the title: the timestamp is the part worth reading twice, not the sentence. */
+  font-weight: 400;
 }
 .road-detail-status { font-weight: 700; font-size: 13px; }
-.road-detail-label { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
-.road-detail-values { display: grid; gap: 4px; font-size: 13px; }
+.road-detail-label { color: #94A3B8; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Road detail hierarchy.
+   Everything in this dialog used to be one muted colour in one sentence shape, so finding the
+   road temperature meant reading every line. Labels now recede, values carry a restrained tint
+   for what they measure, and the note and attribution step down again. Each tint is paired with
+   its written label, so colour is an aid and never the only thing carrying the meaning. */
+.road-detail-updated strong { font-weight: 700; }
+.road-subhead { color: #38BDF8; font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+.road-rule { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.road-values { display: grid; gap: 4px; margin: 0; font-size: 13px; }
+.road-value-row { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 12px; }
+.road-value-row dt { color: #94A3B8; }
+.road-value-row dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+.road-value { color: #F8FAFC; font-weight: 600; }
+.road-value.tone-surface { color: #FDBA74; }
+.road-value.tone-wind { color: #7DD3FC; }
+.road-value.tone-humidity { color: #5EEAD4; }
+.road-value.tone-recent { color: #4ADE80; }
+.road-value.tone-today { color: #FACC15; }
+.road-primary { color: #F8FAFC; }
+.road-note { color: #94A3B8; font-size: 13px; }
+.road-attribution { color: #64748B; font-size: 12px; }
+
+/* Narrow enough that a label and its value would collide: stack instead of squeezing. */
+@media (max-width: 360px) {
+  .road-value-row { grid-template-columns: 1fr; gap: 0; }
+  .road-value-row dd { text-align: left; }
+}
 
 @media (max-width: 820px) {
   .road-map-canvas { height: 340px; }
@@ -386,6 +414,9 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .road-dialog-head div { display: flex; flex-direction: column; }
 .forecast-dialog-head strong,
 .road-dialog-head strong { font-size: 15px; font-weight: 600; }
+/* The station name is the anchor of the road dialog: whitest, and a step larger than the body.
+   Declared after the shared rule because both selectors weigh the same — order decides. */
+.road-dialog-head strong { color: #F8FAFC; font-size: 16px; font-weight: 700; }
 .forecast-dialog-head span,
 .road-dialog-head span { color: var(--muted); font-size: 11px; }
 .forecast-dialog-head button,
