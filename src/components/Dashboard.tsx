@@ -175,17 +175,13 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
         schemaVersion={snapshot.schemaVersion}
       />
       <RoadsSection irca={snapshotEntry(snapshot, "irca")} now={now} schemaVersion={snapshot.schemaVersion} />
-      {/* Paired on a wide screen so all four answers fit one look, stacked on a narrow one. */}
-      <div className="pair">
-        <AuroraSection
-          kp={snapshotEntry(snapshot, "noaaKp")}
-          solarWind={snapshotEntry(snapshot, "solarWind")}
-          ovation={snapshotEntry(snapshot, "ovation")}
-          now={now}
-          schemaVersion={snapshot.schemaVersion}
-        />
-        <WarningsSection imo={snapshotEntry(snapshot, "imo")} schemaVersion={snapshot.schemaVersion} />
-      </div>
+      <AuroraSection
+        kp={snapshotEntry(snapshot, "noaaKp")}
+        solarWind={snapshotEntry(snapshot, "solarWind")}
+        ovation={snapshotEntry(snapshot, "ovation")}
+        now={now}
+        schemaVersion={snapshot.schemaVersion}
+      />
       <PipelineSection pipelines={pipelines} schemaVersion={snapshot.schemaVersion} />
 
       <section>
@@ -216,6 +212,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
           </ol>
         </details>
       </section>
+
+      <WarningsSection imo={snapshotEntry(snapshot, "imo")} schemaVersion={snapshot.schemaVersion} />
     </main>
   );
 }
