@@ -193,11 +193,13 @@ export function buildCloudForecastStyle(
     sites: { type: "geojson", data: siteFeatureCollection(markers) },
   };
   if (imageUrl) {
+    // The app puts `attribution` on this source, which MapLibre Native accepts. MapLibre GL JS
+    // rejects it on an image source and fails the whole style, so the credit is rendered in the
+    // panel below the map instead -- see CLOUD_ATTRIBUTION there.
     sources["ecmwf-cloud-forecast"] = {
       type: "image",
       url: imageUrl,
       coordinates: CLOUD_IMAGE_COORDINATES,
-      attribution: CLOUD_ATTRIBUTION,
     };
   }
 

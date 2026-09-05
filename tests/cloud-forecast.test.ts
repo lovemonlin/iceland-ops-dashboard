@@ -248,8 +248,11 @@ test("the cloud image covers exactly the app's box, corners in the app's order",
   assert.equal(source.type, "image");
   assert.equal(source.url, `${BASE}/tcc-00h.png`);
   assert.deepEqual(source.coordinates, CLOUD_IMAGE_COORDINATES);
-  assert.equal(source.attribution, CLOUD_ATTRIBUTION);
+  // MapLibre GL JS rejects `attribution` on an image source and fails the entire style with it,
+  // unlike MapLibre Native, so the credit lives in the panel rather than on the source.
+  assert.equal("attribution" in source, false, "an image source must carry no attribution key");
   assert.equal(CLOUD_ATTRIBUTION, "ECMWF © CC BY 4.0");
+  assert.match(read("src/components/CloudForecastMap.tsx"), /\{CLOUD_ATTRIBUTION\}/);
 
   // With no frame there is simply no image source, rather than a broken one.
   const bare = buildCloudForecastStyle("/iceland.geojson", undefined, []);
