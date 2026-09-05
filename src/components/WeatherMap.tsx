@@ -588,7 +588,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     if (!wasDrag) selectNear(localPoint(event));
   };
 
-  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+  const onWheel = (event: WheelEvent) => {
     if (!projection) return;
     event.preventDefault();
     stopAnimation();
@@ -609,10 +609,10 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     }, 80);
   };
 
-  const touchDistance = (touches: React.TouchList) =>
+  const touchDistance = (touches: TouchList) =>
     Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
 
-  const onTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+  const onTouchMove = (event: TouchEvent) => {
     if (event.touches.length < 2 || !projection) return;
     event.preventDefault();
     stopAnimation();
@@ -645,6 +645,26 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     setUiScale(viewRef.current.scale);
   };
 
+  /**
+   * Wheel and pinch are bound directly rather than through React's props.
+   *
+   * React registers `wheel` and `touchmove` as passive listeners, so `preventDefault` inside a
+   * synthetic handler does nothing except log "Unable to preventDefault inside passive event
+   * listener invocation" — and the page scrolls away underneath while you are trying to zoom the
+   * map. A non-passive listener is the only way to hold the gesture.
+   */
+  useEffect(() => {
+    if (mode !== "MAP") return;
+    const element = containerRef.current;
+    if (!element) return;
+    element.addEventListener("wheel", onWheel, { passive: false });
+    element.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      element.removeEventListener("wheel", onWheel);
+      element.removeEventListener("touchmove", onTouchMove);
+    };
+  });
+
   const height = projection?.viewportHeight ?? 0;
 
   return (
@@ -673,8 +693,6 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
             onPointerUp={onPointerUp}
             onPointerCancel={() => (drag.current = null)}
             onDoubleClick={() => zoomToScale(viewRef.current.scale >= MAX_SCALE ? 1 : viewRef.current.scale * 2)}
-            onWheel={onWheel}
-            onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
             {projection && (

@@ -381,6 +381,15 @@ test("zoom is interpolated rather than snapped, without moving where it zooms to
   assert.match(map, /Math\.exp\(-event\.deltaY \* 0\.0022\)/);
   assert.equal(/zoomToScale\(scale \* \(event\.deltaY < 0 \? ZOOM_STEP/.test(map), false);
 
+  // React registers wheel and touchmove as passive, which makes preventDefault a no-op: the page
+  // scrolls away underneath the gesture and the console fills with warnings. They are bound
+  // natively instead, so holding the gesture actually works.
+  assert.match(map, /addEventListener\("wheel", onWheel, \{ passive: false \}\)/);
+  assert.match(map, /addEventListener\("touchmove", onTouchMove, \{ passive: false \}\)/);
+  assert.match(map, /removeEventListener\("wheel", onWheel\)/);
+  assert.match(map, /removeEventListener\("touchmove", onTouchMove\)/);
+  assert.equal(/onWheel=\{onWheel\}|onTouchMove=\{onTouchMove\}/.test(map), false);
+
   // The app's own anchor for the buttons is unchanged: the selected site, moved to the centre.
   // The base coordinate is cached so animation frames do not repeatedly recompute geometry.
   assert.match(map, /const anchor = focused \? baseSites\.get\(focused\.id\) \?\? centre : centre;/);
