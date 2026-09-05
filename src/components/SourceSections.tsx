@@ -13,6 +13,7 @@ import {
 } from "@/lib/display";
 import dynamic from "next/dynamic";
 import { AuroraGauges } from "@/components/AuroraGauges";
+import { AuroraModes } from "@/components/AuroraModes";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
 import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
@@ -224,9 +225,11 @@ export function AuroraSection({
           dataTime={oldestEntry?.dataTime}
           dataTimeLabel="來源資料時間"
         >
-          {/* The app's instrument panel, over the same readings the stats below quote. */}
-          <AuroraGauges kpData={kpData} windData={windData} />
-          <div className="stats">
+          {/* Two views of the same three feeds: the app's instrument panel, and its position map. */}
+          <AuroraModes ovationData={ovationData}>
+            {/* The app's instrument panel, over the same readings the stats below quote. */}
+            <AuroraGauges kpData={kpData} windData={windData} />
+            <div className="stats">
             <Stat label="Kp 指數" value={formatNumber(kpData.kp)} />
             <Stat label="太陽風速" value={formatNumber(windData.speedKms, "km/s")} />
             <Stat label="Bt" value={formatNumber(windData.btNt, "nT")} />
@@ -248,7 +251,8 @@ export function AuroraSection({
                 );
               })}
             </ul>
-          </details>
+            </details>
+          </AuroraModes>
         </SourceCard>
       </div>
     </section>

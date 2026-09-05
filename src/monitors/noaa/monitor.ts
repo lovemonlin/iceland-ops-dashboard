@@ -9,6 +9,7 @@ import {
 import { evaluateHealth, type HealthInput } from "@/health/evaluate";
 import type { MonitorErrorType, MonitorHealth } from "@/health/model";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher, type DiagnosticResult } from "@/lib/fetchWithDiagnosticsCore";
+import { encodeOvationGrid } from "@/lib/ovationGrid";
 
 const defaultRequest: DiagnosticFetcher = (url, options) => fetchWithDiagnosticsCore(url, options);
 
@@ -352,6 +353,13 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
     forecastTime: utcMinute(forecastTime),
     icelandLatitudeCells: icelandCells,
     icelandPeakProbabilityPercent: icelandPeak,
+    /**
+     * The aurora position map's own copy of the model, taken from this same response.
+     *
+     * Purely additive: every field above is unchanged, and the browser still never calls NOAA.
+     * Only the latitude band the map draws is kept, row-major -- see `@/lib/ovationGrid`.
+     */
+    grid: encodeOvationGrid(coordinates),
   };
 
   return evaluateHealth({
