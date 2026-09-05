@@ -173,6 +173,11 @@ test("the panel is drawn, and says why the app's fifth dial is absent", () => {
   assert.match(component, /gaugeAngle\(/);
   assert.match(component, /aurora-nowcast-hemi-power|hemispheric-power|hemispheric/i);
 
+  // The app snaps instead of sweeping when animations are off; so does this, and a timer also
+  // guarantees the true reading arrives if no animation frame is ever delivered.
+  assert.match(component, /prefers-reduced-motion: reduce/);
+  assert.match(component, /setTimeout\(\(\) => setDisplayed\(target\), delayMs \+ duration \+ 80\)/);
+
   const lib = read("src/lib/auroraGauge.ts");
   // The omission is explained where the readings are assembled, not left as a silent gap.
   assert.match(lib, /功率（GW）/);

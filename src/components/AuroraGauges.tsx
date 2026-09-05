@@ -53,15 +53,32 @@ function useAnimatedValue(target: number | undefined, start: number, delayMs: nu
   const [displayed, setDisplayed] = useState(start);
   const played = useRef(false);
   const frame = useRef(0);
+  const timer = useRef(0);
 
   useEffect(() => {
+    const stop = () => {
+      cancelAnimationFrame(frame.current);
+      clearTimeout(timer.current);
+    };
+
     if (target === undefined) {
-      // Snapped on the next frame rather than during the effect, so the needle parks at the
-      // minimum without this becoming a render-phase update.
+      // Parked at the minimum, on a timer rather than during the effect so this never becomes a
+      // render-phase update.
       played.current = false;
-      frame.current = requestAnimationFrame(() => setDisplayed(start));
-      return () => cancelAnimationFrame(frame.current);
+      timer.current = window.setTimeout(() => setDisplayed(start), 0);
+      return stop;
     }
+
+    // The app checks ValueAnimator.areAnimatorsEnabled() and snaps when animations are off; the
+    // web equivalent is the reduced-motion preference.
+    const reducedMotion =
+      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      played.current = true;
+      timer.current = window.setTimeout(() => setDisplayed(target), 0);
+      return stop;
+    }
+
     const from = played.current ? displayed : start;
     const first = !played.current;
     const duration = first ? 850 : 600;
@@ -80,7 +97,11 @@ function useAnimatedValue(target: number | undefined, start: number, delayMs: nu
       if (t < 1) frame.current = requestAnimationFrame(step);
     };
     frame.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame.current);
+    // A browser that is not painting delivers no animation frames, and a dial left mid-sweep
+    // would be showing the bottom of its range as if it were the reading. The timer guarantees
+    // the true value arrives whether or not the sweep to it was ever drawn.
+    timer.current = window.setTimeout(() => setDisplayed(target), delayMs + duration + 80);
+    return stop;
     // Re-runs only when the reading itself changes; `displayed` is read as the starting point.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, start, delayMs]);
