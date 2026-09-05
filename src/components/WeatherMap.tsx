@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPublicAssetPath } from "@/lib/publicPath";
+import { SiteForecastDialog } from "@/components/SiteForecastDialog";
 import {
   clampPan,
   COAST_STROKE,
@@ -10,6 +11,9 @@ import {
   DOT_STROKE,
   effectiveObstruction,
   FOCUS_CARD_BACKGROUND,
+  forecastBaseTime,
+  formatForecastDayHour,
+  hourAt,
   FOCUS_RING_COLOR,
   FOCUS_RING_RADIUS,
   FOCUS_RING_STROKE,
@@ -22,6 +26,7 @@ import {
   MAP_LAND,
   MAP_SURFACE,
   MARKER_ICON_SIZE,
+  MAX_OFFSET_HOURS,
   MAX_SCALE,
   obstructionColorFor,
   parseOutline,
@@ -32,6 +37,7 @@ import {
   ZOOM_STEP,
   type OutlineShape,
   type Point,
+  type WeatherHour,
 } from "@/lib/weatherMap";
 
 /** One site as the snapshot stores it, written by the MET Norway monitor. */
@@ -51,6 +57,8 @@ export interface WeatherMapSite {
   cloudHighPercent?: number;
   cloudTotalPercent?: number;
   symbolCode?: string;
+  /** The forecast series the MET Norway monitor stored alongside the current reading. */
+  hours?: WeatherHour[];
 }
 
 /** IcelandAuroraSites.default. */
@@ -265,6 +273,11 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
   const [outlineFailed, setOutlineFailed] = useState(false);
   const [focusedId, setFocusedId] = useState(DEFAULT_SITE_ID);
   const [uiScale, setUiScale] = useState(1);
+  // One offset for both modes: the app keeps it on the view model, above the list/map switch, so
+  // moving the timeline in one and changing mode does not throw the choice away.
+  const [offsetHours, setOffsetHours] = useState(0);
+  /** Which site's hour-by-hour forecast is open. A list row and a map point both set this. */
+  const [detailSiteId, setDetailSiteId] = useState<string | null>(null);
 
   // The view itself lives in refs. Zooming and panning therefore redraw the canvas directly instead
   // of asking React to reconcile a 3,063-point SVG path plus 32 DOM labels on every animation frame.
@@ -323,7 +336,37 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     return positions;
   }, [projection, sites]);
 
-  const focused = sites.find((site) => site.id === focusedId) ?? sites[0];
+  const baseTime = useMemo(() => forecastBaseTime(sites), [sites]);
+  // Derived only from the snapshot's own base, never from the wall clock: a render must not
+  // depend on when it happens to run. With no stored series there is no timeline to show anyway.
+  const selectedTime = useMemo(
+    () => new Date((baseTime?.getTime() ?? 0) + offsetHours * 3_600_000),
+    [baseTime, offsetHours],
+  );
+
+  /**
+   * Every site as it reads at the selected hour.
+   *
+   * Moving the timeline re-picks an already-stored hour; it never fetches. A site with no stored
+   * series keeps its current reading rather than blanking out.
+   */
+  const displaySites = useMemo(
+    () =>
+      sites.map((site) => {
+        const hour = hourAt(site.hours, selectedTime);
+        return hour ? { ...site, ...hour } : site;
+      }),
+    [sites, selectedTime],
+  );
+
+  const focused = displaySites.find((site) => site.id === focusedId) ?? displaySites[0];
+  const detailSite = sites.find((site) => site.id === detailSiteId) ?? null;
+
+  /** A list row and a map point do the same thing in the app: select, and open the forecast. */
+  const openSite = useCallback((id: string) => {
+    setFocusedId(id);
+    setDetailSiteId(id);
+  }, []);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -369,7 +412,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     context.restore();
 
     const placed = layoutMarkers({
-      points: sites,
+      points: displaySites,
       focusedId,
       viewportWidth: projection.viewportWidth,
       viewportHeight: projection.viewportHeight,
@@ -422,7 +465,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
         context.fillText(temperatureText, contentLeft + MARKER_ICON_SIZE + 2, marker.position.y + 0.5);
       }
     }
-  }, [projection, baseRings, sites, focusedId]);
+  }, [projection, baseRings, displaySites, focusedId]);
 
   const scheduleDraw = useCallback(() => {
     if (drawFrameRef.current !== null) return;
@@ -551,7 +594,7 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
     const nearest = placedRef.current
       .map((marker) => ({ marker, distance: Math.hypot(marker.position.x - at.x, marker.position.y - at.y) }))
       .sort((a, b) => a.distance - b.distance)[0];
-    if (nearest && nearest.distance <= TAP_TOLERANCE) setFocusedId(nearest.marker.point.id);
+    if (nearest && nearest.distance <= TAP_TOLERANCE) openSite(nearest.marker.point.id);
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -678,8 +721,46 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
         </button>
       </div>
 
+      {/*
+        The forecast timeline, shared by both modes.
+
+        Moving it makes no request: MET returns an hourly series and the snapshot kept all of it,
+        so this only re-picks a stored hour — the same reasoning as WeatherOverviewViewModel.
+        Zero is the first hour the snapshot describes, which is what "now" means for a snapshot.
+      */}
+      {baseTime && (
+        <div className="forecast-timeline">
+          <div className="forecast-timeline-head">
+            <strong>
+              {offsetHours === 0
+                ? "目前狀況（可往右拉看預報）"
+                : `預報 ${formatForecastDayHour(selectedTime.toISOString())}  ·  ${offsetHours} 小時後`}
+            </strong>
+            {offsetHours !== 0 && (
+              <button type="button" className="forecast-timeline-reset" onClick={() => setOffsetHours(0)}>
+                回到現在
+              </button>
+            )}
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={MAX_OFFSET_HOURS}
+            step={1}
+            value={offsetHours}
+            onChange={(event) => setOffsetHours(Number(event.target.value))}
+            aria-label="預報時間軸"
+            aria-valuetext={offsetHours === 0 ? "目前狀況" : `${offsetHours} 小時後`}
+          />
+          <div className="forecast-timeline-scale" aria-hidden="true">
+            <span>現在</span>
+            <span>+{MAX_OFFSET_HOURS}h</span>
+          </div>
+        </div>
+      )}
+
       {mode === "LIST" ? (
-        <WeatherList sites={sites} focusedId={focusedId} onFocus={setFocusedId} />
+        <WeatherList sites={displaySites} focusedId={focusedId} onFocus={openSite} />
       ) : outlineFailed ? (
         <p className="error">無法載入冰島輪廓，請切回清單檢視。</p>
       ) : (
@@ -756,6 +837,10 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
             </div>
           )}
         </>
+      )}
+
+      {detailSite && (
+        <SiteForecastDialog site={detailSite} from={selectedTime} onClose={() => setDetailSiteId(null)} />
       )}
     </div>
   );

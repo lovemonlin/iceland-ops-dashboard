@@ -462,3 +462,110 @@ export const LEGEND_DOTS: { obstruction: number; label: string }[] = [
   { obstruction: 60, label: "雲很多" },
   { obstruction: 90, label: "滿天雲 — 沒機會" },
 ];
+
+// ── The forecast timeline (WeatherOverviewViewModel.kt, SiteForecastDialog.kt) ─
+
+/**
+ * How far the overview timeline reaches (WeatherOverviewViewModel.MAX_OFFSET_HOURS).
+ *
+ * The slider only runs forwards: `now + offset`, never into the past, because `/complete` only
+ * returns forecast. It stops at 48 because MET is hourly for roughly the first 60 hours and
+ * 6-hourly after — past that the slider would move while the reading stood still.
+ */
+export const MAX_OFFSET_HOURS = 48;
+
+/** SiteForecastDialog.HOURS_SHOWN. Deliberately not 48: the dialog and the timeline are separate. */
+export const DIALOG_HOURS_SHOWN = 24;
+
+/** One hour of a site's stored forecast, as the MET Norway monitor wrote it. */
+export interface WeatherHour extends CloudLayers {
+  time: string;
+  temperatureC?: number;
+  windMps?: number;
+  windFromDirection?: number;
+  symbolCode?: string;
+}
+
+/**
+ * The stored hour nearest a moment — `SiteForecast.at`, which takes the smallest absolute
+ * difference rather than the next entry forward, so a coarse tail still answers.
+ */
+export function hourAt(hours: WeatherHour[] | undefined, at: Date): WeatherHour | undefined {
+  if (!hours || hours.length === 0) return undefined;
+  const target = at.getTime();
+  let best: WeatherHour | undefined;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const hour of hours) {
+    const parsed = Date.parse(hour.time);
+    if (Number.isNaN(parsed)) continue;
+    const distance = Math.abs(parsed - target);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = hour;
+    }
+  }
+  return best;
+}
+
+/** `SiteForecast.nextHours`: everything from `from` onwards, capped at `count`. */
+export function nextHours(hours: WeatherHour[] | undefined, from: Date, count: number): WeatherHour[] {
+  if (!hours) return [];
+  const start = from.getTime();
+  return hours.filter((hour) => {
+    const parsed = Date.parse(hour.time);
+    return !Number.isNaN(parsed) && parsed >= start;
+  }).slice(0, count);
+}
+
+/**
+ * The timeline's own zero.
+ *
+ * The app takes `Clock.System.now()` because it has just fetched. A dashboard is showing a
+ * snapshot that may be an hour old, so the honest zero is the first hour the data describes —
+ * which keeps `+48h` inside the stored series instead of running off its end.
+ */
+export function forecastBaseTime(sites: { hours?: WeatherHour[] }[]): Date | undefined {
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const site of sites) {
+    const first = site.hours?.[0]?.time;
+    if (!first) continue;
+    const parsed = Date.parse(first);
+    if (!Number.isNaN(parsed) && parsed < earliest) earliest = parsed;
+  }
+  return Number.isFinite(earliest) ? new Date(earliest) : undefined;
+}
+
+/**
+ * Forecast clocks are Iceland's, not the reader's.
+ *
+ * The app formats with `TimeZone.currentSystemDefault()` — the device clock of somebody standing
+ * in Iceland. Read from Taipei the same code would label Icelandic weather in Taipei time, which
+ * is the one reading that would be actively misleading. Iceland keeps UTC all year, so this is
+ * both the app's semantics and the simplest to reason about.
+ */
+export const FORECAST_TIME_ZONE = "Atlantic/Reykjavik";
+
+const icelandParts = (iso: string) => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: FORECAST_TIME_ZONE,
+    hourCycle: "h23",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+  }).formatToParts(new Date(iso));
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  // The app formats month and day with %d and the hour with %02d, so "9/6 00:00" — not "09/06".
+  return { month: String(Number(value("month"))), day: String(Number(value("day"))), hour: value("hour") };
+};
+
+/** `SiteForecastDialog.formatHourLabel`: "14:00", and "9/6 00:00" when the day turns over. */
+export function formatForecastHour(iso: string): string {
+  const { month, day, hour } = icelandParts(iso);
+  return hour === "00" ? `${month}/${day} 00:00` : `${hour}:00`;
+}
+
+/** `WeatherDetailScreen.formatDayHour`: the timeline label always carries its date. */
+export function formatForecastDayHour(iso: string): string {
+  const { month, day, hour } = icelandParts(iso);
+  return `${month}/${day} ${hour}:00`;
+}

@@ -347,3 +347,74 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   border: 1px solid;
   background: rgba(8, 17, 31, 0.82);
 }
+
+/* Forecast timeline — the app's ForecastTimeSlider, shared by the list and the map. */
+.forecast-timeline { display: grid; gap: 4px; margin-bottom: 10px; }
+.forecast-timeline-head { display: flex; align-items: center; gap: 8px; }
+.forecast-timeline-head strong { flex: 1; font-size: 13px; font-weight: 600; }
+.forecast-timeline-reset {
+  border: 0;
+  background: transparent;
+  color: var(--info);
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.forecast-timeline-reset:hover { background: #1b2a3b; }
+.forecast-timeline-reset:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+.forecast-timeline input[type="range"] { width: 100%; accent-color: var(--info); }
+.forecast-timeline-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+
+/* Site forecast dialog — the app's SiteForecastDialog. */
+.forecast-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 8, 16, 0.72);
+}
+.forecast-dialog {
+  width: min(420px, 100%);
+  max-height: min(78vh, 620px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.forecast-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.forecast-dialog-head div { display: flex; flex-direction: column; }
+.forecast-dialog-head strong { font-size: 15px; font-weight: 600; }
+.forecast-dialog-head span { color: var(--muted); font-size: 11px; }
+.forecast-dialog-head button { border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; padding: 0 4px; }
+.forecast-dialog-head button:hover { color: var(--text); }
+.forecast-dialog-head button:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+.forecast-dialog-title { color: var(--muted); font-size: 12px; }
+/* The app caps the list at 380dp and scrolls; 24 rows never all fit at once. */
+.forecast-rows { overflow-y: auto; max-height: 380px; display: grid; gap: 2px; }
+.forecast-row {
+  display: grid;
+  grid-template-columns: 64px 30px 44px 46px 46px;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.forecast-row > span:first-child { text-align: left; }
+.forecast-row-head { color: var(--muted); font-size: 11px; }
+/* The first row is the hour being looked at, emphasised as the app emphasises it. */
+.forecast-row.current { background: rgba(89, 169, 255, 0.12); font-weight: 600; }
+.forecast-symbol { display: flex; justify-content: center; }
+.forecast-row .wind-arrow { justify-content: flex-end; }
+
+@media (max-width: 820px) {
+  .forecast-dialog { max-height: 86vh; }
+}

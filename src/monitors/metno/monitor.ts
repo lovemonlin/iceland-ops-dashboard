@@ -12,6 +12,16 @@ import { evaluateHealth } from "@/health/evaluate";
 import type { MonitorHealth } from "@/health/model";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "@/lib/fetchWithDiagnosticsCore";
 
+/**
+ * How far the stored hourly series reaches, in hours.
+ *
+ * The app's overview timeline runs 0..48 h (WeatherOverviewViewModel.MAX_OFFSET_HOURS) and its
+ * per-site dialog shows 24 rows (SiteForecastDialog.HOURS_SHOWN), so 48 covers both. MET's
+ * `/complete` is hourly for roughly the first 60 hours and 6-hourly after that, which is why the
+ * app stops at 48 — past it the slider would move while the reading did not.
+ */
+export const METNO_FORECAST_HOURS = 48;
+
 export const METNO_MONITOR_ID = "metno";
 export const METNO_MONITOR_NAME = "MET Norway Weather";
 
@@ -42,6 +52,21 @@ interface SiteReading {
   /** Degrees the wind blows *from*, the meteorological convention the app's arrow rotates by 180. */
   windFromDirection?: number;
   /** MET Norway's own condition code, e.g. "clearsky_night". Never derived here. */
+  symbolCode?: string;
+  /** The forecast series the same response already carried. Nothing here is synthesised. */
+  hours: HourlyReading[];
+}
+
+/** One hour of the response, kept verbatim. Absent values stay absent. */
+interface HourlyReading {
+  time: string;
+  temperatureC?: number;
+  windMps?: number;
+  windFromDirection?: number;
+  cloudLowPercent?: number;
+  cloudMediumPercent?: number;
+  cloudHighPercent?: number;
+  cloudTotalPercent?: number;
   symbolCode?: string;
 }
 
@@ -80,12 +105,16 @@ function parseForecast(site: WeatherSite, raw: unknown, httpStatus?: number): Si
     return { ok: false, site, detail: `${site.id}: timeseries is empty` };
   }
 
-  const first = timeseries[0] as {
+  type Entry = {
+    time?: unknown;
     data?: {
       instant?: { details?: unknown };
       next_1_hours?: { summary?: { symbol_code?: unknown } };
     };
   };
+
+  const entries = timeseries as Entry[];
+  const first = entries[0];
   const details = first?.data?.instant?.details;
   if (!details || typeof details !== "object") {
     return { ok: false, site, detail: `${site.id}: first timeseries entry has no instant details` };
@@ -97,12 +126,46 @@ function parseForecast(site: WeatherSite, raw: unknown, httpStatus?: number): Si
     return { ok: false, site, detail: `${site.id}: air_temperature is missing or not numeric` };
   }
 
+  /**
+   * Everything from the first entry out to the horizon, at whatever resolution MET published.
+   *
+   * Timestamps are the entries' own `time`, never the array index: the series is hourly early on
+   * and coarser later, so counting positions would silently mislabel the far end.
+   */
+  const startMs = Date.parse(String(entries[0]?.time));
+  const horizonMs = Number.isNaN(startMs) ? Number.NaN : startMs + METNO_FORECAST_HOURS * 3_600_000;
+  const hours: HourlyReading[] = [];
+  for (const entry of entries) {
+    const timeMs = typeof entry.time === "string" ? Date.parse(entry.time) : Number.NaN;
+    if (Number.isNaN(timeMs)) continue;
+    if (!Number.isNaN(horizonMs) && timeMs > horizonMs) break;
+    const hourly = entry.data?.instant?.details as Record<string, unknown> | undefined;
+    if (!hourly || typeof hourly !== "object") continue;
+    hours.push({
+      time: new Date(timeMs).toISOString(),
+      temperatureC: number(hourly.air_temperature),
+      windMps: number(hourly.wind_speed),
+      windFromDirection: number(hourly.wind_from_direction),
+      cloudLowPercent: number(hourly.cloud_area_fraction_low),
+      cloudMediumPercent: number(hourly.cloud_area_fraction_medium),
+      cloudHighPercent: number(hourly.cloud_area_fraction_high),
+      cloudTotalPercent: number(hourly.cloud_area_fraction),
+      // The app reads its condition code from next_1_hours only; the six-hourly tail therefore has
+      // none, and it renders the default symbol rather than borrowing a wider summary.
+      symbolCode:
+        typeof entry.data?.next_1_hours?.summary?.symbol_code === "string"
+          ? entry.data.next_1_hours.summary.symbol_code
+          : undefined,
+    });
+  }
+
   return {
     ok: true,
     reading: {
       site,
       httpStatus,
       updatedAt: new Date(updatedAtMs),
+      hours,
       temperatureC,
       windMps: number(values.wind_speed),
       windGustMps: number(values.wind_speed_of_gust),
@@ -220,6 +283,7 @@ export async function checkMetno(options: MetnoCheckOptions = {}): Promise<Monit
     cloudHighPercent: reading.cloudHighPercent,
     cloudTotalPercent: reading.cloudTotalPercent,
     symbolCode: reading.symbolCode,
+    hours: reading.hours,
   }));
 
   const details: Record<string, unknown> = { ...data, endpoint: METNO_FORECAST_URL };
