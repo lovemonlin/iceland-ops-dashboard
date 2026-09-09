@@ -286,6 +286,7 @@ export async function checkMetno(options: MetnoCheckOptions = {}): Promise<Monit
     lat: reading.site.lat,
     lon: reading.site.lon,
     region: reading.site.region,
+    lightPollution: reading.site.lightPollution,
     temperatureC: reading.temperatureC,
     windMps: reading.windMps,
     windFromDirection: reading.windFromDirection,

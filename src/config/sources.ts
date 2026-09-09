@@ -36,13 +36,15 @@ export interface WeatherSite {
   lat: number;
   lon: number;
   region: string;
+  /** Aurora viewing-site classification copied verbatim from the Android app. */
+  lightPollution: "DARK" | "MODERATE" | "BRIGHT";
 }
 
 /**
  * The app's curated site list, verbatim. MET Norway forbids bulk point-fetching to build grids;
  * a fixed curated list is explicitly what the app was designed around, so this stays in step with it.
  */
-export const WEATHER_SITES: WeatherSite[] = [
+const WEATHER_SITES_WITHOUT_LIGHT_POLLUTION: Omit<WeatherSite, "lightPollution">[] = [
   { id: "grotta", name: "Grótta Lighthouse", nameIs: "Grótta viti", nameZh: "格羅塔燈塔", lat: 64.1656, lon: -22.0186, region: "CAPITAL" },
   { id: "reykjavik", name: "Reykjavík", nameIs: "Reykjavík", nameZh: "雷克雅未克", lat: 64.1466, lon: -21.9426, region: "CAPITAL" },
   { id: "keflavik", name: "Keflavík Airport", nameIs: "Keflavíkurflugvöllur", nameZh: "凱夫拉維克機場", lat: 63.9850, lon: -22.6056, region: "CAPITAL" },
@@ -77,6 +79,46 @@ export const WEATHER_SITES: WeatherSite[] = [
   { id: "landmannalaugar", name: "Landmannalaugar", nameIs: "Landmannalaugar", nameZh: "蘭德曼納勞卡", lat: 63.9900, lon: -19.0600, region: "HIGHLANDS" },
 ];
 
+const SITE_LIGHT_POLLUTION: Record<string, WeatherSite["lightPollution"]> = {
+  grotta: "MODERATE",
+  reykjavik: "BRIGHT",
+  keflavik: "MODERATE",
+  blue_lagoon: "MODERATE",
+  thingvellir: "DARK",
+  geysir: "DARK",
+  gullfoss: "DARK",
+  kerid: "DARK",
+  selfoss: "MODERATE",
+  seljalandsfoss: "DARK",
+  skogafoss: "DARK",
+  vik: "MODERATE",
+  reynisfjara: "DARK",
+  jokulsarlon: "DARK",
+  diamond_beach: "DARK",
+  hofn: "MODERATE",
+  stokksnes: "DARK",
+  borgarnes: "MODERATE",
+  kirkjufell: "DARK",
+  budir: "DARK",
+  snaefellsjokull: "DARK",
+  hellissandur: "DARK",
+  hvitserkur: "DARK",
+  isafjordur: "MODERATE",
+  akureyri: "BRIGHT",
+  godafoss: "DARK",
+  myvatn: "DARK",
+  husavik: "MODERATE",
+  dettifoss: "DARK",
+  asbyrgi: "DARK",
+  egilsstadir: "MODERATE",
+  landmannalaugar: "DARK",
+};
+
+export const WEATHER_SITES: WeatherSite[] = WEATHER_SITES_WITHOUT_LIGHT_POLLUTION.map((site) => ({
+  ...site,
+  lightPollution: SITE_LIGHT_POLLUTION[site.id],
+}));
+
 // ── NOAA SWPC ─────────────────────────────────────────────────────────────────
 export const SWPC_BASE = "https://services.swpc.noaa.gov";
 
@@ -86,6 +128,7 @@ export const SWPC_BASE = "https://services.swpc.noaa.gov";
  * `/products/summary/`. These are the paths the app actually calls.
  */
 export const SWPC_KP_URL = `${SWPC_BASE}/json/planetary_k_index_1m.json`;
+export const SWPC_KP_FORECAST_URL = `${SWPC_BASE}/products/noaa-planetary-k-index-forecast.json`;
 export const SWPC_SOLAR_WIND_MAG_URL = `${SWPC_BASE}/products/summary/solar-wind-mag-field.json`;
 export const SWPC_SOLAR_WIND_SPEED_URL = `${SWPC_BASE}/products/summary/solar-wind-speed.json`;
 export const SWPC_OVATION_URL = `${SWPC_BASE}/json/ovation_aurora_latest.json`;

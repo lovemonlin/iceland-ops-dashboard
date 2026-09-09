@@ -7,7 +7,7 @@
  */
 
 /** Bump when the snapshot shape changes in a way a reader must notice. */
-export const SNAPSHOT_SCHEMA_VERSION = 1;
+export const SNAPSHOT_SCHEMA_VERSION = 2;
 
 /** Written by `npm run snapshot`, served as a static file, read by the page on the server. */
 export const SNAPSHOT_RELATIVE_PATH = "public/data/latest-health.json";

@@ -1,6 +1,7 @@
 import {
   SOURCE_STALE_AFTER_SECONDS,
   SOURCE_TIMEOUT_MS,
+  SWPC_KP_FORECAST_URL,
   SWPC_KP_URL,
   SWPC_OVATION_URL,
   SWPC_SOLAR_WIND_MAG_URL,
@@ -10,6 +11,7 @@ import { evaluateHealth, type HealthInput } from "@/health/evaluate";
 import type { MonitorErrorType, MonitorHealth } from "@/health/model";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher, type DiagnosticResult } from "@/lib/fetchWithDiagnosticsCore";
 import { encodeOvationGrid } from "@/lib/ovationGrid";
+import type { KpForecastPoint, KpForecastStatus, NoaaKpForecastData } from "@/snapshot/types";
 
 const defaultRequest: DiagnosticFetcher = (url, options) => fetchWithDiagnosticsCore(url, options);
 
@@ -159,6 +161,175 @@ export async function checkNoaaKp(options: NoaaCheckOptions = {}): Promise<Monit
     staleAfter: SOURCE_STALE_AFTER_SECONDS.noaaKp,
     data,
     details: { ...data, endpoint: SWPC_KP_URL },
+  });
+}
+
+// ── Planetary K index forecast ────────────────────────────────────────────────
+
+const MIN_KP_FORECAST_HOURS = 48;
+
+function forecastStatus(value: unknown): KpForecastStatus {
+  if (typeof value !== "string") return "unknown";
+  const status = value.toLowerCase();
+  return status === "observed" || status === "estimated" || status === "predicted" ? status : "unknown";
+}
+
+/**
+ * NOAA's 3-day product contains one object per 3-hour interval. This mirrors the Android parser:
+ * rows with a null Kp are omitted, SWPC's zone-less timestamps are UTC, and the provider's
+ * observed/estimated/predicted marker is retained rather than inferred.
+ */
+export async function checkNoaaKpForecast(options: NoaaCheckOptions = {}): Promise<MonitorHealth> {
+  const now = options.now ?? new Date();
+  const request = options.request ?? defaultRequest;
+  const checkedAt = now.toISOString();
+  const base = { id: "noaaKpForecast", name: "NOAA Kp Forecast" };
+
+  const response = await swpcGet<unknown>(SWPC_KP_FORECAST_URL, request);
+  if (!response.ok) return transportFailure(base, checkedAt, response, SWPC_KP_FORECAST_URL);
+
+  if (!Array.isArray(response.data)) {
+    return evaluateHealth(
+      schemaFailure(base, checkedAt, response, "SCHEMA_ERROR", "Kp forecast response is not an array.", SWPC_KP_FORECAST_URL),
+    );
+  }
+  if (response.data.length === 0) {
+    return evaluateHealth(
+      schemaFailure(base, checkedAt, response, "EMPTY_DATA", "Kp forecast response contains no points.", SWPC_KP_FORECAST_URL),
+    );
+  }
+
+  const points: KpForecastPoint[] = [];
+  for (const [index, raw] of response.data.entries()) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return evaluateHealth(
+        schemaFailure(
+          base,
+          checkedAt,
+          response,
+          "SCHEMA_ERROR",
+          `Kp forecast row ${index} is not an object.`,
+          SWPC_KP_FORECAST_URL,
+        ),
+      );
+    }
+
+    const row = raw as Record<string, unknown>;
+    const time = parseSwpcTime(row.time_tag);
+    if (!time) {
+      return evaluateHealth(
+        schemaFailure(
+          base,
+          checkedAt,
+          response,
+          "INVALID_TIMESTAMP",
+          `Kp forecast row ${index} has no valid time_tag.`,
+          SWPC_KP_FORECAST_URL,
+        ),
+      );
+    }
+    if (row.kp === null || row.kp === undefined) continue;
+    if (number(row.kp) === undefined) {
+      return evaluateHealth(
+        schemaFailure(
+          base,
+          checkedAt,
+          response,
+          "SCHEMA_ERROR",
+          `Kp forecast row ${index} has a non-numeric kp.`,
+          SWPC_KP_FORECAST_URL,
+        ),
+      );
+    }
+    if (row.observed !== null && row.observed !== undefined && typeof row.observed !== "string") {
+      return evaluateHealth(
+        schemaFailure(
+          base,
+          checkedAt,
+          response,
+          "SCHEMA_ERROR",
+          `Kp forecast row ${index} has a non-string observed status.`,
+          SWPC_KP_FORECAST_URL,
+        ),
+      );
+    }
+    if (row.noaa_scale !== null && row.noaa_scale !== undefined && typeof row.noaa_scale !== "string") {
+      return evaluateHealth(
+        schemaFailure(
+          base,
+          checkedAt,
+          response,
+          "SCHEMA_ERROR",
+          `Kp forecast row ${index} has a non-string noaa_scale.`,
+          SWPC_KP_FORECAST_URL,
+        ),
+      );
+    }
+
+    points.push({
+      time: time.toISOString(),
+      kp: row.kp as number,
+      status: forecastStatus(row.observed),
+      noaaScale: typeof row.noaa_scale === "string" ? row.noaa_scale : null,
+    });
+  }
+
+  if (points.length === 0) {
+    return evaluateHealth(
+      schemaFailure(base, checkedAt, response, "EMPTY_DATA", "Kp forecast contains no numeric Kp points.", SWPC_KP_FORECAST_URL),
+    );
+  }
+
+  const pointTimes = points.map((point) => Date.parse(point.time));
+  const forecastStart = Math.min(...pointTimes);
+  const forecastEnd = Math.max(...pointTimes);
+  const coverageHours = (forecastEnd - now.getTime()) / 3_600_000;
+  if (coverageHours < MIN_KP_FORECAST_HOURS) {
+    return evaluateHealth({
+      ...base,
+      checkedAt,
+      provenance: PROVENANCE,
+      latencyMs: response.diagnostics.latencyMs,
+      httpStatus: response.diagnostics.httpStatus,
+      networkOk: true,
+      parseOk: true,
+      schemaOk: true,
+      recordCount: points.length,
+      fatalError: {
+        type: "STALE_DATA",
+        message: `Kp forecast reaches only ${Math.max(0, coverageHours).toFixed(1)} hours ahead; at least ${MIN_KP_FORECAST_HOURS} are required.`,
+      },
+      details: {
+        endpoint: SWPC_KP_FORECAST_URL,
+        forecastStart: new Date(forecastStart).toISOString(),
+        forecastEnd: new Date(forecastEnd).toISOString(),
+      },
+    });
+  }
+
+  const latestCurrentTime = Math.max(...pointTimes.filter((time) => time <= now.getTime()));
+  const data: NoaaKpForecastData = { points };
+  return evaluateHealth({
+    ...base,
+    checkedAt,
+    provenance: PROVENANCE,
+    latencyMs: response.diagnostics.latencyMs,
+    httpStatus: response.diagnostics.httpStatus,
+    networkOk: true,
+    parseOk: true,
+    schemaOk: true,
+    recordCount: points.length,
+    dataTime: Number.isFinite(latestCurrentTime) ? new Date(latestCurrentTime).toISOString() : undefined,
+    lastSuccess: checkedAt,
+    data,
+    details: {
+      endpoint: SWPC_KP_FORECAST_URL,
+      points: points.length,
+      futurePoints: pointTimes.filter((time) => time >= now.getTime()).length,
+      forecastStart: new Date(forecastStart).toISOString(),
+      forecastEnd: new Date(forecastEnd).toISOString(),
+      coverageHours: Number(coverageHours.toFixed(1)),
+    },
   });
 }
 

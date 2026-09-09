@@ -5,17 +5,20 @@ import test from "node:test";
 import {
   IMO_ACTIVE_WARNINGS_URL,
   METNO_FORECAST_URL,
+  SWPC_KP_FORECAST_URL,
   SWPC_KP_URL,
   SWPC_OVATION_URL,
   SWPC_SOLAR_WIND_MAG_URL,
   SWPC_SOLAR_WIND_SPEED_URL,
   WEATHER_SITES,
 } from "../src/config/sources";
+import { MONITOR_IDS } from "../src/config/monitors";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
 import { checkImo } from "../src/monitors/imo/monitor";
 import { checkMetno } from "../src/monitors/metno/monitor";
-import { checkNoaaKp, checkOvation, checkSolarWind } from "../src/monitors/noaa/monitor";
+import { checkNoaaKp, checkNoaaKpForecast, checkOvation, checkSolarWind } from "../src/monitors/noaa/monitor";
 import { mergeSource } from "../src/snapshot/mergeSnapshot";
+import { isNoaaKpForecastData } from "../src/snapshot/types";
 
 const NOW = new Date("2026-09-04T09:00:00Z");
 const RECENT = "2026-09-04T08:55:00Z";
@@ -98,6 +101,9 @@ test("MET: a successful collection records values, provenance and location count
   assert.equal(health.data?.temperatureC, 8.4);
   assert.equal(health.data?.primarySite, "Reykjavík");
   assert.equal(health.dataTime, new Date(RECENT).toISOString());
+  const sites = health.data?.sites as { id: string; lightPollution: string }[];
+  assert.equal(sites.find((site) => site.id === "reykjavik")?.lightPollution, "BRIGHT");
+  assert.equal(sites.find((site) => site.id === "akureyri")?.lightPollution, "BRIGHT");
 });
 
 test("MET: requests carry the compliant User-Agent and four-decimal coordinates", async () => {
@@ -202,6 +208,95 @@ test("NOAA Kp: an old sample is STALE", async () => {
   const stale = [{ time_tag: "2026-09-04T05:00:00", estimated_kp: 2 }];
   const health = await checkNoaaKp({ now: NOW, request: stub({ [SWPC_KP_URL]: { body: stale } }) });
   assert.equal(health.status, "stale");
+});
+
+// ── NOAA Kp forecast ──────────────────────────────────────────────────────────
+
+const kpForecast = Array.from({ length: 23 }, (_, index) => {
+  const time = new Date(NOW.getTime() + (index - 2) * 3 * 3_600_000);
+  return {
+    time_tag: time.toISOString().slice(0, 19).replace("T", " "),
+    kp: 2 + index / 10,
+    observed: index === 0 ? "Observed" : index === 1 ? "ESTIMATED" : index === 2 ? "unexpected" : "predicted",
+    noaa_scale: index === 20 ? "G1" : null,
+  };
+});
+
+test("NOAA Kp forecast: all raw points and provider statuses are normalised without inventing Kp", async () => {
+  const health = await checkNoaaKpForecast({
+    now: NOW,
+    request: stub({ [SWPC_KP_FORECAST_URL]: { body: kpForecast } }),
+  });
+
+  assert.equal(health.status, "ok");
+  assert.equal(health.id, "noaaKpForecast");
+  assert.equal(health.recordCount, 23);
+  assert.equal(isNoaaKpForecastData(health.data), true);
+  const points = health.data?.points as {
+    time: string;
+    kp: number;
+    status: string;
+    noaaScale: string | null;
+  }[];
+  assert.deepEqual(points.slice(0, 4).map((point) => point.status), [
+    "observed",
+    "estimated",
+    "unknown",
+    "predicted",
+  ]);
+  assert.equal(points[20].kp, kpForecast[20].kp);
+  assert.equal(points[20].noaaScale, "G1");
+  assert.equal(points.at(-1)?.time, "2026-09-06T21:00:00.000Z");
+  assert.equal(health.dataTime, "2026-09-04T09:00:00.000Z");
+});
+
+test("NOAA Kp forecast: null Kp rows are skipped exactly like the app", async () => {
+  const body = [...kpForecast, { time_tag: "2026-09-07 00:00:00", kp: null, observed: "predicted", noaa_scale: null }];
+  const health = await checkNoaaKpForecast({
+    now: NOW,
+    request: stub({ [SWPC_KP_FORECAST_URL]: { body } }),
+  });
+  assert.equal(health.status, "ok");
+  assert.equal(health.recordCount, kpForecast.length);
+});
+
+test("NOAA Kp forecast: malformed or shorter-than-48-hour products fail without replacement data", async () => {
+  const cases: [Route, string][] = [
+    [{ throws: true }, "NETWORK_ERROR"],
+    [{ body: { points: [] } }, "SCHEMA_ERROR"],
+    [{ body: [] }, "EMPTY_DATA"],
+    [{ body: [{ ...kpForecast[0], time_tag: "not a time" }] }, "INVALID_TIMESTAMP"],
+    [{ body: [{ ...kpForecast[0], kp: "4.0" }] }, "SCHEMA_ERROR"],
+    [{ body: kpForecast.slice(0, 10) }, "STALE_DATA"],
+  ];
+  for (const [route, expected] of cases) {
+    const health = await checkNoaaKpForecast({
+      now: NOW,
+      request: stub({ [SWPC_KP_FORECAST_URL]: route }),
+    });
+    assert.equal(health.status, "error");
+    assert.equal(health.errorType, expected);
+    assert.equal(health.data, undefined);
+  }
+});
+
+test("NOAA Kp forecast: a failed refresh preserves the previous successful forecast", async () => {
+  const good = await checkNoaaKpForecast({
+    now: NOW,
+    request: stub({ [SWPC_KP_FORECAST_URL]: { body: kpForecast } }),
+  });
+  const stored = mergeSource(undefined, good, "2026-09-04T09:00:00.000Z");
+  const failed = await checkNoaaKpForecast({
+    now: NOW,
+    request: stub({ [SWPC_KP_FORECAST_URL]: { throws: true } }),
+  });
+  const after = mergeSource(stored, failed, "2026-09-04T10:00:00.000Z");
+
+  assert.equal(after.status, "error");
+  assert.deepEqual(after.data, good.data);
+  assert.equal(after.dataTime, good.dataTime);
+  assert.equal(after.lastSuccessAt, "2026-09-04T09:00:00.000Z");
+  assert.equal(after.lastAttemptAt, "2026-09-04T10:00:00.000Z");
 });
 
 // ── Solar wind ────────────────────────────────────────────────────────────────
@@ -371,12 +466,42 @@ test("the production snapshot contains no mock source", () => {
 test("every monitored source points at the endpoint the Android app uses", () => {
   assert.equal(METNO_FORECAST_URL, "https://api.met.no/weatherapi/locationforecast/2.0/complete");
   assert.equal(SWPC_KP_URL, "https://services.swpc.noaa.gov/json/planetary_k_index_1m.json");
+  assert.equal(
+    SWPC_KP_FORECAST_URL,
+    "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
+  );
   assert.equal(SWPC_SOLAR_WIND_MAG_URL, "https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json");
   assert.equal(SWPC_OVATION_URL, "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json");
   assert.equal(IMO_ACTIVE_WARNINGS_URL, "https://api.vedur.is/cap/capbroker/active/detailed/all");
   // The app's curated list, verbatim.
   assert.equal(WEATHER_SITES.length, 32);
   assert.equal(WEATHER_SITES.some((site) => site.id === "reykjavik"), true);
+  assert.equal(MONITOR_IDS.length, 10);
+  assert.equal(MONITOR_IDS.includes("noaaKpForecast"), true);
   // Deprecated SWPC paths must never come back.
   assert.equal(SWPC_KP_URL.includes("/products/solar-wind/"), false);
+});
+
+test("all 32 light-pollution classes match the Android site's formal mapping", () => {
+  const expected = {
+    grotta: "MODERATE", reykjavik: "BRIGHT", keflavik: "MODERATE", blue_lagoon: "MODERATE",
+    thingvellir: "DARK", geysir: "DARK", gullfoss: "DARK", kerid: "DARK", selfoss: "MODERATE",
+    seljalandsfoss: "DARK", skogafoss: "DARK", vik: "MODERATE", reynisfjara: "DARK",
+    jokulsarlon: "DARK", diamond_beach: "DARK", hofn: "MODERATE", stokksnes: "DARK",
+    borgarnes: "MODERATE", kirkjufell: "DARK", budir: "DARK", snaefellsjokull: "DARK",
+    hellissandur: "DARK", hvitserkur: "DARK", isafjordur: "MODERATE", akureyri: "BRIGHT",
+    godafoss: "DARK", myvatn: "DARK", husavik: "MODERATE", dettifoss: "DARK", asbyrgi: "DARK",
+    egilsstadir: "MODERATE", landmannalaugar: "DARK",
+  };
+  assert.deepEqual(
+    Object.fromEntries(WEATHER_SITES.map((site) => [site.id, site.lightPollution])),
+    expected,
+  );
+  assert.deepEqual(
+    Object.fromEntries(["DARK", "MODERATE", "BRIGHT"].map((classification) => [
+      classification,
+      WEATHER_SITES.filter((site) => site.lightPollution === classification).length,
+    ])),
+    { DARK: 20, MODERATE: 10, BRIGHT: 2 },
+  );
 });

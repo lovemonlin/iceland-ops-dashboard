@@ -25,7 +25,7 @@ In particular, the Android project's Gradle, APK, emulator and Android Studio ru
 
 ## Data sources monitored
 
-Phase one covers seven data sources plus the two GitHub Actions workflows that publish them.
+Phase one covers eight data sources plus the two GitHub Actions workflows that publish them.
 **Every one of them reads real production data — there is no mock data path in the runtime.**
 
 | Section | Monitor | id | Source |
@@ -35,6 +35,7 @@ Phase one covers seven data sources plus the two GitHub Actions workflows that p
 | Pipelines | IRCA Road Publisher | `ircaPipeline` | GitHub Actions REST API |
 | Pipelines | ECMWF Cloud Publisher | `ecmwfPipeline` | GitHub Actions REST API |
 | Aurora | NOAA Kp | `noaaKp` | `services.swpc.noaa.gov` planetary K index |
+| Aurora | NOAA Kp Forecast | `noaaKpForecast` | `services.swpc.noaa.gov` NOAA 3-day planetary K-index forecast |
 | Aurora | NOAA Solar Wind | `solarWind` | `services.swpc.noaa.gov` solar wind summaries |
 | Aurora | NOAA OVATION | `ovation` | `services.swpc.noaa.gov` aurora oval grid |
 | Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` | `iceland-aurora-cloud` GitHub Pages (ECMWF IFS Open Data) |
@@ -50,7 +51,8 @@ so "is this real?" is checkable rather than assumed.
 **MET Norway** queries the app's 32 curated sites through Locationforecast 2.0, with a compliant
 User-Agent and coordinates trimmed to four decimals as MET's terms require. The snapshot records how
 many locations were checked, how many answered and which did not, so a partial outage is visible
-rather than averaged away. Set `METNO_USER_AGENT` to supply your own contact address; the default
+rather than averaged away. Each stored site also carries the Android app's `DARK`, `MODERATE`, or
+`BRIGHT` light-pollution class. Set `METNO_USER_AGENT` to supply your own contact address; the default
 identifies this project by its public repository, and no private email is committed.
 
 **NOAA SWPC** is read through the same paths the app uses — the widely-copied

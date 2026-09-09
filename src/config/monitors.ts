@@ -4,6 +4,7 @@ export const MONITOR_IDS = [
   "irca",
   "ircaPipeline",
   "noaaKp",
+  "noaaKpForecast",
   "solarWind",
   "ovation",
   "ecmwf",

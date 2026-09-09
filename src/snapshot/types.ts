@@ -1,5 +1,39 @@
 import type { HealthStatus } from "@/health/model";
 
+export type KpForecastStatus = "observed" | "estimated" | "predicted" | "unknown";
+
+/** Raw NOAA 3-hour Kp forecast input, normalised only for timestamp and status representation. */
+export interface KpForecastPoint {
+  time: string;
+  kp: number;
+  status: KpForecastStatus;
+  noaaScale: string | null;
+}
+
+export interface NoaaKpForecastData extends Record<string, unknown> {
+  points: KpForecastPoint[];
+}
+
+export function isNoaaKpForecastData(value: unknown): value is NoaaKpForecastData {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const points = (value as { points?: unknown }).points;
+  if (!Array.isArray(points) || points.length === 0) return false;
+  const statuses: KpForecastStatus[] = ["observed", "estimated", "predicted", "unknown"];
+  return points.every((point) => {
+    if (!point || typeof point !== "object" || Array.isArray(point)) return false;
+    const candidate = point as Partial<KpForecastPoint>;
+    return (
+      typeof candidate.time === "string" &&
+      !Number.isNaN(Date.parse(candidate.time)) &&
+      typeof candidate.kp === "number" &&
+      Number.isFinite(candidate.kp) &&
+      typeof candidate.status === "string" &&
+      statuses.includes(candidate.status as KpForecastStatus) &&
+      (candidate.noaaScale === null || typeof candidate.noaaScale === "string")
+    );
+  });
+}
+
 /**
  * One source as stored in a snapshot.
  *

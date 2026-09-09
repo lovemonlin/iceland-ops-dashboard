@@ -110,7 +110,7 @@ test("8. a mixed round produces the right overall status and summary", () => {
   // Pipelines are stored apart from sources.
   assert.deepEqual(Object.keys(snapshot.pipelines ?? {}), ["ircaPipeline"]);
   assert.equal(snapshot.sources.ircaPipeline, undefined);
-  assert.equal(snapshot.schemaVersion, 1);
+  assert.equal(snapshot.schemaVersion, 2);
   assert.equal(snapshot.generatedAt, TEN);
   assert.equal(snapshot.scheduledFor, "2026-09-03T11:00:00.000Z");
 });
