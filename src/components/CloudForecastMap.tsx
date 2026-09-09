@@ -9,7 +9,6 @@ import {
   CLOUD_ATTRIBUTION,
   CLOUD_FORECAST_MAX_HOURS,
   CLOUD_FORECAST_NOTE,
-  CLOUD_FORECAST_NOW,
   CLOUD_FORECAST_TITLE,
   CLOUD_FRAME_AVAILABLE,
   CLOUD_FRAME_UNAVAILABLE,
@@ -17,17 +16,16 @@ import {
   CLOUD_IMAGE_COORDINATES,
   CLOUD_LEGEND,
   cloudForecastMarkersAt,
-  formatForecastOffset,
-  formatForecastTime,
+  formatCloudForecastTimes,
   formatGeneratedAt,
   formatIcelandDateTime,
   formatRunAt,
-  formatValidAt,
   frameAt,
   siteFeatureCollection,
   type CloudFrame,
 } from "@/lib/cloudForecast";
 import { getPublicAssetPath } from "@/lib/publicPath";
+import { deviceTimeZone, getIpTimeZone, type LocalTimeZone } from "@/lib/ipTimezone";
 import { effectiveObstruction, forecastBaseTime, hourAt, type WeatherHour } from "@/lib/weatherMap";
 
 /**
@@ -39,6 +37,34 @@ import { effectiveObstruction, forecastBaseTime, hourAt, type WeatherHour } from
  */
 
 const ICELAND_CENTER: [number, number] = [-18.7, 64.96];
+
+function CloudForecastTime({
+  value,
+  label,
+  offsetHours,
+  localTimeZone,
+  localTimeLabel,
+}: {
+  value: string | undefined;
+  label?: string;
+  offsetHours?: number;
+  localTimeZone?: string;
+  localTimeLabel: "當地時間" | "裝置時間";
+}) {
+  const times = formatCloudForecastTimes(value, localTimeZone);
+  return (
+    <div className="cloud-forecast-times">
+      {label && <span className="cloud-forecast-time-label">{label}</span>}
+      <time className="cloud-forecast-time cloud-forecast-time-local" dateTime={value}>
+        {localTimeLabel} <strong>{times.local ?? "—"}</strong>
+      </time>
+      <time className="cloud-forecast-time cloud-forecast-time-iceland" dateTime={value}>
+        冰島時間 <strong>{times.iceland ?? "—"}</strong>
+      </time>
+      {offsetHours !== undefined && <span className="cloud-forecast-lead">· {offsetHours} 小時後</span>}
+    </div>
+  );
+}
 
 export interface CloudForecastSite extends ForecastSite {
   lat: number;
@@ -64,6 +90,17 @@ export function CloudForecastMap({
   const [failure, setFailure] = useState<string | null>(null);
   const [offsetHours, setOffsetHours] = useState(0);
   const [detailSiteId, setDetailSiteId] = useState<string | null>(null);
+  const [localTimeZone, setLocalTimeZone] = useState<LocalTimeZone>(deviceTimeZone);
+
+  useEffect(() => {
+    let disposed = false;
+    void getIpTimeZone().then((value) => {
+      if (!disposed) setLocalTimeZone(value);
+    });
+    return () => {
+      disposed = true;
+    };
+  }, []);
 
   /**
    * Zero is the first hour the stored weather describes, the same base the weather timeline
@@ -206,7 +243,6 @@ export function CloudForecastMap({
 
   const generated = formatIcelandDateTime(generatedAt);
   const run = formatIcelandDateTime(runAt) ?? "—";
-  const valid = formatIcelandDateTime(frame?.validAt) ?? "—";
 
   return (
     <div className="cloud-forecast">
@@ -216,11 +252,12 @@ export function CloudForecastMap({
       <div className="cloud-forecast-panel">
         <strong>{CLOUD_FORECAST_TITLE}</strong>
 
-        <p className="cloud-forecast-offset">
-          {offsetHours === 0
-            ? CLOUD_FORECAST_NOW
-            : formatForecastOffset(formatForecastTime(selectedTime.toISOString()), offsetHours)}
-        </p>
+        <CloudForecastTime
+          value={selectedTime.toISOString()}
+          offsetHours={offsetHours}
+          localTimeZone={localTimeZone.timeZone}
+          localTimeLabel={localTimeZone.source === "ip" ? "當地時間" : "裝置時間"}
+        />
 
         <input
           type="range"
@@ -247,7 +284,12 @@ export function CloudForecastMap({
             {generated ? formatGeneratedAt(generated) : CLOUD_GENERATED_PENDING}
           </span>
           <span>{formatRunAt(run)}</span>
-          <span>{formatValidAt(valid)}</span>
+          <CloudForecastTime
+            label="目前預報時間"
+            value={frame?.validAt}
+            localTimeZone={localTimeZone.timeZone}
+            localTimeLabel={localTimeZone.source === "ip" ? "當地時間" : "裝置時間"}
+          />
         </div>
 
         <div className="cloud-forecast-legend">

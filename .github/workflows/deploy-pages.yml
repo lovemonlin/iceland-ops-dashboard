@@ -50,6 +50,7 @@ jobs:
         # GitHub Pages serves project sites from /<repository>/, so the site is built with that base path.
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT: ${{ vars.IP_TIMEZONE_ENDPOINT }}
         run: npm run build
 
       - uses: actions/configure-pages@v5

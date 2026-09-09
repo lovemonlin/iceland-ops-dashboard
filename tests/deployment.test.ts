@@ -68,7 +68,7 @@ test("5. only the snapshot request is cache-busted, not the whole site", () => {
   assert.equal(dashboard.includes(PAGES_BASE_PATH), false);
 });
 
-test("6. nothing the browser loads can reach a production API", () => {
+test("6. only the approved IP-timezone endpoint may be reached from the browser", () => {
   for (const file of [
     "src/app/page.tsx",
     "src/app/layout.tsx",
@@ -78,6 +78,7 @@ test("6. nothing the browser loads can reach a production API", () => {
     "src/components/WeatherMap.tsx",
     "src/components/RoadMap.tsx",
     "src/components/MapDisclosure.tsx",
+    "src/components/CloudForecastMap.tsx",
   ]) {
     const source = read(file);
     for (const forbidden of [
@@ -95,6 +96,17 @@ test("6. nothing the browser loads can reach a production API", () => {
       assert.equal(source.includes(forbidden), false, `${file} must not reference ${forbidden}`);
     }
   }
+
+  const timezoneConfig = read("src/config/ipTimezone.ts");
+  const timezoneClient = read("src/lib/ipTimezone.ts");
+  const cloudForecast = read("src/components/CloudForecastMap.tsx");
+  assert.match(timezoneConfig, /process\.env\.NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT/);
+  assert.equal(/https?:\/\//.test(timezoneConfig), false, "the endpoint must not be hardcoded");
+  assert.equal(cloudForecast.includes("NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT"), false);
+  assert.match(timezoneClient, /fetcher\(endpoint/);
+  assert.match(timezoneClient, /cache: "no-store"/);
+  assert.match(timezoneClient, /credentials: "omit"/);
+  assert.equal(/https?:\/\//.test(timezoneClient), false, "the client must use only the configured endpoint");
 });
 
 test("7. the exported site ships the snapshot and disables Jekyll processing", () => {
@@ -145,16 +157,22 @@ test("10. no credential or token is referenced anywhere in the tree", () => {
   assert.equal(existsSync(resolve(process.cwd(), ".env")), false);
 });
 
-test("11. no external host, scheduler or platform was introduced", () => {
+test("11. no unapproved deployment platform was introduced", () => {
   const workflow = workflowDirectives();
   const config = read("next.config.ts");
   const packageJson = read("package.json");
 
-  for (const forbidden of ["cloudflare", "vercel", "netlify", "docker", "railway", "fly.io"]) {
+  for (const forbidden of ["vercel", "netlify", "docker", "railway", "fly.io"]) {
     assert.equal(workflow.toLowerCase().includes(forbidden), false, `workflow must not introduce ${forbidden}`);
     assert.equal(config.toLowerCase().includes(forbidden), false, `next.config must not introduce ${forbidden}`);
     assert.equal(packageJson.toLowerCase().includes(forbidden), false, `dependencies must not introduce ${forbidden}`);
   }
+
+  assert.equal(
+    workflow.includes("NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT: ${{ vars.IP_TIMEZONE_ENDPOINT }}"),
+    true,
+    "Pages must receive only the explicitly approved Worker URL from a repository variable",
+  );
 });
 
 test("the deployment writes only what the hourly collection is allowed to change", () => {

@@ -21,7 +21,7 @@ import {
   FORECAST_COAST_COLOR,
   FORECAST_LAND_COLOR,
   FORECAST_OCEAN_COLOR,
-  formatForecastOffset,
+  formatCloudForecastTimes,
   formatIcelandDateTime,
   frameAt,
   type CloudFrame,
@@ -427,7 +427,7 @@ test("the browser reaches ECMWF only through our own published images", () => {
 
 // ── The control panel ────────────────────────────────────────────────────────
 
-test("the three timestamps are distinct and Iceland local", () => {
+test("the cloud forecast shows browser-local and Iceland clocks for the same instant", () => {
   // Generated, run and valid are three different instants and must never be collapsed into one.
   assert.equal(formatIcelandDateTime("2026-09-05T12:52:00Z"), "09/05 12:52");
   assert.equal(formatIcelandDateTime("2026-09-05T06:00:00Z"), "09/05 06:00");
@@ -435,14 +435,20 @@ test("the three timestamps are distinct and Iceland local", () => {
   assert.equal(formatIcelandDateTime(undefined), undefined);
   assert.equal(formatIcelandDateTime("nonsense"), undefined);
 
-  // Iceland keeps UTC all year, so a UTC instant reads as the same clock time there -- and
-  // deliberately not as the reader's own, which is the one label that would mislead.
-  assert.equal(formatForecastOffset("9/5 18:00", 12), "預測 9/5 18:00 · 12 小時後");
+  // Production omits this optional zone, so the browser default is used. Injecting it here
+  // keeps this test independent of the machine running it.
+  assert.deepEqual(formatCloudForecastTimes("2026-09-09T01:00:00Z", "Asia/Taipei"), {
+    local: "09/09 09:00",
+    iceland: "09/09 01:00",
+  });
 
   const component = read("src/components/CloudForecastMap.tsx");
   assert.match(component, /formatGeneratedAt\(generated\)/);
   assert.match(component, /formatRunAt\(run\)/);
-  assert.match(component, /formatValidAt\(valid\)/);
+  assert.match(component, /localTimeZone=\{localTimeZone\.timeZone\}/);
+  assert.match(component, /localTimeLabel=\{localTimeZone\.source === "ip" \? "當地時間" : "裝置時間"\}/);
+  assert.match(component, /cloud-forecast-time-local/);
+  assert.match(component, /cloud-forecast-time-iceland/);
   // The Kp line the app prints is left out rather than invented, and says so.
   assert.match(component, /未收集 NOAA 三日 Kp 預報序列/);
 });
@@ -453,7 +459,7 @@ test("the panel carries the app's wording, in the app's order", () => {
   const component = source.slice(source.indexOf("<div className=\"cloud-forecast\">"));
   const order = [
     "CLOUD_FORECAST_TITLE",
-    "CLOUD_FORECAST_NOW",
+    "value={selectedTime.toISOString()}",
     'type="range"',
     "cloud-forecast-timing",
     "cloud-forecast-legend",

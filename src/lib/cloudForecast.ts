@@ -104,53 +104,51 @@ export const CLOUD_LEGEND: { color: string; label: string }[] = [
 // ── Wording (values-zh-rTW/strings.xml) ───────────────────────────────────────
 
 export const CLOUD_FORECAST_TITLE = "未來雲量預報（各地點）";
-export const CLOUD_FORECAST_NOW = "預測現在 · 0 小時後";
 export const CLOUD_FRAME_AVAILABLE = "ECMWF 總雲量覆蓋層：每 3 小時一格，預報未來 24 小時。";
 export const CLOUD_FRAME_UNAVAILABLE = "尚未設定 ECMWF 區域雲圖服務；地點預報仍可使用。";
 export const CLOUD_FORECAST_NOTE =
   "地點顏色代表預測雲層遮蔽率；衛星影像與極光帶不是 24 小時預報，因此在此模式隱藏。";
 export const CLOUD_GENERATED_PENDING = "資料更新時間：等待下一次雲圖發布";
 
-/** `map_forecast_offset`: 預測 %1$s · %2$d 小時後 */
-export function formatForecastOffset(time: string, offsetHours: number): string {
-  return `預測 ${time} · ${offsetHours} 小時後`;
-}
-
 export const formatGeneratedAt = (value: string) => `資料更新時間：冰島當地 ${value}`;
 export const formatRunAt = (value: string) => `模型起報時間：冰島當地 ${value}`;
-export const formatValidAt = (value: string) => `目前預報時間：冰島當地 ${value}`;
 
 /** Iceland's clock, as the trip is planned in — the same choice as the weather timeline. */
 export const CLOUD_TIME_ZONE = "Atlantic/Reykjavik";
 
-function icelandParts(iso: string) {
+function dateTimeParts(iso: string, timeZone?: string) {
   const parsed = Date.parse(iso);
   if (Number.isNaN(parsed)) return undefined;
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: CLOUD_TIME_ZONE,
+    ...(timeZone ? { timeZone } : {}),
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false,
+    hourCycle: "h23",
   }).formatToParts(new Date(parsed));
   const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
   return { month: value("month"), day: value("day"), hour: value("hour"), minute: value("minute") };
 }
 
-/** `formatForecastTime()` — "%d/%d %02d:%02d", month and day unpadded. */
-export function formatForecastTime(iso: string): string {
-  const parts = icelandParts(iso);
-  if (!parts) return "—";
-  return `${Number(parts.month)}/${Number(parts.day)} ${parts.hour}:${parts.minute}`;
+function formatDateTime(iso: string | undefined, timeZone?: string): string | undefined {
+  if (!iso) return undefined;
+  const parts = dateTimeParts(iso, timeZone);
+  if (!parts) return undefined;
+  return `${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
 /** `formatIcelandDateTime()` — "%02d/%02d %02d:%02d", zero-padded. */
 export function formatIcelandDateTime(iso: string | undefined): string | undefined {
-  if (!iso) return undefined;
-  const parts = icelandParts(iso);
-  if (!parts) return undefined;
-  return `${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+  return formatDateTime(iso, CLOUD_TIME_ZONE);
+}
+
+/** The reader's browser clock and Iceland's fixed trip-planning clock for one snapshot instant. */
+export function formatCloudForecastTimes(iso: string | undefined, localTimeZone?: string) {
+  return {
+    local: formatDateTime(iso, localTimeZone),
+    iceland: formatIcelandDateTime(iso),
+  };
 }
 
 // ── The map style (MapStyleFactory.build, forecastMode = true) ────────────────

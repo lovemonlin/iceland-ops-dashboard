@@ -570,7 +570,21 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   gap: 8px;
 }
 .cloud-forecast-panel strong { font-size: 13px; }
-.cloud-forecast-offset { margin: 0; font-size: 13px; font-weight: 600; }
+.cloud-forecast-times {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.cloud-forecast-time-label { color: var(--muted); font-size: 11px; }
+.cloud-forecast-time { font-size: inherit; }
+.cloud-forecast-time-local { color: var(--info); }
+.cloud-forecast-time-iceland { color: var(--degraded); }
+.cloud-forecast-time strong { color: inherit; }
+.cloud-forecast-lead { color: var(--muted); }
 .cloud-forecast-panel input[type="range"] { width: 100%; accent-color: var(--info); }
 .cloud-forecast-missing { margin: 0; font-size: 11px; color: var(--muted); }
 
@@ -586,6 +600,7 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   color: var(--muted);
 }
 .cloud-forecast-generated { font-weight: 600; color: var(--info); }
+.cloud-forecast-timing .cloud-forecast-times { font-size: 11px; }
 
 .cloud-forecast-legend { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
 .cloud-forecast-legend span { display: flex; align-items: center; font-size: 11px; color: var(--muted); }

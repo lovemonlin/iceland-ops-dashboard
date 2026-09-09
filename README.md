@@ -213,7 +213,9 @@ Iceland Ops Dashboard  --  https://lovemonlin.github.io/iceland-ops-dashboard/
 ```
 
 **Browser refresh and production data collection are different things.** Opening or reloading the
-dashboard reads one static JSON file and contacts no production API. Production data is collected
+dashboard reads one static JSON file and contacts no production data API. The optional timezone
+helper is the sole browser endpoint: it reads no dashboard data and returns only an IANA timezone.
+Production data is collected
 only when the scheduled task runs. The dashboard does not need to be open for that to happen, and
 having it open does not make it happen more often.
 
@@ -445,6 +447,15 @@ served from `/`. Every path is built through `getPublicAssetPath()` / `getSnapsh
 `public/.nojekyll` stops GitHub Pages from discarding the `_next/` directory. The snapshot request
 is cache-busted with a timestamp so a redeployed snapshot is never hidden behind a cached copy; the
 rest of the site stays ordinary cacheable static content.
+
+#### Optional IP timezone helper
+
+The cloud forecast uses the browser/device timezone by default. To prefer the visitor's IP timezone,
+deploy `cloudflare/timezone-worker` separately and set its URL in `NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT`.
+For local development put the value in root `.env.local`; for GitHub Pages set the repository Actions
+variable `IP_TIMEZONE_ENDPOINT`. `NEXT_PUBLIC_*` values are frozen into the static bundle at build time,
+so changing the Worker URL requires a new Pages build. The Worker returns only
+`{ "timezone": "Area/City" }`, contains no IP logging, and failures fall back to the device timezone.
 
 The snapshot's central contract: **a failed collection never erases the last good data.** Each source
 stores the result of the latest attempt (`status`, `errorType`, `lastAttemptAt`) alongside the last
