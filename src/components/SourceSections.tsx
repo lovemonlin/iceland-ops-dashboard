@@ -213,21 +213,25 @@ export function RoadsSection({
 
 export function AuroraSection({
   kp,
+  kpForecast,
   solarWind,
   ovation,
   now,
   schemaVersion,
 }: {
   kp?: SnapshotSource;
+  kpForecast?: SnapshotSource;
   solarWind?: SnapshotSource;
   ovation?: SnapshotSource;
   now: Date;
   schemaVersion: number;
 }) {
-  const entries = [kp, solarWind, ovation].filter((entry): entry is SnapshotSource => entry !== undefined);
+  const entries = [kp, kpForecast, solarWind, ovation].filter(
+    (entry): entry is SnapshotSource => entry !== undefined,
+  );
   if (entries.length === 0) return null;
 
-  // Three feeds, one question — "can I see the aurora tonight?" — so they share one card.
+  // Four feeds, one question — "can I see the aurora tonight?" — so they share one card.
   // The combined status uses the shared precedence rule; nothing here re-decides health.
   const worst = getSystemStatus(entries);
   const failing = entries.find((entry) => entry.status === worst && entry.status !== "ok");
@@ -261,7 +265,7 @@ export function AuroraSection({
           dataTime={oldestEntry?.dataTime}
           dataTimeLabel="來源資料時間"
         >
-          {/* Two views of the same three feeds: the app's instrument panel, and its position map. */}
+          {/* Two views of the same four feeds: the app's instrument panel, and its position map. */}
           <AuroraModes ovationData={ovationData}>
             {/* The app's instrument panel, over the same readings the stats below quote. */}
             <AuroraGauges kpData={kpData} windData={windData} />

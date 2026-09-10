@@ -177,6 +177,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
       <RoadsSection irca={snapshotEntry(snapshot, "irca")} now={now} schemaVersion={snapshot.schemaVersion} />
       <AuroraSection
         kp={snapshotEntry(snapshot, "noaaKp")}
+        kpForecast={snapshotEntry(snapshot, "noaaKpForecast")}
         solarWind={snapshotEntry(snapshot, "solarWind")}
         ovation={snapshotEntry(snapshot, "ovation")}
         now={now}

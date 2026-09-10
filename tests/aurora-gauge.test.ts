@@ -141,6 +141,27 @@ test("the dials read the snapshot the dashboard already publishes", () => {
   assert.equal(empty[0].spec.format(empty[0].value), "—");
 });
 
+test("the aurora card combines all four snapshot sources in order without fetching NOAA", () => {
+  const dashboard = read("src/components/Dashboard.tsx");
+  const sections = read("src/components/SourceSections.tsx");
+
+  assert.match(
+    dashboard,
+    /kpForecast=\{snapshotEntry\(snapshot, "noaaKpForecast"\)\}/,
+    "Dashboard must pass the stored Kp forecast into AuroraSection",
+  );
+  assert.match(sections, /kpForecast\?: SnapshotSource/);
+  assert.match(sections, /const entries = \[kp, kpForecast, solarWind, ovation\]/);
+  assert.match(sections, /Four feeds, one question/);
+  assert.match(sections, /same four feeds/);
+
+  // The card only combines entries already present in the snapshot.
+  assert.equal(/fetch\s*\(|noaa\.gov|SWPC_/i.test(sections), false);
+  assert.equal(/noaa\.gov|SWPC_/i.test(dashboard), false);
+  assert.equal([...dashboard.matchAll(/fetch\s*\(/g)].length, 1, "only the existing snapshot reload may fetch");
+  assert.match(dashboard, /fetch\(getSnapshotUrl\(\{ cacheBust: true \}\)/);
+});
+
 test("the ranges, zones and thresholds match the app's own file", { skip: !hasAndroid }, () => {
   const kotlin = read(ANDROID_SPECS);
 
