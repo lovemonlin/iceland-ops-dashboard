@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AuroraScoreExplanationDialog } from "@/components/AuroraScoreExplanationDialog";
 import {
   auroraForecastSites,
   defaultAuroraForecastSite,
@@ -21,6 +22,7 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
   const defaultSite = defaultAuroraForecastSite(sites);
   const [siteId, setSiteId] = useState("reykjavik");
   const [selectedHour, setSelectedHour] = useState(0);
+  const [scoreExplanationOpen, setScoreExplanationOpen] = useState(false);
   const [localTimeZone, setLocalTimeZone] = useState<LocalTimeZone>(deviceTimeZone);
   const site = sites.find((candidate) => candidate.id === siteId) ?? defaultSite;
 
@@ -64,7 +66,24 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
         </select>
       </div>
 
-      <p className="aurora-forecast-hint">未來 48 小時逐時預測；可橫向捲動並點選任一小時查看細節。</p>
+      <div className="aurora-forecast-guide">
+        <p className="aurora-forecast-hint">
+          未來 48 小時逐時預測（時間軸為冰島時間）；可橫向捲動並點選任一小時查看細節。
+        </p>
+        <button
+          type="button"
+          className="aurora-score-explain-button"
+          aria-haspopup="dialog"
+          aria-expanded={scoreExplanationOpen}
+          onClick={() => setScoreExplanationOpen(true)}
+        >
+          ⓘ 分數怎麼算？
+        </button>
+      </div>
+
+      {scoreExplanationOpen && (
+        <AuroraScoreExplanationDialog onClose={() => setScoreExplanationOpen(false)} />
+      )}
 
       <div className="aurora-forecast-timeline" aria-label="未來 48 小時極光預測">
         {forecast.map((assessment, index) => {
