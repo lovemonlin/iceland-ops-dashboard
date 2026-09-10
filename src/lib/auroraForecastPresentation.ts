@@ -10,7 +10,31 @@ export interface AuroraForecastDisplaySite extends AuroraForecastSite {
   name: string;
   nameIs: string;
   nameZh: string;
+  region: AuroraRegion;
 }
+
+const BRIEFING_SITE_LABELS: Record<string, string> = {
+  geysir: "蓋錫爾",
+  thingvellir: "辛格韋德利",
+  jokulsarlon: "冰河湖",
+};
+
+/** Short labels for the briefing timeline; formal site names stay unchanged. */
+export function briefingSiteLabel(site: Pick<AuroraForecastDisplaySite, "id" | "nameZh">) {
+  return BRIEFING_SITE_LABELS[site.id] ?? site.nameZh;
+}
+
+export const AURORA_REGIONS = ["CAPITAL", "SOUTH", "WEST", "WESTFJORDS", "NORTH", "EAST", "HIGHLANDS"] as const;
+export type AuroraRegion = (typeof AURORA_REGIONS)[number];
+export const AURORA_REGION_LABEL: Record<AuroraRegion, string> = {
+  CAPITAL: "首都圈",
+  SOUTH: "南部",
+  WEST: "西部",
+  WESTFJORDS: "西峽灣",
+  NORTH: "北部",
+  EAST: "東部",
+  HIGHLANDS: "高地",
+};
 
 const LIGHT_POLLUTION = new Set<LightPollution>(["DARK", "MODERATE", "BRIGHT"]);
 
@@ -31,7 +55,8 @@ export function auroraForecastSites(snapshot: DashboardSnapshot): AuroraForecast
       !Number.isFinite(site.lat) ||
       typeof site.lon !== "number" ||
       !Number.isFinite(site.lon) ||
-      !LIGHT_POLLUTION.has(site.lightPollution as LightPollution)
+      !LIGHT_POLLUTION.has(site.lightPollution as LightPollution) ||
+      !AURORA_REGIONS.includes(site.region as AuroraRegion)
     ) {
       return [];
     }
@@ -44,6 +69,7 @@ export function auroraForecastSites(snapshot: DashboardSnapshot): AuroraForecast
       lat: site.lat,
       lon: site.lon,
       lightPollution: site.lightPollution as LightPollution,
+      region: site.region as AuroraRegion,
     }];
   });
 }
@@ -71,4 +97,14 @@ export function skyLightLabel(assessment: Pick<AuroraAssessment, "darknessFactor
   if (assessment.darknessFactor === 0) return "白晝";
   if (assessment.darknessFactor < 1) return "不夠暗";
   return "黑夜";
+}
+
+export function briefingBestSiteLabel(
+  assessment: Pick<AuroraAssessment, "score" | "darknessFactor" | "sunElevation"> & {
+    site: Pick<AuroraForecastDisplaySite, "id" | "nameZh">;
+  },
+) {
+  return assessment.score < 5 || skyLightLabel(assessment) === "白晝"
+    ? undefined
+    : briefingSiteLabel(assessment.site);
 }

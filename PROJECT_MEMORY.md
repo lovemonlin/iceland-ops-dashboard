@@ -2,6 +2,121 @@
 
 No credential, API key, token, PAT or secret may ever be written in this file.
 
+## 最新更新紀錄（2026-09-10）：雙時區與未來 48 小時極光預測
+
+這一輪已完成並推送到 `main`。功能 commit 依序為：
+
+| Commit | 內容 |
+| --- | --- |
+| `4644c81` | 雲層預報加入 IP 當地時間／裝置 fallback 與固定冰島時間；加入 Cloudflare Worker 原始碼及設定 |
+| `897e95a` | Snapshot schema v2、`noaaKpForecast`、32 個地點光害分類，以及 Android AuroraVisibility 48 小時計算移植 |
+| `f5c6688` | `noaaKpForecast` 納入極光卡片的四來源 health、最舊資料時間與技術來源清單 |
+| `2d2d9df` | 新增「極光預測」第三模式、32 地點選擇、48 小時時間軸與逐時詳細資料 |
+| `64e0779` | 新增「ⓘ 分數怎麼算？」accessible Dialog 與完整計算說明 |
+
+最後已確認本機 `main` 與 `origin/main` 同步在 `64e0779`。本節這次是後續新增的
+專案交接紀錄，本身尚未 commit / push。
+
+### 最終使用者可看到的結果
+
+- 雲層預報的選取時間與「目前預報時間」都顯示兩個時區：
+  - IP timezone 成功時顯示「當地時間」，顏色 `#59A9FF`。
+  - IP 查詢失敗時沿用同一位置顯示「裝置時間」，取瀏覽器／作業系統 timezone。
+  - 「冰島時間」固定使用 IANA `Atlantic/Reykjavik`，顏色 `#FF9F43`。
+  - ECMWF「模式時次 ...Z」仍維持 UTC / Zulu，沒有變更。
+- 極光卡片有三個模式，順序是「儀表板」、「極光機率位置圖」、「極光預測」；預設仍是「儀表板」。
+- 「極光預測」直接使用 snapshot 裡 32 個 MET site，預設 Reykjavík；下拉選單以中文名稱為主並附英文名稱。
+- 每個地點顯示從目前時間開始的 0～47 小時，共 48 筆逐時 assessment。時間軸可橫向捲動，
+  每小時直條高度是 score、顏色是 level，時間軸標示的是冰島時間。
+- 點擊、hover 或 keyboard focus 某小時會顯示雙時區、score、level、Kp、aurora strength、
+  effective obstruction、darkness、moon、site factor、光害與繁中 limiting factor。
+- 白晝／不夠暗／黑夜直接讀每小時 assessment 的 `sunElevation` 與 `darknessFactor`；第二晚也逐時計算，
+  沒有使用 Android 舊的 24 小時 `DarknessWindow`。
+- 「ⓘ 分數怎麼算？」以原生 `<dialog>.showModal()` 開啟。Dialog 支援 Escape、背景點擊、
+  右上與底部關閉鈕，開啟後聚焦關閉鈕，長內容在 Dialog 內捲動，手機版最高 `92dvh`。
+- Dialog 明確說明分數是「極光可見條件綜合評分」，不是看到極光的機率百分比；內容包括五因子公式、
+  Bz 加成、Kp 換算、三層雲 transmission、太陽高度、月光、地磁位置、光害係數、level 門檻及計算示例。
+
+### 資料與計算架構
+
+仍維持：
+
+```text
+production source → scheduled snapshot → Dashboard browser
+```
+
+- Browser 不直接連 NOAA、MET Norway、OVATION 或 Solar Wind；極光預測只讀既有 snapshot。
+- 唯一允許的 browser 外部 request 是既有 IP timezone Cloudflare Worker。
+- Worker 只回傳 `request.cf.timezone` 的 `{ "timezone": ... }`，不回傳 IP、城市或座標，
+  使用 `Cache-Control: no-store`，正式 CORS 只允許 `https://lovemonlin.github.io`。
+- Worker URL 集中由 `NEXT_PUBLIC_IP_TIMEZONE_ENDPOINT` 設定，不硬寫在元件中；sessionStorage、shared promise、
+  timeout、IANA timezone 驗證與 device fallback 都在 `src/lib/ipTimezone.ts`。
+- 本輪只加入 Worker 原始碼與設定，沒有實際部署 Cloudflare Worker。若正式 Pages 沒有設定 endpoint，
+  UI 會安全 fallback 成「裝置時間」。
+
+### Snapshot 與 AuroraVisibility
+
+- Snapshot schema 是 v2，新增獨立 source `noaaKpForecast`，資料來自 NOAA 3-day planetary K-index forecast。
+- Forecast point 保存 `time`、`kp`、`status`（observed / estimated / predicted / unknown）與 `noaaScale`；
+  不自行推導未來 Kp。
+- Snapshot merge contract 未變：最新收集結果更新 status/error/lastAttemptAt；失敗時保留最後成功的
+  data/dataTime/lastSuccessAt。
+- MET snapshot 的 32 個 site 都帶 Android 正式定義的 `DARK` / `MODERATE` / `BRIGHT` light pollution。
+- 48 小時純函式入口是：
+
+```ts
+buildAuroraForecast48(snapshot, site, baseTime)
+```
+
+- 第 0 小時使用目前 OVATION，並只在這一小時套用目前 Bz 南向加成。
+- 第 1～47 小時使用 NOAA Kp Forecast；找不到涵蓋 interval 時依 Android 行為 fallback 到目前即時 Kp。
+- 不外推未來 Bz、Bt、solar wind 或 OVATION。
+- Score 公式保持 Android 移植版本：
+
+```text
+極光強度 × 雲層因子 × 黑暗因子 × 月光因子 × 地點因子
+```
+
+- 雲層使用低／中／高雲 transmission 權重 1.0 / 0.7 / 0.35；黑暗使用逐時太陽高度；
+  月光使用月相、是否在地平線上及月亮高度；地點使用修正地磁緯度及 light pollution。
+- `src/lib/auroraVisibility.ts` 是唯一評分核心。UI 沒有複製或修改評分公式；Dialog 的 level 名稱與顏色
+  直接呼叫既有 `levelOf()`。
+- 最終 level：0～4 看不到 `#64748B`、5～19 不佳 `#FB923C`、20～39 普通 `#FDE047`、
+  40～64 良好 `#86EFAC`、65～100 極佳 `#4ADE80`。
+
+### 本輪關鍵檔案
+
+- 時區：`cloudflare/timezone-worker/src/index.ts`、`cloudflare/timezone-worker/wrangler.toml`、
+  `src/config/ipTimezone.ts`、`src/lib/ipTimezone.ts`、`src/components/CloudForecastMap.tsx`。
+- Snapshot / collector：`src/snapshot/types.ts`、`src/config/snapshot.ts`、`src/config/sources.ts`、
+  `src/config/monitors.ts`、`src/monitors/noaa/monitor.ts`、`src/monitors/metno/monitor.ts`。
+- 計算核心：`src/lib/auroraVisibility.ts`。
+- 48 小時 UI：`src/components/AuroraModes.tsx`、`src/components/AuroraForecast.tsx`、
+  `src/lib/auroraForecastPresentation.ts`、`src/components/SourceSections.tsx`、`src/components/Dashboard.tsx`。
+- 分數說明：`src/components/AuroraScoreExplanationDialog.tsx`、`src/app/globals.css`。
+- 主要測試：`tests/ip-timezone.test.ts`、`tests/aurora-visibility.test.ts`、
+  `tests/aurora-forecast-ui.test.ts`、`tests/aurora-score-dialog.test.ts`、`tests/deployment.test.ts`。
+
+### 最終驗證
+
+在 commit `64e0779` 推送前的最終結果：
+
+- `npm.cmd test`：402 / 402 通過。
+- `npm.cmd run lint`：通過。
+- `npx.cmd tsc --noEmit`：通過。
+- `npm.cmd run build`：通過，Next.js static export 成功。
+- `git diff --check`：通過。
+- 沒有新增 dependency，沒有修改 Android App、snapshot scheduler 或 upstream API 架構。
+
+### 新對話接續重點
+
+1. 先讀本節，再以 git 與目前程式碼驗證記錄仍然有效。
+2. 不要另寫 AuroraVisibility 公式；任何極光 UI 都從 `buildAuroraForecast48()` 的 assessment 顯示。
+3. 不要讓 browser 直接抓 NOAA / MET / OVATION / Solar Wind；僅 IP timezone Worker 是核准例外。
+4. 若要讓正式環境顯示 IP 當地時間，下一個外部操作是部署 `cloudflare/timezone-worker`，並將 Worker URL
+   設為 GitHub repository variable `IP_TIMEZONE_ENDPOINT`；部署與設定在本輪沒有執行。
+5. 目前沒有待使用者決定的極光 UI 細節。
+
 ## Status (2026-09-03)
 
 The dashboard runs on the **scheduled snapshot architecture** (step 9), is published on GitHub

@@ -96,8 +96,8 @@ test("status wording follows the app's thresholds", () => {
   assert.equal(bzStatus(-10), "很有利");
   assert.equal(bzStatus(-6), "有利");
   assert.equal(bzStatus(-1), "稍有利");
-  assert.equal(bzStatus(0), "偏不利");
-  assert.equal(bzStatus(4.9), "偏不利");
+  assert.equal(bzStatus(0), "不利");
+  assert.equal(bzStatus(4.9), "不利");
   assert.equal(bzStatus(5), "不利");
 
   assert.equal(btStatus(4.9), "偏弱");

@@ -160,7 +160,6 @@ export const bzStatus = (value?: number) => {
   if (value <= -10) return "很有利";
   if (value <= -5) return "有利";
   if (value < 0) return "稍有利";
-  if (value < 5) return "偏不利";
   return "不利";
 };
 

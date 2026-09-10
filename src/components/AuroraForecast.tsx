@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AuroraBriefingDialog } from "@/components/AuroraBriefingDialog";
 import { AuroraScoreExplanationDialog } from "@/components/AuroraScoreExplanationDialog";
 import {
   auroraForecastSites,
@@ -23,6 +24,7 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
   const [siteId, setSiteId] = useState("reykjavik");
   const [selectedHour, setSelectedHour] = useState(0);
   const [scoreExplanationOpen, setScoreExplanationOpen] = useState(false);
+  const [briefingOpen, setBriefingOpen] = useState(false);
   const [localTimeZone, setLocalTimeZone] = useState<LocalTimeZone>(deviceTimeZone);
   const site = sites.find((candidate) => candidate.id === siteId) ?? defaultSite;
 
@@ -70,19 +72,37 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
         <p className="aurora-forecast-hint">
           未來 48 小時逐時預測（時間軸為冰島時間）；可橫向捲動並點選任一小時查看細節。
         </p>
-        <button
-          type="button"
-          className="aurora-score-explain-button"
-          aria-haspopup="dialog"
-          aria-expanded={scoreExplanationOpen}
-          onClick={() => setScoreExplanationOpen(true)}
-        >
-          ⓘ 分數怎麼算？
-        </button>
+        <div className="aurora-forecast-actions">
+          <button
+            type="button"
+            className="aurora-score-explain-button"
+            aria-haspopup="dialog"
+            aria-expanded={scoreExplanationOpen}
+            onClick={() => setScoreExplanationOpen(true)}
+          >
+            ⓘ 分數怎麼算？
+          </button>
+          <button
+            type="button"
+            className="aurora-briefing-button"
+            aria-haspopup="dialog"
+            aria-expanded={briefingOpen}
+            onClick={() => setBriefingOpen(true)}
+          >
+            🌌 極光快報
+          </button>
+        </div>
       </div>
 
       {scoreExplanationOpen && (
         <AuroraScoreExplanationDialog onClose={() => setScoreExplanationOpen(false)} />
+      )}
+      {briefingOpen && (
+        <AuroraBriefingDialog
+          snapshot={snapshot}
+          now={baseTime}
+          onClose={() => setBriefingOpen(false)}
+        />
       )}
 
       <div className="aurora-forecast-timeline" aria-label="未來 48 小時極光預測">
