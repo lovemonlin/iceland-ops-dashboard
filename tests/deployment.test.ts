@@ -79,6 +79,7 @@ test("6. only the approved IP-timezone endpoint may be reached from the browser"
     "src/components/RoadMap.tsx",
     "src/components/MapDisclosure.tsx",
     "src/components/CloudForecastMap.tsx",
+    "src/components/AuroraForecast.tsx",
   ]) {
     const source = read(file);
     for (const forbidden of [

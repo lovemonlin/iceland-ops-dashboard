@@ -20,7 +20,7 @@ import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
 import type { CloudFrame } from "@/lib/cloudForecast";
 import { decodeSiteForecast } from "@/lib/forecastCodec";
 import { dataAgeMinutes } from "@/monitors/correlate";
-import type { SnapshotSource } from "@/snapshot/types";
+import type { DashboardSnapshot, SnapshotSource } from "@/snapshot/types";
 
 /**
  * The four things a traveller came to find out — weather, roads, aurora, warnings — plus the
@@ -216,6 +216,7 @@ export function AuroraSection({
   kpForecast,
   solarWind,
   ovation,
+  snapshot,
   now,
   schemaVersion,
 }: {
@@ -223,6 +224,7 @@ export function AuroraSection({
   kpForecast?: SnapshotSource;
   solarWind?: SnapshotSource;
   ovation?: SnapshotSource;
+  snapshot: DashboardSnapshot;
   now: Date;
   schemaVersion: number;
 }) {
@@ -265,8 +267,8 @@ export function AuroraSection({
           dataTime={oldestEntry?.dataTime}
           dataTimeLabel="來源資料時間"
         >
-          {/* Two views of the same four feeds: the app's instrument panel, and its position map. */}
-          <AuroraModes ovationData={ovationData}>
+          {/* Three views of the same four feeds: instruments, position map, and 48-hour forecast. */}
+          <AuroraModes ovationData={ovationData} snapshot={snapshot} now={now}>
             {/* The app's instrument panel, over the same readings the stats below quote. */}
             <AuroraGauges kpData={kpData} windData={windData} />
             <div className="stats">

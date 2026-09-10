@@ -180,6 +180,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
         kpForecast={snapshotEntry(snapshot, "noaaKpForecast")}
         solarWind={snapshotEntry(snapshot, "solarWind")}
         ovation={snapshotEntry(snapshot, "ovation")}
+        snapshot={snapshot}
         now={now}
         schemaVersion={snapshot.schemaVersion}
       />

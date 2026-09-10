@@ -451,7 +451,7 @@ test("the graticule is the app's, and still has no 0° meridian", () => {
   assert.equal(GRATICULE_LONGITUDES.includes(0), false);
 });
 
-// ── 12, 13, 14, 15: the card's two modes ─────────────────────────────────────
+// ── 12, 13, 14, 15: the card's modes ─────────────────────────────────────────
 
 test("the aurora card defaults to the gauges", () => {
   const modes = read("src/components/AuroraModes.tsx");
@@ -462,7 +462,7 @@ test("the aurora card defaults to the gauges", () => {
   assert.match(modes, /className="road-modes aurora-view-modes"/);
 
   const sections = read("src/components/SourceSections.tsx");
-  assert.match(sections, /<AuroraModes ovationData=\{ovationData\}>/);
+  assert.match(sections, /<AuroraModes ovationData=\{ovationData\} snapshot=\{snapshot\} now=\{now\}>/);
   // The gauges and their stats stay exactly where they were, inside the default mode.
   assert.match(sections, /<AuroraGauges kpData=\{kpData\} windData=\{windData\} \/>/);
 });
