@@ -40,11 +40,14 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
                             └──▶ Pages 重新部署（npm ci → npm test → build）
 ```
 
-- **本機**只負責開發與 push。本機也註冊了三個 Windows 排程工作，但**全部是 Disabled**，
-  不會執行；`logs/hourly-snapshot.log` 最後一筆是 2026-09-06 02:07 +08:00。不要在本機啟用
-  它們，也不要在本機執行 `npm run snapshot`——那會改到執行電腦負責的
-  `public/data/latest-health.json`，只會製造衝突。
-- **執行電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`。
+- **開發機（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機也註冊了三個
+  Windows 排程工作，但**全部是 Disabled**，必須維持停用；`logs/hourly-snapshot.log` 最後一筆
+  是 2026-09-06 02:07 +08:00。
+- **永遠不要在開發機執行 `npm run snapshot`。** 沒有例外。那條指令會改寫
+  `public/data/latest-health.json`。收集與把 snapshot **push 回 GitHub** 只屬於執行機。
+  開發機上的 snapshot 過期時，用 `git pull --ff-only` 取回執行機已發布的那份，不要自己重收。
+- **執行電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`，
+  並 push 那一個 snapshot 檔。
 - push 到 `main` 有兩個消費者。GitHub Pages 立即重建，而且 `npm test` 不過就不會部署；
   執行電腦則在下一次 :07 pull 之後直接採用新程式碼，**沒有任何測試把關**。推送前的本機
   驗證是執行電腦唯一的防線。
@@ -70,11 +73,35 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 4. HTTP 200 永遠不等於健康。
 5. 本 repo 不得寫入 `iceland-aurora`、`iceland-aurora-ios`、`iceland-aurora-cloud`。
 6. 排程收集只允許改動 `public/data/latest-health.json` 這一個檔案。
-7. 未經使用者明確要求，不得 `git reset`、`git restore`、force push，不得修改 production
+7. **開發機永遠不得執行 `npm run snapshot`。** 收集與 snapshot 的 push 只由執行機做。開發機
+   只 push 程式；snapshot 過期就 `git pull --ff-only`，不要自己重收。
+8. 未經使用者明確要求，不得 `git reset`、`git restore`、force push，不得修改 production
    scheduler 或 snapshot schema，不得自行 commit 或 push。
-8. 不得修改 repo 的 NTFS ownership 或 ACL。
+9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：天氣取值共用 `hourAt`，預設最多 59 分鐘
+
+48 小時預測與天氣地圖沿用 Android `SiteForecast.at` 的 nearest-hour，但加上 59 分鐘上限：
+整點對整點時，差不到一小時仍對得上；超出 MET 覆蓋滿一小時後，不再沿用最後一筆雲況去評後面
+的小時。缺天氣時 `assessAuroraVisibility` 仍走原有預設遮蔽 50%。
+
+極光快報的 18:00–02:00 是構造出來的整點，改呼叫同一個 `hourAt(..., 0)`，維持精確對時，
+不再自寫 `weatherAt`。缺該整點就顯示「—」，不向鄰居借，與 forecast codec 契約一致。
+
+## 2026-09-11：開發機永遠不跑 `npm run snapshot`
+
+使用者確認這台 checkout 是開發機，不是 production 時鐘。原則沒有例外：
+
+- 開發機：改程式、測試、push **程式**到 GitHub。
+- 執行機：每小時 pull 後跑 `npm run snapshot`，並且是**唯一**把
+  `public/data/latest-health.json` push 回 GitHub 的機器。
+- 開發機上的 snapshot 以 GitHub 上執行機已發布的那份為準。過期就 pull，不要重收。
+- 本機那三個 Windows 排程工作維持 Disabled，不得啟用。
+
+寫進 `AGENTS.md` 與本檔「不可違反的約束」，避免下一個 agent 為了 debug 或「更新畫面」
+而在這台跑收集。
 
 ## 2026-09-11：hourly runner 在 pull 帶進 dependency 變更時自行安裝
 

@@ -171,13 +171,16 @@ To work on it:
 
 ```powershell
 npm install
-npm run snapshot   # collect production data once and write the snapshot
-npm run dev        # serve the dashboard from that snapshot
-npm run build      # static export into out/
+git pull --ff-only   # take the snapshot the execution machine already published
+npm run dev          # serve the dashboard from that snapshot
+npm run build        # static export into out/
 ```
 
-`npm run snapshot` is the scheduled collection: it is the only thing that contacts production, and
-it is meant to be invoked hourly by an external scheduler. There is deliberately no built-in cron.
+**Never run `npm run snapshot` on the development machine.** That command is the scheduled
+collection: it is the only thing that contacts production, and only the execution machine may
+invoke it (hourly via `scripts\hourly-snapshot.ps1`) and push the resulting
+`public/data/latest-health.json`. There is deliberately no built-in cron. On this machine, a stale
+snapshot is fixed by pulling, not by collecting.
 
 In the browser, `Reload latest snapshot` re-reads the file, and the page does so on its own every
 5 minutes. Neither re-checks production.
@@ -225,8 +228,8 @@ The scheduled collection is only ever allowed to change one file: `public/data/l
 It must not touch source code, `package.json`, the workflow, configuration or this README. Pushing
 that one file to `main` is what publishes new data: the Pages workflow rebuilds and redeploys.
 
-`npm run snapshot` runs the same collection locally, for development, manual validation and
-recovery. Nothing has to run on anyone's machine for the site to stay up.
+`npm run snapshot` is not a development command. Only the execution machine runs it. Nothing has
+to run on the development machine for the site to stay up.
 
 ### Which machine runs what
 
@@ -245,9 +248,10 @@ is **no test gate on that path**, which is why the checks below are run before p
 
 Two consequences worth knowing:
 
-- **Do not run `npm run snapshot` on the development machine.** It rewrites
-  `public/data/latest-health.json`, which the execution machine owns, so the only result is a
-  conflicting change to a file someone else is about to commit.
+- **Never run `npm run snapshot` on the development machine. No exceptions.** It rewrites
+  `public/data/latest-health.json`, which only the execution machine may collect and push. A stale
+  snapshot on this machine is fixed with `git pull --ff-only`, not by collecting. Do not enable
+  the Disabled scheduled tasks registered here.
 - **A push that changes dependencies installs itself on the execution machine.** When the hourly
   pull moves `package.json` or `package-lock.json`, the runner runs `npm ci` before collecting;
   otherwise it does not, so the npm registry is not in the path of every hourly collection. A

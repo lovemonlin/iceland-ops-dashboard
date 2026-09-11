@@ -1,9 +1,12 @@
 # Collects production data and publishes the result.
 #
-# The hourly beat is a GitHub schedule. Note that GitHub documents scheduled events as best-effort:
-# they can be delayed under load, and this account's other repository was measured delivering a
-# three-hourly cron every 134-401 minutes. The dashboard's own SCHEDULED UPDATE OVERDUE banner is
-# what makes any such slippage visible, so the 60/90 minute policy is deliberately not relaxed.
+# The hourly beat is the Windows runner on the execution machine
+# (`scripts/hourly-snapshot.ps1`). This workflow is only a doorbell: a push to
+# `automation/hourly-trigger.txt`, or a manual `workflow_dispatch`. It has no cron.
+# GitHub scheduled events are best-effort and were measured delivering a three-hourly
+# cron every 134-401 minutes; that schedule was removed on 2026-09-04. The dashboard's
+# SCHEDULED UPDATE OVERDUE banner is what makes slippage visible, so the 60/90 minute
+# policy is deliberately not relaxed.
 name: Update Dashboard Snapshot
 
 on:

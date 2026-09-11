@@ -1,5 +1,9 @@
 # Iceland Ops Dashboard — Cursor 開發規範
 
+> **歷史需求規格（2026-09 專案啟動時寫下），已被實作超越。**
+> 現況與約束以 `PROJECT_MEMORY.md`、`README.md`、`AGENTS.md` 為準。
+> 本檔保留作為當初怎麼起步的紀錄，不要再當成待辦清單執行。
+
 > 專案名稱：`iceland-ops-dashboard`  
 > 專案用途：冰島旅行神器的開發者資料監控中心  
 > 專案性質：**獨立、唯讀、非旅客端產品**
