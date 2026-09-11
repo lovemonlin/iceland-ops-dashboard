@@ -26,7 +26,7 @@ test("AuroraModes has three modes and still defaults to the instrument dashboard
   assert.equal(dashboardIndex < mapIndex && mapIndex < forecastIndex, true);
 
   assert.match(modes, /hidden=\{mode !== "GAUGES"\}>\{children\}/);
-  assert.match(modes, /<AuroraOvalMap ovation=\{ovationData\}/);
+  assert.match(modes, /<AuroraOvalMap ovation=\{ovationData\} snapshot=\{snapshot\}/);
   assert.match(modes, /forecastRequested &&/);
   assert.match(modes, /hidden=\{mode !== "FORECAST"\}/);
 });

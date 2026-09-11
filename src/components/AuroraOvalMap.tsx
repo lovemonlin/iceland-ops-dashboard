@@ -19,10 +19,12 @@ import {
   OVAL_RESOLUTION_NOTE,
   OVAL_TITLE,
   ovalCameraPadding,
+  ovalSiteFeatureCollection,
   SITE_TAP_TOLERANCE,
 } from "@/lib/auroraOval";
 import { decodeOvationGrid, icelandProbability } from "@/lib/ovationGrid";
 import { getPublicAssetPath } from "@/lib/publicPath";
+import type { DashboardSnapshot } from "@/snapshot/types";
 
 /**
  * The app's aurora position screen, inside the dashboard's aurora card.
@@ -37,13 +39,9 @@ import { getPublicAssetPath } from "@/lib/publicPath";
  */
 
 /**
- * The app colours each site by `AuroraVisibility.assess`, which needs solar elevation, moon
- * interference, geomagnetic latitude advantage, the site's light-pollution class and a Kp
- * *forecast* series. The dashboard collects none of those, so a colour here would be invented.
- * `MapViewModel.neutralMarkers()` is the app's own answer to exactly that situation, and this is
- * its colour. The markers stay in place and stay clickable.
+ * The markers use the current-hour `buildAuroraForecast48(..., 1)` colour and score, the same
+ * assessment the 48-hour forecast already shows at offset zero.
  */
-const NEUTRAL_MARKER_COLOR = "#64748B";
 
 interface SiteSelection {
   id: string;
@@ -52,24 +50,17 @@ interface SiteSelection {
   nameIs: string;
   lat: number;
   lon: number;
+  score: number;
+  levelLabel: string;
 }
 
-function siteFeatureCollection() {
-  return {
-    type: "FeatureCollection" as const,
-    features: WEATHER_SITES.map((site) => ({
-      type: "Feature" as const,
-      properties: {
-        id: site.id,
-        name: site.name,
-        nameZh: site.nameZh,
-        nameIs: site.nameIs,
-        color: NEUTRAL_MARKER_COLOR,
-        score: 0,
-      },
-      geometry: { type: "Point" as const, coordinates: [site.lon, site.lat] },
-    })),
-  };
+function propertyText(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function propertyNumber(value: unknown) {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 /** The app wraps its own fit in `runCatching` and drops to a fixed centre and zoom; so does this. */
@@ -81,7 +72,13 @@ function frameOval(map: MapLibreMap, width: number, height: number) {
   }
 }
 
-export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> }) {
+export function AuroraOvalMap({
+  ovation,
+  snapshot,
+}: {
+  ovation: Record<string, unknown>;
+  snapshot: DashboardSnapshot;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -94,6 +91,7 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
   // The contour walk is the expensive part, so it runs once per stored grid, not once per render.
   const bands = useMemo(() => (grid ? buildContourBands(grid) : []), [grid]);
   const probability = useMemo(() => icelandProbability(grid), [grid]);
+  const sites = useMemo(() => ovalSiteFeatureCollection(snapshot), [snapshot]);
 
   const observation = formatOvalTime(ovation.observationTime as string | undefined);
   const forecast = formatOvalTime(ovation.forecastTime as string | undefined);
@@ -114,7 +112,7 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
         const style = buildAuroraOvalStyle(
           getPublicAssetPath("/data/world_land.geojson"),
           getPublicAssetPath("/data/iceland.geojson"),
-          siteFeatureCollection(),
+          sites,
         );
 
         const created = new maplibre.Map({
@@ -165,6 +163,8 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
                   nameIs: site.nameIs,
                   lat: site.lat,
                   lon: site.lon,
+                  score: propertyNumber(hit?.properties?.score),
+                  levelLabel: propertyText(hit?.properties?.levelLabel) || "看不到",
                 }
               : null,
           );
@@ -181,6 +181,13 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
       setReady(false);
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const source = map.getSource("sites") as { setData?: (data: unknown) => void } | undefined;
+    source?.setData?.(sites);
+  }, [sites, ready]);
 
   /**
    * The contour bands, inserted above the detailed Iceland fill so they sit under the markers,
@@ -284,12 +291,11 @@ export function AuroraOvalMap({ ovation }: { ovation: Record<string, unknown> })
             <span>{selected.nameIs}</span>
           </div>
           <p className="aurora-oval-note">
+            綜合可見度 {selected.score} 分（{selected.levelLabel}）
+          </p>
+          <p className="aurora-oval-note">
             OVATION 模型機率 {grid ? grid.probabilityAt(selected.lat, selected.lon) : 0}%
             （{selected.lat.toFixed(3)}, {selected.lon.toFixed(3)}）
-          </p>
-          {/* Stated rather than filled in with a number this dashboard cannot compute. */}
-          <p className="aurora-oval-note">
-            App 的綜合可見度評分需要日照高度、月光干擾、地磁緯度與光害分級，這份 Dashboard 尚未收集，因此不顯示分數。
           </p>
           <button type="button" onClick={() => setSelected(null)}>
             關閉

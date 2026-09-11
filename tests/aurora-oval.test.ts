@@ -19,6 +19,7 @@ import {
   OVAL_CAMERA_BOUNDS,
   OVAL_CAMERA_FALLBACK,
   ovalCameraPadding,
+  ovalSiteFeatureCollection,
   SITE_TAP_TOLERANCE,
 } from "../src/lib/auroraOval";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
@@ -390,13 +391,25 @@ test("the marker circles are MapStyleFactory.siteCircleLayer, unchanged", () => 
   const component = read("src/components/AuroraOvalMap.tsx");
   assert.match(component, /queryRenderedFeatures\(box, \{ layers: \["site-circles"\] \}\)/);
   assert.match(component, /event\.point\.x - SITE_TAP_TOLERANCE/);
-  // No score is invented: the app's own neutral fallback colour is used instead.
-  assert.match(component, /NEUTRAL_MARKER_COLOR = "#64748B"/);
-  assert.match(component, /color: NEUTRAL_MARKER_COLOR/);
-  assert.match(component, /score: 0/);
-  // No stand-in for the app's composite score is computed here, only named in the comment that
-  // explains why it is absent.
+  assert.match(component, /ovalSiteFeatureCollection\(snapshot\)/);
+  assert.match(component, /綜合可見度 \{selected\.score\} 分（\{selected\.levelLabel\}）/);
+  assert.equal(component.includes("尚未收集"), false);
   assert.equal(/sunElevation\(|moonInterference\(|latitudeAdvantage\(/.test(component), false);
+});
+
+test("oval site colours are the current-hour AuroraVisibility assessment", () => {
+  const snapshot = JSON.parse(read("public/data/latest-health.json"));
+  const collection = ovalSiteFeatureCollection(snapshot);
+  assert.equal(collection.features.length, 32);
+  for (const feature of collection.features) {
+    const color = feature.properties.color;
+    assert.equal(["#64748B", "#FB923C", "#FDE047", "#86EFAC", "#4ADE80"].includes(color), true, color);
+    assert.equal(Number.isInteger(feature.properties.score), true);
+    assert.equal(feature.properties.score >= 0 && feature.properties.score <= 100, true);
+  }
+  const library = read("src/lib/auroraOval.ts");
+  assert.match(library, /buildAuroraForecast48\(/);
+  assert.match(library, /snapshot\.generatedAt,\s*1/);
 });
 
 test("the app's neutral fallback is the colour used, not one made up here", { skip: !hasAndroid }, () => {

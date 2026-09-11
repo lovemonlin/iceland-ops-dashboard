@@ -290,6 +290,7 @@ export function buildAuroraForecast48(
   snapshot: DashboardSnapshot,
   site: AuroraForecastSite,
   baseTime: Date | string = snapshot.generatedAt,
+  hourCount = 48,
 ): AuroraAssessment[] {
   const base = baseTime instanceof Date ? new Date(baseTime) : new Date(baseTime);
   if (Number.isNaN(base.getTime())) throw new RangeError("baseTime must be a valid date");
@@ -306,7 +307,7 @@ export function buildAuroraForecast48(
   const probability = ovation?.probabilityAt(site.lat, site.lon);
   const bzGsm = finite(snapshot.sources.solarWind?.data?.bzNt);
 
-  return Array.from({ length: 48 }, (_, offset) => {
+  return Array.from({ length: hourCount }, (_, offset) => {
     const time = new Date(base.getTime() + offset * HOUR_MS);
     return assessAuroraVisibility({
       time,

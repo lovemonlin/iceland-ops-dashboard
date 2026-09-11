@@ -67,6 +67,7 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
   Worker 回傳 `Asia/Taipei`，與冰島時間差 8 小時。
 - Android parity 測試已在 Pages CI 跑過：21:07 那次建置 checkout 了 `iceland-aurora`，
   416 個測試、skip 0。secret `ANDROID_REPO_TOKEN` 已在 repo 上。
+- 雲層預報與極光位置圖都改為顯示已有的評分／Kp，不再寫「尚未收集」。
 
 ## 不可違反的約束
 
@@ -86,6 +87,12 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：極光位置圖地點改顯示當前小時可見度分數
+
+點地點先前寫「尚未收集日照／月光／光害／Kp 預報因此不顯示分數」，與
+`buildAuroraForecast48` 已在算的事實不符。標記顏色與點選分數改用該函式的 hour-0
+assessment（現況 OVATION／Bz 只給 offset 0），不另寫公式。
 
 ## 2026-09-11：雲層預報改顯示已收集的 Kp 預報
 

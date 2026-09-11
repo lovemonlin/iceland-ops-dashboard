@@ -79,7 +79,7 @@ export function AuroraModes({
 
       {mapRequested && (
         <div hidden={mode !== "MAP"}>
-          <AuroraOvalMap ovation={ovationData} />
+          <AuroraOvalMap ovation={ovationData} snapshot={snapshot} />
         </div>
       )}
 

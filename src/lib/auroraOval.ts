@@ -16,6 +16,9 @@
  */
 
 import type { OvationGrid } from "@/lib/ovationGrid";
+import { WEATHER_SITES } from "@/config/sources";
+import { buildAuroraForecast48 } from "@/lib/auroraVisibility";
+import type { DashboardSnapshot } from "@/snapshot/types";
 
 // ── Contour bands (AuroraProbabilityContours.kt:38-43) ────────────────────────
 
@@ -275,6 +278,37 @@ export function icelandFeature() {
     type: "Feature" as const,
     properties: { name: "Iceland" },
     geometry: { type: "Point" as const, coordinates: [-18.97, 64.96] },
+  };
+}
+
+/**
+ * Site markers coloured by the current-hour AuroraVisibility assessment — the same hour-0
+ * result the 48-hour forecast already publishes. Neutral grey is only the app's loading fallback.
+ */
+export function ovalSiteFeatureCollection(snapshot: DashboardSnapshot) {
+  return {
+    type: "FeatureCollection" as const,
+    features: WEATHER_SITES.map((site) => {
+      const assessment = buildAuroraForecast48(
+        snapshot,
+        { id: site.id, lat: site.lat, lon: site.lon, lightPollution: site.lightPollution },
+        snapshot.generatedAt,
+        1,
+      )[0];
+      return {
+        type: "Feature" as const,
+        properties: {
+          id: site.id,
+          name: site.name,
+          nameZh: site.nameZh,
+          nameIs: site.nameIs,
+          color: assessment.color,
+          score: assessment.score,
+          levelLabel: assessment.levelLabel,
+        },
+        geometry: { type: "Point" as const, coordinates: [site.lon, site.lat] },
+      };
+    }),
   };
 }
 
