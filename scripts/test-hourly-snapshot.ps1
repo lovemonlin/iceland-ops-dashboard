@@ -60,7 +60,9 @@ function New-TestRepository {
     & git -C $work remote add origin $origin *>$null
 
     New-Item -ItemType Directory -Path (Join-Path $work 'public\data') -Force | Out-Null
-    Write-TextFile (Join-Path $work '.gitignore') "logs/`n.runtime/`n"
+    # node_modules is ignored here for the same reason it is in the real repository: an install
+    # must not make the runner's "only the snapshot changed" guard fire.
+    Write-TextFile (Join-Path $work '.gitignore') "logs/`n.runtime/`nnode_modules/`n"
 
 
     $snapshot = @{
@@ -216,6 +218,52 @@ try {
     Assert-That 'exits 0' ($result.ExitCode -eq 0)
     Assert-That 'says it skipped a recent collection' ($result.Output -match 'SKIPPED: snapshot is only')
     Assert-That 'creates no commit' ((Get-CommitCount $repo.Work) -eq $before)
+
+    Write-Host "`n11. a dependency change arriving with the pull is installed before collecting" -ForegroundColor Cyan
+    $repo = New-TestRepository -Mode fresh; $repos += $repo
+    # A second clone stands in for the development machine pushing a dependency change.
+    $other = Join-Path $repo.Root 'other'
+    & git clone $repo.Origin $other *>$null
+    & git -C $other config user.name 'Test Runner' *>$null
+    & git -C $other config user.email 'test@example.invalid' *>$null
+    # A lockfile with no dependencies at all: `npm ci` then succeeds without reaching the registry.
+    $lock = @{
+        name            = 'hourly-test'
+        version         = '1.0.0'
+        lockfileVersion = 3
+        requires        = $true
+        packages        = @{ '' = @{ name = 'hourly-test'; version = '1.0.0' } }
+    }
+    Write-TextFile (Join-Path $other 'package-lock.json') ($lock | ConvertTo-Json -Depth 6)
+    & git -C $other add package-lock.json *>$null
+    & git -C $other commit -m 'change dependencies' *>$null
+    & git -C $other push origin main *>$null
+    $before = Get-CommitCount $repo.Work
+    $result = Invoke-Runner -Work $repo.Work
+    Assert-That 'exits 0' ($result.ExitCode -eq 0) $result.Output
+    Assert-That 'reports the dependency change' ($result.Output -match 'Dependencies changed; installing before collecting')
+    Assert-That 'installed before collecting' ($result.Output -match 'npm ci OK')
+    Assert-That 'clears the retry marker' (-not (Test-Path (Join-Path $repo.Work '.runtime\install-required')))
+    Assert-That 'still publishes the snapshot' ([int](& git -C $repo.Work rev-list --count 'origin/main..HEAD') -eq 0)
+    Assert-That 'the install did not trip the changed-file guard' ($result.Output -notmatch 'unexpected files changed')
+
+    Write-Host "`n12. an ordinary pull does not install anything" -ForegroundColor Cyan
+    $repo = New-TestRepository -Mode fresh; $repos += $repo
+    $result = Invoke-Runner -Work $repo.Work
+    Assert-That 'exits 0' ($result.ExitCode -eq 0) $result.Output
+    Assert-That 'says nothing about dependencies' ($result.Output -notmatch 'Dependencies changed')
+    Assert-That 'never ran an install' ($result.Output -notmatch 'npm ci OK')
+
+    Write-Host "`n13. an install that failed once is retried on the next run" -ForegroundColor Cyan
+    $repo = New-TestRepository -Mode fresh; $repos += $repo
+    New-Item -ItemType Directory -Path (Join-Path $repo.Work '.runtime') -Force | Out-Null
+    Set-Content -Path (Join-Path $repo.Work '.runtime\install-required') -Value 'install required' -Encoding ascii
+    $result = Invoke-Runner -Work $repo.Work
+    # No lockfile exists here, so `npm ci` cannot succeed: the point is that it was attempted.
+    Assert-That 'attempts the install again' ($result.Output -match 'Dependencies changed; installing before collecting')
+    Assert-That 'reports the failure' ($result.Output -match 'DEPENDENCY INSTALL FAILED')
+    Assert-That 'exits non-zero' ($result.ExitCode -ne 0)
+    Assert-That 'keeps the marker for the next run' (Test-Path (Join-Path $repo.Work '.runtime\install-required'))
 } finally {
     foreach ($repo in $repos) {
         Remove-Item $repo.Root -Recurse -Force -ErrorAction SilentlyContinue

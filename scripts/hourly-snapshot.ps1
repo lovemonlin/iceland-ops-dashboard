@@ -7,8 +7,8 @@
     One safe, single-shot run:
 
         acquire lock -> verify repo -> push anything left over -> pull --ff-only
-        -> npm run snapshot -> validate -> guard changed files
-        -> commit only the snapshot -> push -> log -> release lock
+        -> install if the pull changed dependencies -> npm run snapshot -> validate
+        -> guard changed files -> commit only the snapshot -> push -> log -> release lock
 
     It is deliberately conservative. It never stashes, resets, checks out, cleans or force-pushes,
     and it refuses to touch a working tree that has your own uncommitted work in it. If anything
@@ -37,8 +37,9 @@ $ErrorActionPreference = 'Stop'
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 
-# A snapshot younger than this is left alone, so the Windows runner and the GitHub schedule
-# (still enabled as a backup) cannot both collect within the same hour.
+# A snapshot younger than this is left alone, so two collections cannot land within the same hour.
+# The GitHub backup schedule this originally guarded against was removed on 2026-09-04; the guard
+# still earns its place for manual runs and for a catch-up run after a missed occurrence.
 $SkipIfSnapshotYoungerThanMinutes = 45
 
 # The lock is treated as abandoned after this long, so a crashed run cannot block every later one.
@@ -56,6 +57,8 @@ $SnapshotRelativePath = 'public/data/latest-health.json'
 $SnapshotPath = Join-Path $RepositoryPath 'public\data\latest-health.json'
 $RuntimeDir = Join-Path $RepositoryPath '.runtime'
 $LockPath = Join-Path $RuntimeDir 'hourly-snapshot.lock'
+# Written before an install and removed only once it succeeds, so a failed one is retried next run.
+$InstallMarkerPath = Join-Path $RuntimeDir 'install-required'
 $LogDir = Join-Path $RepositoryPath 'logs'
 $LogPath = Join-Path $LogDir 'hourly-snapshot.log'
 
@@ -255,6 +258,9 @@ try {
         Write-Log 'push OK (recovered earlier commits)'
     }
 
+    # Where HEAD stood before the pull, so a dependency change arriving with it can be spotted.
+    $beforePull = (Invoke-Git rev-parse HEAD).Output
+
     $pull = Invoke-Git pull --ff-only origin main
     if ($pull.ExitCode -ne 0) {
         Write-Log "ABORTED: git pull --ff-only failed; the branch has diverged and needs a human. $($pull.Output)"
@@ -262,6 +268,43 @@ try {
         exit $exitCode
     }
     Write-Log 'git pull OK'
+
+    <#
+        A pull brings new code but leaves node_modules exactly as it was, and `npm run snapshot`
+        cannot survive that on its own: it fails every hour until someone installs by hand.
+
+        Installing unconditionally would fix that by putting the npm registry in the path of every
+        single collection, trading a rare failure for an hourly one. So the install runs only when
+        the pull actually moved package.json or package-lock.json. The marker exists because that
+        test is about the pull, not about the machine: without it, an install that failed once
+        would never be retried until some later commit happened to touch dependencies again.
+    #>
+    $afterPull = (Invoke-Git rev-parse HEAD).Output
+    $needsInstall = Test-Path $InstallMarkerPath
+    if (-not $needsInstall -and $beforePull -ne $afterPull) {
+        $pulled = (Invoke-Git diff --name-only $beforePull $afterPull).Output -split "`r?`n"
+        $needsInstall = [bool]($pulled | Where-Object { $_.Trim() -in @('package.json', 'package-lock.json') })
+    }
+
+    if ($needsInstall) {
+        Write-Log 'Dependencies changed; installing before collecting.'
+        Set-Content -Path $InstallMarkerPath -Value 'install required' -Encoding ascii
+        Push-Location $RepositoryPath
+        try {
+            # No audit and no funding notice: this is an unattended job, and an audit is a second
+            # network call that can fail on its own without saying anything about the install.
+            $install = Invoke-Native -Command 'npm' -Arguments @('ci', '--no-audit', '--no-fund')
+        } finally {
+            Pop-Location
+        }
+        if ($install.ExitCode -ne 0) {
+            Write-Log "ERROR: DEPENDENCY INSTALL FAILED. Nothing collected; the previous published snapshot stands. $($install.Output)"
+            $exitCode = 1
+            exit $exitCode
+        }
+        Remove-Item $InstallMarkerPath -Force -ErrorAction SilentlyContinue
+        Write-Log 'npm ci OK'
+    }
 
     if (-not $Force) {
         $age = Get-SnapshotAgeMinutes

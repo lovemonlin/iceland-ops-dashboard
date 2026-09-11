@@ -110,7 +110,7 @@ test("the runner's own artefacts stay out of git", () => {
   assert.match(ignored, /^\.runtime\/$/m);
 });
 
-test("the two schedulers cannot both collect within the same hour", () => {
+test("two collections cannot land within the same hour", () => {
   const script = directives();
   assert.match(script, /\$SkipIfSnapshotYoungerThanMinutes = 45/);
   assert.match(script, /SKIPPED: snapshot is only/);
@@ -132,6 +132,24 @@ test("the Task Scheduler registration is documented and reproducible", () => {
   assert.match(readme, /-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/);
 });
 
+test("a dependency change arriving with the pull is installed before collecting", () => {
+  const script = directives();
+
+  // A pull brings new code but leaves node_modules behind, and `npm run snapshot` cannot recover
+  // from that on its own. The install is conditional on the pull having moved a dependency file:
+  // doing it every hour would put the npm registry in the path of every single collection.
+  assert.match(script, /Invoke-Git diff --name-only \$beforePull \$afterPull/);
+  assert.match(script, /'package\.json', 'package-lock\.json'/);
+  assert.match(script, /Invoke-Native -Command 'npm' -Arguments @\('ci', '--no-audit', '--no-fund'\)/);
+
+  // A failed install stops the run rather than collecting against a half-installed tree, and the
+  // marker is what makes it retry instead of waiting for the next dependency change to arrive.
+  assert.match(script, /DEPENDENCY INSTALL FAILED/);
+  assert.match(script, /\$InstallMarkerPath = Join-Path \$RuntimeDir 'install-required'/);
+  assert.match(script, /Set-Content -Path \$InstallMarkerPath/);
+  assert.match(script, /Remove-Item \$InstallMarkerPath/);
+});
+
 test("the safety behaviour is covered by a harness that never uses the real repository", () => {
   const harness = read("scripts/test-hourly-snapshot.ps1");
   assert.match(harness, /New-TestRepository/);
@@ -139,4 +157,11 @@ test("the safety behaviour is covered by a harness that never uses the real repo
   // Every case builds its own throwaway repo rather than pointing at this one.
   assert.equal(harness.includes("C:\\dev\\iceland-ops-dashboard"), false);
   assert.equal(SNAPSHOT_FILE.length > 0, true);
+
+  // The install path has all three of its outcomes covered: installed, skipped, retried.
+  assert.match(harness, /a dependency change arriving with the pull is installed before collecting/);
+  assert.match(harness, /an ordinary pull does not install anything/);
+  assert.match(harness, /an install that failed once is retried on the next run/);
+  // An install writes node_modules, which must not read as an unexpected change.
+  assert.match(harness, /node_modules\//);
 });
