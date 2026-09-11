@@ -72,6 +72,9 @@ test("a card is only as tall as its own content", () => {
   const cards = css.match(/^\.cards \{[^}]*\}/m)?.[0] ?? "";
   assert.match(cards, /display: grid/);
   assert.match(cards, /align-items: start/);
+  // minmax(340px, 1fr) cannot shrink below 340px, so a phone narrower than that
+  // overflowed the page; min(340px, 100%) keeps the floor inside the card.
+  assert.match(cards, /minmax\(min\(340px, 100%\), 1fr\)/);
   // The pair grid already did this; both card grids must agree.
   const pair = css.match(/^\.pair \{[^}]*\}/m)?.[0] ?? "";
   assert.match(pair, /align-items: start/);

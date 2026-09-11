@@ -533,6 +533,14 @@ test("the map cannot be rotated or tilted", () => {
   assert.match(map, /touchZoomRotate: true/);
 });
 
+test("the oval map canvas cannot widen the page", () => {
+  const css = read("src/app/globals.css");
+  assert.match(css, /\.aurora-oval-canvas \{[\s\S]*?overflow: hidden/);
+  assert.match(css, /\.aurora-oval-canvas canvas \{[\s\S]*?position: absolute !important/);
+  assert.match(css, /\.aurora-oval-canvas canvas \{[\s\S]*?width: 100% !important/);
+  assert.match(css, /html \{ overflow-x: clip; \}/);
+});
+
 test("the camera keeps the app's geographic framing", () => {
   assert.deepEqual(OVAL_CAMERA_BOUNDS, [
     [-85, 48],

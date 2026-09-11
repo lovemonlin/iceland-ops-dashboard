@@ -15,14 +15,18 @@
 
 * { box-sizing: border-box; }
 
+html { overflow-x: clip; }
+
 body {
   margin: 0;
+  max-width: 100%;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   font: 15px/1.5 "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
 }
 
-main { max-width: 1180px; margin: auto; padding: 32px; }
+main { max-width: min(1180px, 100%); margin: auto; padding: 32px; min-width: 0; }
 
 .overdue { border: 1px solid var(--warn); border-left: 4px solid var(--warn); background: #2a2312; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
 .overdue strong { color: var(--warn); font-size: 17px; }
@@ -95,10 +99,10 @@ button:disabled { opacity: .6; cursor: default; }
 /* `align-items: start` so a card is only as tall as it needs to be. Without it a short card is
    stretched to match an expanded neighbour -- the cloud forecast next to an open weather map was
    1020px tall for 156px of content -- which reads as a card that failed to load something. */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; align-items: start; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 14px; align-items: start; min-width: 0; }
 /* Aurora and warnings answer one question each, so they share a row rather than a screen. */
-.pair { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; align-items: start; }
-.card { padding: 16px 20px; border-left: 3px solid var(--line); }
+.pair { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; align-items: start; min-width: 0; }
+.card { padding: 16px 20px; border-left: 3px solid var(--line); min-width: 0; max-width: 100%; }
 .card.tone-ok { border-left-color: var(--ok); }
 .card.tone-info { border-left-color: var(--info); }
 .card.tone-warn { border-left-color: var(--warn); }
@@ -254,8 +258,16 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .wind-arrow span { color: var(--text); font-variant-numeric: tabular-nums; }
 
 /* Road map. The palette lives in the MapLibre style, which is the app's own. */
-.road-map { position: relative; display: grid; gap: 10px; }
-.road-map-canvas { width: 100%; height: 460px; border-radius: 10px; overflow: hidden; }
+.road-map { position: relative; display: grid; gap: 10px; min-width: 0; max-width: 100%; }
+.road-map-canvas { position: relative; width: 100%; max-width: 100%; min-width: 0; height: 460px; border-radius: 10px; overflow: hidden; }
+.road-map-canvas canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  display: block;
+}
 .road-station-label { position: absolute; pointer-events: none; white-space: nowrap; font-weight: 600; }
 .road-legend {
   display: grid;
@@ -457,17 +469,31 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
    The info card is overlaid at the bottom of the map, as the app overlays it — never beside it.
    Compose dp and CSS px are both 1/160 inch at scale 1, so the app's 18/12/14 dp carry across. */
 .aurora-view-modes { margin-top: 14px; }
-.aurora-oval { position: relative; margin-top: 12px; }
+.aurora-oval { position: relative; margin-top: 12px; min-width: 0; max-width: 100%; overflow: hidden; }
 .aurora-oval-canvas {
+  position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   /* The app's card covers roughly the bottom 47% of a phone screen; this keeps a similar share
      of the map visible above it rather than letting the card take over a short container. */
   height: 440px;
   border-radius: 10px;
   overflow: hidden;
   background: #07162b;
+  touch-action: none;
 }
-.aurora-oval-canvas .maplibregl-canvas { outline: none; }
+.aurora-oval-canvas .maplibregl-canvas,
+.aurora-oval-canvas canvas {
+  outline: none;
+  position: absolute !important;
+  left: 0;
+  top: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  display: block;
+}
 
 /* Bottom-centred, 12dp outer margin, 14dp inner padding, 18dp corners, surface at 0.94 alpha. */
 .aurora-oval-card {
@@ -549,7 +575,7 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .aurora-oval-site button:hover { color: var(--text); background: #1b2a3b; }
 
 /* ── Aurora 48-hour forecast ─────────────────────────────────────────────── */
-.aurora-forecast { margin-top: 14px; }
+.aurora-forecast { margin-top: 14px; min-width: 0; }
 .aurora-forecast-head { display: flex; flex-direction: column; gap: 5px; }
 .aurora-forecast-head label { font-size: 12px; color: var(--muted); }
 .aurora-forecast-head select {
@@ -1021,6 +1047,7 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 }
 
 @media (max-width: 520px) {
+  main { padding: 16px; }
   .aurora-forecast-guide { align-items: flex-start; flex-direction: column; }
   .aurora-forecast-actions { justify-content: flex-start; }
   .aurora-forecast-detail-head { flex-direction: column; gap: 7px; }
@@ -1036,11 +1063,22 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
    title, selected time, slider, timing, legend, frame state, note, attribution. */
 .cloud-forecast { margin-top: 12px; }
 .cloud-forecast-canvas {
+  position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 340px;
   border-radius: 10px;
   overflow: hidden;
   background: #294d61;
+}
+.cloud-forecast-canvas canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  display: block;
 }
 .cloud-forecast-panel {
   margin-top: 10px;
