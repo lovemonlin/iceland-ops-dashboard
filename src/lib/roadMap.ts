@@ -522,19 +522,25 @@ export function roadDisplayTitle(item: RoadFeatureItem): string {
 }
 
 /**
- * IRCA's GeoJSON has no Chinese. The app fills 中文說明 with on-device Google Translate
- * (RoadInfoViewModel.kt). This dashboard cannot do that, so it only maps the official
- * one-word codes IRCA sometimes sends as the entire description.
+ * IRCA's GeoJSON has no Chinese. Short official codes are mapped here; longer English is
+ * translated on the desktop with the browser Translator API, matching the app's on-device
+ * Google Translate (RoadInfoViewModel.kt) without a network translation service.
  */
 const ROAD_OFFICIAL_PHRASE_ZH: Record<string, string> = {
   Holur: "坑洞",
+  "Heavily snow-covered": "路面積雪嚴重",
+  "Verulega snjóþungt": "路面積雪嚴重",
 };
 
 export const ROAD_CHINESE_UNAVAILABLE = "此項目目前沒有可用的中文翻譯。";
-export const ROAD_CHINESE_NOTE =
-  "中文為非官方對照。儀表板沒有 App 的裝置端翻譯，長篇說明請讀下方官方原文。";
+export const ROAD_CHINESE_LOADING = "正在準備中文翻譯…";
+export const ROAD_CHINESE_NOTE = "中文為非官方機器翻譯 · 由 Google 裝置端翻譯產生";
+export const ROAD_CHINESE_NEED_CHROME =
+  "請用最新版 Chrome 或 Edge 開啟此頁，瀏覽器才會像 App 一樣在裝置端產生中文說明。";
+export const ROAD_CHINESE_ICELANDIC_ONLY =
+  "此則只有冰島文原文，瀏覽器無法翻譯冰島文長篇說明。";
 
-/** The app's zh 中文說明 body, without ML Kit. */
+/** The instant zh 中文說明: status labels and IRCA's one-line official codes. */
 export function roadChineseExplanation(item: RoadFeatureItem): string | undefined {
   if (item.type === "STATION") return undefined;
   if (item.type === "ROAD") return roadStatusLabel(item.status);
@@ -544,6 +550,95 @@ export function roadChineseExplanation(item: RoadFeatureItem): string | undefine
   if (mapped) return mapped;
   if (!english && !icelandic) return roadStatusLabel(item.status);
   return undefined;
+}
+
+export function roadEnglishForTranslation(item: RoadFeatureItem): string | undefined {
+  if (item.type !== "INCIDENT") return undefined;
+  if (roadChineseExplanation(item)) return undefined;
+  const english = item.descriptionEnglish.trim();
+  if (!english || english === "No reported restriction") return undefined;
+  return english;
+}
+
+type BrowserTranslator = { translate(input: string): Promise<string> };
+type TranslatorApi = {
+  availability(options: { sourceLanguage: string; targetLanguage: string }): Promise<string | null>;
+  create(options: { sourceLanguage: string; targetLanguage: string }): Promise<BrowserTranslator>;
+};
+
+function translatorApi(): TranslatorApi | undefined {
+  const value = (globalThis as { Translator?: TranslatorApi }).Translator;
+  return typeof value?.availability === "function" && typeof value?.create === "function"
+    ? value
+    : undefined;
+}
+
+export function browserHasRoadTranslator(): boolean {
+  return Boolean(translatorApi());
+}
+
+const translatedEnglish = new Map<string, string>();
+let translatorClient: BrowserTranslator | undefined;
+let translatorCreate: Promise<BrowserTranslator | undefined> | undefined;
+
+export function resetRoadTranslatorForTests() {
+  translatedEnglish.clear();
+  translatorClient = undefined;
+  translatorCreate = undefined;
+}
+
+function translatorClientPromise(): Promise<BrowserTranslator | undefined> {
+  if (translatorClient) return Promise.resolve(translatorClient);
+  const api = translatorApi();
+  if (!api) return Promise.resolve(undefined);
+  if (!translatorCreate) {
+    const activation = (globalThis as { navigator?: { userActivation?: { isActive: boolean } } })
+      .navigator?.userActivation;
+    // Chrome's create() hangs without a real user gesture. Skip rather than leave the dialog loading.
+    if (activation && !activation.isActive) return Promise.resolve(undefined);
+    translatorCreate = api
+      .create({ sourceLanguage: "en", targetLanguage: "zh-Hant" })
+      .then((client) => {
+        translatorClient = client;
+        return client;
+      })
+      .catch(() => {
+        translatorCreate = undefined;
+        return undefined;
+      });
+  }
+  return translatorCreate;
+}
+
+/** Desktop Chrome / Edge on-device translate, same job as the app's ML Kit. */
+export async function translateRoadEnglish(text: string): Promise<string | undefined> {
+  const cached = translatedEnglish.get(text);
+  if (cached) return cached;
+  try {
+    const client = await translatorClientPromise();
+    if (!client) return undefined;
+    const translated = (await client.translate(text)).trim();
+    if (!translated) return undefined;
+    translatedEnglish.set(text, translated);
+    return translated;
+  } catch {
+    translatorClient = undefined;
+    translatorCreate = undefined;
+    return undefined;
+  }
+}
+
+export function roadChineseNote(
+  item: RoadFeatureItem,
+  chinese: string | undefined,
+  pending: boolean,
+): string {
+  if (chinese || pending) return ROAD_CHINESE_NOTE;
+  if (roadEnglishForTranslation(item) && !browserHasRoadTranslator()) return ROAD_CHINESE_NEED_CHROME;
+  const english = item.descriptionEnglish.trim();
+  const icelandic = item.descriptionIcelandic.trim();
+  if (!english && icelandic) return ROAD_CHINESE_ICELANDIC_ONLY;
+  return ROAD_CHINESE_NOTE;
 }
 
 /**

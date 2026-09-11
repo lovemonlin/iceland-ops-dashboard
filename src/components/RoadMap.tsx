@@ -18,10 +18,13 @@ import {
   ROAD_MODES,
   ROAD_QUERY_ORDER,
   ROAD_TAP_TOLERANCE,
-  ROAD_CHINESE_NOTE,
+  ROAD_CHINESE_LOADING,
   ROAD_CHINESE_UNAVAILABLE,
   roadChineseExplanation,
+  roadChineseNote,
   roadDisplayTitle,
+  roadEnglishForTranslation,
+  translateRoadEnglish,
   roadStatusColor,
   roadStatusEnglish,
   roadStatusLabel,
@@ -57,13 +60,33 @@ export function RoadMap() {
   // Also held in state: the labels overlay renders from it, and a ref must not be read during render.
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [selected, setSelected] = useState<RoadFeatureItem | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  const [machineChinese, setMachineChinese] = useState<string | undefined>();
+  const [translationPending, setTranslationPending] = useState(false);
   // The app reaches these as two separate screens; here they are one map with a toggle.
   const [mode, setMode] = useState<RoadInfoMode>("EVENTS");
   const modeRef = useRef<RoadInfoMode>(mode);
   const [failure, setFailure] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const onSelect = useCallback((item: RoadFeatureItem) => setSelected(item), []);
+  const onSelect = useCallback((item: RoadFeatureItem) => {
+    selectedIdRef.current = item.id;
+    setSelected(item);
+    const english = roadEnglishForTranslation(item);
+    if (!english) {
+      setMachineChinese(undefined);
+      setTranslationPending(false);
+      return;
+    }
+    setMachineChinese(undefined);
+    setTranslationPending(true);
+    const id = item.id;
+    void translateRoadEnglish(english).then((text) => {
+      if (selectedIdRef.current !== id) return;
+      setMachineChinese(text);
+      setTranslationPending(false);
+    });
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -165,7 +188,10 @@ export function RoadMap() {
     map.setPaintProperty("station-markers", "circle-opacity", showStations ? 1 : 0);
     map.setPaintProperty("station-markers", "circle-stroke-opacity", showStations ? 1 : 0);
     // A selection made in the other mode would otherwise stay open over an invisible feature.
+    selectedIdRef.current = null;
     setSelected(null);
+    setMachineChinese(undefined);
+    setTranslationPending(false);
   }, [mode, ready]);
 
   /**
@@ -244,7 +270,19 @@ export function RoadMap() {
         </span>
       </div>
 
-      {selected && <RoadDetailDialog item={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <RoadDetailDialog
+          item={selected}
+          machineChinese={machineChinese}
+          translationPending={translationPending}
+          onClose={() => {
+            selectedIdRef.current = null;
+            setSelected(null);
+            setMachineChinese(undefined);
+            setTranslationPending(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -346,7 +384,17 @@ function StationLabels({ map, ready }: { map: MapLibreMap | null; ready: boolean
  * Opening and closing only sets React state; the map effect keys on `onSelect`, which is stable,
  * so nothing here rebuilds MapLibre, refetches the GeoJSON or moves the camera.
  */
-function RoadDetailDialog({ item, onClose }: { item: RoadFeatureItem; onClose: () => void }) {
+function RoadDetailDialog({
+  item,
+  machineChinese,
+  translationPending,
+  onClose,
+}: {
+  item: RoadFeatureItem;
+  machineChinese?: string;
+  translationPending: boolean;
+  onClose: () => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
 
   // Escape closes it, and focus starts on the close control so the keyboard is not trapped.
@@ -377,7 +425,11 @@ function RoadDetailDialog({ item, onClose }: { item: RoadFeatureItem; onClose: (
           </button>
         </div>
         <div className="road-dialog-body">
-          <RoadDetailBody item={item} />
+          <RoadDetailBody
+            item={item}
+            machineChinese={machineChinese}
+            translationPending={translationPending}
+          />
         </div>
       </div>
     </div>
@@ -385,9 +437,17 @@ function RoadDetailDialog({ item, onClose }: { item: RoadFeatureItem; onClose: (
 }
 
 /** The detail fields themselves, unchanged from the inline card — only its shell became a dialog. */
-function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
+function RoadDetailBody({
+  item,
+  machineChinese,
+  translationPending,
+}: {
+  item: RoadFeatureItem;
+  machineChinese?: string;
+  translationPending: boolean;
+}) {
   const isStation = item.type === "STATION";
-  const chinese = roadChineseExplanation(item);
+  const chinese = roadChineseExplanation(item) ?? machineChinese;
   return (
     <>
       {isStation && item.updatedAt && (
@@ -413,10 +473,12 @@ function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
           <p className="road-detail-label">中文說明</p>
           {chinese ? (
             <p className="road-primary">{chinese}</p>
+          ) : translationPending ? (
+            <p className="road-note">{ROAD_CHINESE_LOADING}</p>
           ) : (
             <p className="road-note">{ROAD_CHINESE_UNAVAILABLE}</p>
           )}
-          <p className="road-translation-note">{ROAD_CHINESE_NOTE}</p>
+          <p className="road-translation-note">{roadChineseNote(item, chinese, translationPending)}</p>
           <p className="road-detail-label">官方英文內容</p>
           <p className="road-primary">{item.titleEnglish || roadStatusEnglish(item.status)}</p>
           {item.descriptionEnglish && <p className="road-note">{item.descriptionEnglish}</p>}

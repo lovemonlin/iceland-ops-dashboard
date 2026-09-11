@@ -23,8 +23,17 @@ import {
   ROAD_STATUS_DEFAULT_COLOR,
   ROAD_STATUS_LINE_COLORS,
   ROAD_TAP_TOLERANCE,
+  browserHasRoadTranslator,
+  resetRoadTranslatorForTests,
   roadChineseExplanation,
+  roadChineseNote,
   roadDisplayTitle,
+  roadEnglishForTranslation,
+  ROAD_CHINESE_ICELANDIC_ONLY,
+  ROAD_CHINESE_LOADING,
+  ROAD_CHINESE_NEED_CHROME,
+  ROAD_CHINESE_NOTE,
+  ROAD_CHINESE_UNAVAILABLE,
   roadLayerVisibility,
   roadStatusColor,
   roadStatusEnglish,
@@ -33,6 +42,7 @@ import {
   STATION_LEGEND,
   STATION_TRAFFIC_COLOR,
   STATION_WEATHER_COLOR,
+  translateRoadEnglish,
 } from "../src/lib/roadMap";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -250,27 +260,74 @@ test("titles follow the app's rules for each item type", () => {
   assert.equal(roadDisplayTitle({ ...base, type: "STATION", name: "Hellisheiði" }), "Hellisheiði");
 });
 
-test("incident Chinese explanations map IRCA's one-word codes and do not invent paragraph translations", () => {
+test("incident Chinese explanations map IRCA's one-word codes and leave paragraphs for the browser translator", () => {
   const base = readFeature({}, "INCIDENT");
   assert.equal(
     roadChineseExplanation({ ...base, status: "warning", descriptionIcelandic: "Holur" }),
     "坑洞",
   );
   assert.equal(
-    roadChineseExplanation({
-      ...base,
-      status: "warning",
-      descriptionEnglish: "The bridge is open.",
-      descriptionIcelandic: "Brúin er opin.",
-    }),
-    undefined,
+    roadChineseExplanation({ ...base, status: "warning", descriptionEnglish: "Heavily snow-covered" }),
+    "路面積雪嚴重",
   );
+  const paragraph = {
+    ...base,
+    status: "warning",
+    descriptionEnglish: "The bridge is open.",
+    descriptionIcelandic: "Brúin er opin.",
+  };
+  assert.equal(roadChineseExplanation(paragraph), undefined);
+  assert.equal(roadEnglishForTranslation(paragraph), "The bridge is open.");
   assert.equal(
     roadChineseExplanation({ ...base, status: "roadworks" }),
     "道路施工",
   );
+  assert.equal(roadEnglishForTranslation({ ...base, status: "roadworks" }), undefined);
   assert.equal(roadChineseExplanation({ ...readFeature({}, "ROAD"), status: "slippery" }), "路面濕滑");
   assert.equal(roadChineseExplanation(readFeature({}, "STATION")), undefined);
+});
+
+test("browser translation uses Translator and never a translation HTTP API", async () => {
+  resetRoadTranslatorForTests();
+  assert.equal(browserHasRoadTranslator(), false);
+  assert.equal(await translateRoadEnglish("Please drive carefully."), undefined);
+
+  const api = {
+    async availability() {
+      return "available";
+    },
+    async create() {
+      return {
+        async translate(input: string) {
+          return `請小心駕駛：${input}`;
+        },
+      };
+    },
+  };
+  (globalThis as { Translator?: typeof api }).Translator = api;
+  resetRoadTranslatorForTests();
+  assert.equal(browserHasRoadTranslator(), true);
+  assert.equal(await translateRoadEnglish("Please drive carefully."), "請小心駕駛：Please drive carefully.");
+  assert.equal(await translateRoadEnglish("Please drive carefully."), "請小心駕駛：Please drive carefully.");
+  delete (globalThis as { Translator?: typeof api }).Translator;
+  resetRoadTranslatorForTests();
+
+  const icelandicOnly = readFeature(
+    { description_is: "Unnið við styrkingu og endurmótun Laugarvatnsvegar." },
+    "INCIDENT",
+  );
+  const englishWorks = readFeature(
+    {
+      description_en:
+        "Work is underway to strengthen and reshape Laugarvatnsvegur (37) from Laugarvatn to Hjálmstaðir. Please drive carefully.",
+    },
+    "INCIDENT",
+  );
+  assert.equal(roadChineseNote(icelandicOnly, undefined, false), ROAD_CHINESE_ICELANDIC_ONLY);
+  assert.equal(roadChineseNote(englishWorks, undefined, false), ROAD_CHINESE_NEED_CHROME);
+  assert.equal(roadChineseNote(englishWorks, "施工中，請小心駕駛。", false), ROAD_CHINESE_NOTE);
+  assert.equal(ROAD_CHINESE_LOADING, "正在準備中文翻譯…");
+  assert.equal(ROAD_CHINESE_UNAVAILABLE, "此項目目前沒有可用的中文翻譯。");
 });
 
 // ── 9-11. Collapsed by default, and nothing loads until it is opened ──────────
@@ -416,10 +473,13 @@ test("a clicked road, incident or station opens one modal dialog", () => {
   // All three feature kinds go through the same selection path, so one dialog serves them all.
   assert.match(roadMap, /const type = layer === "incident-markers" \? "INCIDENT" : layer === "station-markers" \? "STATION" : "ROAD";/);
   assert.match(roadMap, /onSelect\(readFeature\(hit\.properties \?\? \{\}, type\)\);/);
-  assert.match(roadMap, /const onSelect = useCallback\(\(item: RoadFeatureItem\) => setSelected\(item\), \[\]\);/);
+  assert.match(roadMap, /const onSelect = useCallback\(\(item: RoadFeatureItem\) => \{/);
+  assert.match(roadMap, /\}, \[\]\);/);
 
   // The detail is a dialog, not the inline panel that used to push the Dashboard down.
-  assert.match(roadMap, /\{selected && <RoadDetailDialog item=\{selected\} onClose=\{\(\) => setSelected\(null\)\} \/>\}/);
+  assert.match(roadMap, /\{selected && \(/);
+  assert.match(roadMap, /<RoadDetailDialog/);
+  assert.match(roadMap, /onClose=\{\(\) => \{/);
   assert.equal(roadMap.includes("<RoadDetailCard"), false, "the inline detail card must be gone");
   assert.equal(roadMap.includes('className="road-detail"'), false, "the inline detail shell must be gone");
   assert.equal([...roadMap.matchAll(/<RoadDetailDialog/g)].length, 1, "exactly one dialog");
@@ -477,9 +537,10 @@ test("the road dialog still shows every field the inline card did", () => {
   assert.match(body, /測站數值由官方量測，僅供參考。/);
   // Road / incident: Chinese first, then the official English and Icelandic source text.
   assert.match(body, /中文說明/);
-  assert.match(body, /roadChineseExplanation\(item\)/);
+  assert.match(body, /roadChineseExplanation\(item\) \?\? machineChinese/);
+  assert.match(body, /ROAD_CHINESE_LOADING/);
   assert.match(body, /ROAD_CHINESE_UNAVAILABLE/);
-  assert.match(body, /ROAD_CHINESE_NOTE/);
+  assert.match(body, /roadChineseNote\(item, chinese, translationPending\)/);
   assert.match(body, /官方英文內容/);
   assert.match(body, /\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}/);
   assert.match(body, /\{item\.descriptionEnglish && <p className="road-note">\{item\.descriptionEnglish\}<\/p>\}/);
@@ -488,6 +549,11 @@ test("the road dialog still shows every field the inline card did", () => {
   assert.match(body, /\{ROAD_ATTRIBUTION\}/);
   assert.equal(body.includes("英文原文"), false);
   assert.equal(/fetch\s*\(|translate\.googleapis|mlkit/i.test(body), false);
+
+  const map = read("src/components/RoadMap.tsx");
+  assert.match(map, /translateRoadEnglish\(english\)/);
+  assert.match(map, /roadEnglishForTranslation\(item\)/);
+  assert.equal(/fetch\s*\(|translate\.googleapis/i.test(map), false);
 
   // Every station measurement still has a row, now one label each rather than a run of prose.
   const values = roadMap.split("function StationDetails")[1] ?? "";
