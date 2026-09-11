@@ -522,23 +522,64 @@ export function roadDisplayTitle(item: RoadFeatureItem): string {
 }
 
 /**
- * IRCA's GeoJSON has no Chinese. Short official codes are mapped here; longer English is
- * translated on the desktop with the browser Translator API, matching the app's on-device
- * Google Translate (RoadInfoViewModel.kt) without a network translation service.
+ * IRCA's GeoJSON has no Chinese. Short official codes and a few known IRCA sentences are mapped
+ * here. Longer English still goes through the browser Translator, but Iceland-specific terms are
+ * rewritten first so "sheep roundup" cannot become 綿羊綜述.
  */
 const ROAD_OFFICIAL_PHRASE_ZH: Record<string, string> = {
   Holur: "坑洞",
   "Heavily snow-covered": "路面積雪嚴重",
   "Verulega snjóþungt": "路面積雪嚴重",
+  "Þjórsárdalsvegur closed due to the sheep roundup. Reopens at 17:30":
+    "Þjórsárdalsvegur（喬薩達爾路）因進行「秋季趕羊／圈羊活動」暫時關閉。預計於 17:30 重新開放。",
 };
+
+/** Phrases the on-device translator routinely mangles; replaced in the English *before* translate. */
+const ROAD_ENGLISH_REWRITES: [RegExp, string][] = [
+  [/the sheep roundup/gi, "the traditional autumn sheep herding"],
+  [/sheep roundup/gi, "traditional autumn sheep herding"],
+];
+
+const ROAD_CHINESE_FIXES: [RegExp, string][] = [
+  [/綿羊綜述/g, "秋季趕羊／圈羊活動"],
+  [/綿羊摘要/g, "秋季趕羊／圈羊活動"],
+  [/綿羊匯總/g, "秋季趕羊／圈羊活動"],
+];
 
 export const ROAD_CHINESE_UNAVAILABLE = "此項目目前沒有可用的中文翻譯。";
 export const ROAD_CHINESE_LOADING = "正在準備中文翻譯…";
 export const ROAD_CHINESE_NOTE = "中文為非官方機器翻譯 · 由 Google 裝置端翻譯產生";
+export const ROAD_CHINESE_CURATED_NOTE = "中文為非官方對照，專有名詞已依冰島用法改寫。";
 export const ROAD_CHINESE_NEED_CHROME =
   "請用最新版 Chrome 或 Edge 開啟此頁，瀏覽器才會像 App 一樣在裝置端產生中文說明。";
 export const ROAD_CHINESE_ICELANDIC_ONLY =
   "此則只有冰島文原文，瀏覽器無法翻譯冰島文長篇說明。";
+
+function normalizeRoadText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function lookupOfficialPhrase(text: string): string | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  return ROAD_OFFICIAL_PHRASE_ZH[trimmed] ?? ROAD_OFFICIAL_PHRASE_ZH[normalizeRoadText(trimmed)];
+}
+
+function rewriteRoadEnglish(text: string): string {
+  let next = text;
+  for (const [pattern, replacement] of ROAD_ENGLISH_REWRITES) {
+    next = next.replace(pattern, replacement);
+  }
+  return next;
+}
+
+function polishRoadChinese(text: string): string {
+  let next = text;
+  for (const [pattern, replacement] of ROAD_CHINESE_FIXES) {
+    next = next.replace(pattern, replacement);
+  }
+  return next;
+}
 
 /** The instant zh 中文說明: status labels and IRCA's one-line official codes. */
 export function roadChineseExplanation(item: RoadFeatureItem): string | undefined {
@@ -546,10 +587,25 @@ export function roadChineseExplanation(item: RoadFeatureItem): string | undefine
   if (item.type === "ROAD") return roadStatusLabel(item.status);
   const english = item.descriptionEnglish.trim();
   const icelandic = item.descriptionIcelandic.trim();
-  const mapped = ROAD_OFFICIAL_PHRASE_ZH[english] ?? ROAD_OFFICIAL_PHRASE_ZH[icelandic];
+  const mapped = lookupOfficialPhrase(english) ?? lookupOfficialPhrase(icelandic);
   if (mapped) return mapped;
   if (!english && !icelandic) return roadStatusLabel(item.status);
   return undefined;
+}
+
+export function roadChineseGloss(item: RoadFeatureItem): string[] {
+  const english = item.descriptionEnglish;
+  const icelandic = item.descriptionIcelandic;
+  const notes: string[] = [];
+  if (/Þjórsárdalsvegur/i.test(english) || /Þjórsárdalsvegur/i.test(icelandic)) {
+    notes.push("Þjórsárdalsvegur：冰島 32 號公路（喬薩達爾山谷路段）。");
+  }
+  if (/sheep roundup/i.test(english) || /vegna rétta|\bréttir\b/i.test(icelandic)) {
+    notes.push(
+      "秋季趕羊／圈羊活動（réttir）：冰島每年九月傳統，牧人把夏季山區野放的綿羊趕回農場圈欄，過程會占用道路。",
+    );
+  }
+  return notes;
 }
 
 export function roadEnglishForTranslation(item: RoadFeatureItem): string | undefined {
@@ -614,10 +670,15 @@ function translatorClientPromise(): Promise<BrowserTranslator | undefined> {
 export async function translateRoadEnglish(text: string): Promise<string | undefined> {
   const cached = translatedEnglish.get(text);
   if (cached) return cached;
+  const curated = lookupOfficialPhrase(text);
+  if (curated) {
+    translatedEnglish.set(text, curated);
+    return curated;
+  }
   try {
     const client = await translatorClientPromise();
     if (!client) return undefined;
-    const translated = (await client.translate(text)).trim();
+    const translated = polishRoadChinese((await client.translate(rewriteRoadEnglish(text))).trim());
     if (!translated) return undefined;
     translatedEnglish.set(text, translated);
     return translated;
@@ -633,7 +694,9 @@ export function roadChineseNote(
   chinese: string | undefined,
   pending: boolean,
 ): string {
-  if (chinese || pending) return ROAD_CHINESE_NOTE;
+  if (pending) return ROAD_CHINESE_NOTE;
+  if (chinese && lookupOfficialPhrase(item.descriptionEnglish)) return ROAD_CHINESE_CURATED_NOTE;
+  if (chinese) return ROAD_CHINESE_NOTE;
   if (roadEnglishForTranslation(item) && !browserHasRoadTranslator()) return ROAD_CHINESE_NEED_CHROME;
   const english = item.descriptionEnglish.trim();
   const icelandic = item.descriptionIcelandic.trim();

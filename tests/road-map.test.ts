@@ -26,9 +26,11 @@ import {
   browserHasRoadTranslator,
   resetRoadTranslatorForTests,
   roadChineseExplanation,
+  roadChineseGloss,
   roadChineseNote,
   roadDisplayTitle,
   roadEnglishForTranslation,
+  ROAD_CHINESE_CURATED_NOTE,
   ROAD_CHINESE_ICELANDIC_ONLY,
   ROAD_CHINESE_LOADING,
   ROAD_CHINESE_NEED_CHROME,
@@ -285,12 +287,33 @@ test("incident Chinese explanations map IRCA's one-word codes and leave paragrap
   assert.equal(roadEnglishForTranslation({ ...base, status: "roadworks" }), undefined);
   assert.equal(roadChineseExplanation({ ...readFeature({}, "ROAD"), status: "slippery" }), "路面濕滑");
   assert.equal(roadChineseExplanation(readFeature({}, "STATION")), undefined);
+
+  const sheepEnglish = "Þjórsárdalsvegur closed due to the sheep roundup.\nReopens at 17:30";
+  const sheepChinese =
+    "Þjórsárdalsvegur（喬薩達爾路）因進行「秋季趕羊／圈羊活動」暫時關閉。預計於 17:30 重新開放。";
+  const sheep = {
+    ...base,
+    status: "closure",
+    descriptionEnglish: sheepEnglish,
+    descriptionIcelandic: "Þjórsárdalsvegur lokaður vegna rétta. \nOpnar aftur 17:30",
+  };
+  assert.equal(roadChineseExplanation(sheep), sheepChinese);
+  assert.equal(roadEnglishForTranslation(sheep), undefined);
+  assert.deepEqual(roadChineseGloss(sheep), [
+    "Þjórsárdalsvegur：冰島 32 號公路（喬薩達爾山谷路段）。",
+    "秋季趕羊／圈羊活動（réttir）：冰島每年九月傳統，牧人把夏季山區野放的綿羊趕回農場圈欄，過程會占用道路。",
+  ]);
+  assert.equal(roadChineseNote(sheep, sheepChinese, false), ROAD_CHINESE_CURATED_NOTE);
 });
 
 test("browser translation uses Translator and never a translation HTTP API", async () => {
   resetRoadTranslatorForTests();
   assert.equal(browserHasRoadTranslator(), false);
   assert.equal(await translateRoadEnglish("Please drive carefully."), undefined);
+  assert.equal(
+    await translateRoadEnglish("Þjórsárdalsvegur closed due to the sheep roundup.\nReopens at 17:30"),
+    "Þjórsárdalsvegur（喬薩達爾路）因進行「秋季趕羊／圈羊活動」暫時關閉。預計於 17:30 重新開放。",
+  );
 
   const api = {
     async availability() {
@@ -299,6 +322,7 @@ test("browser translation uses Translator and never a translation HTTP API", asy
     async create() {
       return {
         async translate(input: string) {
+          if (input.includes("traditional autumn sheep herding")) return "因綿羊綜述而關閉";
           return `請小心駕駛：${input}`;
         },
       };
@@ -308,7 +332,10 @@ test("browser translation uses Translator and never a translation HTTP API", asy
   resetRoadTranslatorForTests();
   assert.equal(browserHasRoadTranslator(), true);
   assert.equal(await translateRoadEnglish("Please drive carefully."), "請小心駕駛：Please drive carefully.");
-  assert.equal(await translateRoadEnglish("Please drive carefully."), "請小心駕駛：Please drive carefully.");
+  assert.equal(
+    await translateRoadEnglish("Closed due to a local sheep roundup."),
+    "因秋季趕羊／圈羊活動而關閉",
+  );
   delete (globalThis as { Translator?: typeof api }).Translator;
   resetRoadTranslatorForTests();
 
@@ -540,6 +567,7 @@ test("the road dialog still shows every field the inline card did", () => {
   assert.match(body, /roadChineseExplanation\(item\) \?\? machineChinese/);
   assert.match(body, /ROAD_CHINESE_LOADING/);
   assert.match(body, /ROAD_CHINESE_UNAVAILABLE/);
+  assert.match(body, /roadChineseGloss\(item\)\.map/);
   assert.match(body, /roadChineseNote\(item, chinese, translationPending\)/);
   assert.match(body, /官方英文內容/);
   assert.match(body, /\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}/);

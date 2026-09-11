@@ -21,6 +21,7 @@ import {
   ROAD_CHINESE_LOADING,
   ROAD_CHINESE_UNAVAILABLE,
   roadChineseExplanation,
+  roadChineseGloss,
   roadChineseNote,
   roadDisplayTitle,
   roadEnglishForTranslation,
@@ -472,7 +473,14 @@ function RoadDetailBody({
         <>
           <p className="road-detail-label">中文說明</p>
           {chinese ? (
-            <p className="road-primary">{chinese}</p>
+            <>
+              <p className="road-primary">{chinese}</p>
+              {roadChineseGloss(item).map((note) => (
+                <p key={note} className="road-note">
+                  {note}
+                </p>
+              ))}
+            </>
           ) : translationPending ? (
             <p className="road-note">{ROAD_CHINESE_LOADING}</p>
           ) : (
