@@ -9,6 +9,7 @@ import {
   formatBt,
   formatBz,
   formatKp,
+  formatPower,
   formatSpeed,
   gaugeAngle,
   GAUGE_SPECS,
@@ -45,7 +46,7 @@ test("the dial geometry is the app's 270° arc, open at the bottom", () => {
 test("each dial carries the app's range and zone thresholds", () => {
   const spec = (key: string) => GAUGE_SPECS.find((candidate) => candidate.key === key)!;
 
-  assert.deepEqual(GAUGE_SPECS.map((entry) => entry.key), ["kp", "bz", "bt", "speed"]);
+  assert.deepEqual(GAUGE_SPECS.map((entry) => entry.key), ["kp", "bz", "bt", "speed", "power"]);
 
   assert.deepEqual(spec("kp").range, { start: 0, end: 9 });
   assert.deepEqual(spec("kp").zones, [
@@ -68,6 +69,12 @@ test("each dial carries the app's range and zone thresholds", () => {
 
   assert.deepEqual(spec("bt").range, { start: 0, end: 20 });
   assert.deepEqual(spec("speed").range, { start: 250, end: 800 });
+  assert.deepEqual(spec("power").range, { start: 0, end: 200 });
+  assert.deepEqual(spec("power").zones, [
+    { upTo: 20, color: "#4ADE80" },
+    { upTo: 50, color: "#FDE047" },
+    { upTo: 200, color: "#FB923C" },
+  ]);
 });
 
 test("zone colours are picked by the app's own rule", () => {
@@ -80,6 +87,13 @@ test("zone colours are picked by the app's own rule", () => {
   assert.equal(zoneColorFor(kp, 9), "#FB923C");
   // Past the last bound it stays on the last colour rather than falling back to grey.
   assert.equal(zoneColorFor(kp, 99), "#FB923C");
+
+  const power = GAUGE_SPECS.find((spec) => spec.key === "power")!.zones;
+  assert.equal(zoneColorFor(power, 0), "#4ADE80");
+  assert.equal(zoneColorFor(power, 20), "#4ADE80");
+  assert.equal(zoneColorFor(power, 20.1), "#FDE047");
+  assert.equal(zoneColorFor(power, 50), "#FDE047");
+  assert.equal(zoneColorFor(power, 50.1), "#FB923C");
 });
 
 test("values are formatted exactly as the app prints them", () => {
@@ -92,6 +106,8 @@ test("values are formatted exactly as the app prints them", () => {
   assert.equal(formatBt(6), "6.0");
   assert.equal(formatSpeed(385.7), "385");
   assert.equal(formatSpeed(undefined), "—");
+  assert.equal(formatPower(13.9), "13");
+  assert.equal(formatPower(undefined), "—");
 });
 
 test("status wording follows the app's thresholds", () => {
@@ -115,6 +131,7 @@ test("status wording follows the app's thresholds", () => {
 
   // Kp and power carry no status pill in the app, so neither do they here.
   assert.equal(GAUGE_SPECS.find((spec) => spec.key === "kp")!.status, undefined);
+  assert.equal(GAUGE_SPECS.find((spec) => spec.key === "power")!.status, undefined);
   for (const value of [undefined]) {
     assert.equal(bzStatus(value), undefined);
     assert.equal(btStatus(value), undefined);
@@ -126,6 +143,7 @@ test("the dials read the snapshot the dashboard already publishes", () => {
   const readings = readGauges(
     { kp: 0.33, kpLabel: "0P" },
     { speedKms: 385, btNt: 6, bzNt: 2, observedAt: "2026-09-04 14:00 UTC" },
+    { northGw: 13.9, southGw: 12 },
   );
   assert.deepEqual(
     readings.map((entry) => [entry.spec.key, entry.value]),
@@ -134,17 +152,20 @@ test("the dials read the snapshot the dashboard already publishes", () => {
       ["bz", 2],
       ["bt", 6],
       ["speed", 385],
+      ["power", 13.9],
     ],
   );
+  assert.equal(readings[4].spec.format(readings[4].value), "13");
 
   // A missing or non-numeric reading becomes "no value" rather than zero, so a dead feed never
   // parks the needle at a number that looks like data.
   const empty = readGauges({}, { speedKms: "n/a" });
-  assert.deepEqual(empty.map((entry) => entry.value), [undefined, undefined, undefined, undefined]);
+  assert.deepEqual(empty.map((entry) => entry.value), [undefined, undefined, undefined, undefined, undefined]);
   assert.equal(empty[0].spec.format(empty[0].value), "—");
+  assert.equal(empty[4].spec.format(empty[4].value), "—");
 });
 
-test("the aurora card combines all four snapshot sources in order without fetching NOAA", () => {
+test("the aurora card combines all five snapshot sources in order without fetching NOAA", () => {
   const dashboard = read("src/components/Dashboard.tsx");
   const sections = read("src/components/SourceSections.tsx");
 
@@ -153,10 +174,16 @@ test("the aurora card combines all four snapshot sources in order without fetchi
     /kpForecast=\{snapshotEntry\(snapshot, "noaaKpForecast"\)\}/,
     "Dashboard must pass the stored Kp forecast into AuroraSection",
   );
+  assert.match(
+    dashboard,
+    /hemiPower=\{snapshotEntry\(snapshot, "noaaHemiPower"\)\}/,
+    "Dashboard must pass the stored hemispheric power into AuroraSection",
+  );
   assert.match(sections, /kpForecast\?: SnapshotSource/);
-  assert.match(sections, /const entries = \[kp, kpForecast, solarWind, ovation\]/);
-  assert.match(sections, /Four feeds, one question/);
-  assert.match(sections, /same four feeds/);
+  assert.match(sections, /hemiPower\?: SnapshotSource/);
+  assert.match(sections, /const entries = \[kp, kpForecast, solarWind, ovation, hemiPower\]/);
+  assert.match(sections, /Five feeds, one question/);
+  assert.match(sections, /same five feeds/);
 
   // The card only combines entries already present in the snapshot.
   assert.equal(/fetch\s*\(|noaa\.gov|SWPC_/i.test(sections), false);
@@ -172,6 +199,7 @@ test("the ranges, zones and thresholds match the app's own file", { skip: !hasAn
   assert.match(kotlin, /val bzRange = -20f\.\.20f/);
   assert.match(kotlin, /val btRange = 0f\.\.20f/);
   assert.match(kotlin, /val speedRange = 250f\.\.800f/);
+  assert.match(kotlin, /val hemisphericPowerRange = 0f\.\.200f/);
 
   // Every zone bound this port claims must appear in the app's own zone lists.
   for (const spec of GAUGE_SPECS) {
@@ -191,11 +219,25 @@ test("the ranges, zones and thresholds match the app's own file", { skip: !hasAn
   assert.match(kotlin, /it < 400 -> R\.string\.gauge_status_low/);
 });
 
-test("the panel is drawn, and says why the app's fifth dial is absent", () => {
+test("hemispheric power uses the app's SWPC table and last-row parser", {
+  skip: !hasAndroidFile("app/src/main/java/com/iceland/aurora/data/remote/SwpcApi.kt"),
+}, () => {
+  const kotlin = read(androidPath("app/src/main/java/com/iceland/aurora/data/remote/SwpcApi.kt"));
+  assert.match(kotlin, /text\/aurora-nowcast-hemi-power\.txt/);
+  assert.match(kotlin, /\.lastOrNull\(\)/);
+  assert.match(kotlin, /northGw = parts\[2\]\.toDoubleOrNull\(\)/);
+  const monitor = read("src/monitors/noaa/monitor.ts");
+  assert.match(monitor, /SWPC_HEMI_POWER_URL/);
+  assert.match(monitor, /rows\.at\(-1\)/);
+  assert.match(monitor, /northGw/);
+});
+
+test("the panel is drawn with the app's fifth dial, from the snapshot only", () => {
   const component = read("src/components/AuroraGauges.tsx");
   assert.match(component, /GAUGE_STYLE\.segmentCount/);
   assert.match(component, /gaugeAngle\(/);
-  assert.match(component, /aurora-nowcast-hemi-power|hemispheric-power|hemispheric/i);
+  assert.match(component, /hemiData/);
+  assert.equal(/fetch\s*\(|noaa\.gov|SWPC_/i.test(component), false);
 
   // The app snaps instead of sweeping when animations are off; so does this, and a timer also
   // guarantees the true reading arrives if no animation frame is ever delivered.
@@ -203,7 +245,7 @@ test("the panel is drawn, and says why the app's fifth dial is absent", () => {
   assert.match(component, /setTimeout\(\(\) => setDisplayed\(target\), delayMs \+ duration \+ 80\)/);
 
   const lib = read("src/lib/auroraGauge.ts");
-  // The omission is explained where the readings are assembled, not left as a silent gap.
   assert.match(lib, /功率（GW）/);
-  assert.match(lib, /does not monitor that endpoint/);
+  assert.match(lib, /noaaHemiPower/);
+  assert.match(lib, /northGw/);
 });

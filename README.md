@@ -38,6 +38,7 @@ Phase one covers eight data sources plus the two GitHub Actions workflows that p
 | Aurora | NOAA Kp Forecast | `noaaKpForecast` | `services.swpc.noaa.gov` NOAA 3-day planetary K-index forecast |
 | Aurora | NOAA Solar Wind | `solarWind` | `services.swpc.noaa.gov` solar wind summaries |
 | Aurora | NOAA OVATION | `ovation` | `services.swpc.noaa.gov` aurora oval grid |
+| Aurora | NOAA Hemispheric Power | `noaaHemiPower` | `services.swpc.noaa.gov` aurora nowcast hemispheric power |
 | Forecast / Warnings | ECMWF Cloud Forecast | `ecmwf` | `iceland-aurora-cloud` GitHub Pages (ECMWF IFS Open Data) |
 | Forecast / Warnings | IMO Warnings | `imo` | `api.vedur.is` CAP broker |
 
@@ -58,8 +59,9 @@ identifies this project by its public repository, and no private email is commit
 **NOAA SWPC** is read through the same paths the app uses — the widely-copied
 `/products/solar-wind/...` paths now 404 and are deliberately absent. Kp comes from the one-minute
 planetary index, solar wind from the lightweight summary products (losing only the optional speed
-product is DEGRADED, not ERROR), and OVATION is summarised rather than stored whole: grid size, both
-timestamps, and the strongest probability over Icelandic latitudes.
+product is DEGRADED, not ERROR), OVATION is summarised rather than stored whole: grid size, both
+timestamps, and the strongest probability over Icelandic latitudes, and hemispheric power is the
+last row of SWPC's 5-minute text table (north and south GW; the 功率 dial reads north).
 
 **IMO warnings** are read from the CAP broker with its required API-version header. The body is
 parsed as text, because the broker answers `204 No Content` when nothing is active — reading it as

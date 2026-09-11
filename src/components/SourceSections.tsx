@@ -234,6 +234,7 @@ export function AuroraSection({
   kpForecast,
   solarWind,
   ovation,
+  hemiPower,
   snapshot,
   now,
   schemaVersion,
@@ -242,16 +243,17 @@ export function AuroraSection({
   kpForecast?: SnapshotSource;
   solarWind?: SnapshotSource;
   ovation?: SnapshotSource;
+  hemiPower?: SnapshotSource;
   snapshot: DashboardSnapshot;
   now: Date;
   schemaVersion: number;
 }) {
-  const entries = [kp, kpForecast, solarWind, ovation].filter(
+  const entries = [kp, kpForecast, solarWind, ovation, hemiPower].filter(
     (entry): entry is SnapshotSource => entry !== undefined,
   );
   if (entries.length === 0) return null;
 
-  // Four feeds, one question — "can I see the aurora tonight?" — so they share one card.
+  // Five feeds, one question — "can I see the aurora tonight?" — so they share one card.
   // The combined status uses the shared precedence rule; nothing here re-decides health.
   const worst = getSystemStatus(entries);
   const failing = entries.find((entry) => entry.status === worst && entry.status !== "ok");
@@ -269,6 +271,7 @@ export function AuroraSection({
   const kpData = kp?.data ?? {};
   const windData = solarWind?.data ?? {};
   const ovationData = ovation?.data ?? {};
+  const hemiData = hemiPower?.data ?? {};
 
   return (
     <section>
@@ -285,15 +288,16 @@ export function AuroraSection({
           dataTime={oldestEntry?.dataTime}
           dataTimeLabel="來源資料時間"
         >
-          {/* Three views of the same four feeds: instruments, position map, and 48-hour forecast. */}
+          {/* Three views of the same five feeds: instruments, position map, and 48-hour forecast. */}
           <AuroraModes ovationData={ovationData} snapshot={snapshot} now={now}>
             {/* The app's instrument panel, over the same readings the stats below quote. */}
-            <AuroraGauges kpData={kpData} windData={windData} />
+            <AuroraGauges kpData={kpData} windData={windData} hemiData={hemiData} />
             <div className="stats">
             <Stat label="Kp 指數" value={formatNumber(kpData.kp)} />
             <Stat label="太陽風速" value={formatNumber(windData.speedKms, "km/s")} />
             <Stat label="Bt" value={formatNumber(windData.btNt, "nT")} />
             <Stat label="Bz" value={formatSigned(windData.bzNt, "nT")} />
+            <Stat label="北半球功率" value={formatNumber(hemiData.northGw, "GW")} />
             <Stat label="冰島上空機率" value={formatPercent(ovationData.icelandPeakProbabilityPercent)} />
           </div>
           <p className="muted-line">資料更新：約 {formatRelativeAge(oldest)}</p>

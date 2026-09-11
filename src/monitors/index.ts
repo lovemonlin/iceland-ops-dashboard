@@ -6,7 +6,13 @@ import { checkPipelines } from "@/monitors/github/monitor";
 import { checkImo } from "@/monitors/imo/monitor";
 import { checkIrca } from "@/monitors/irca/monitor";
 import { checkMetno } from "@/monitors/metno/monitor";
-import { checkNoaaKp, checkNoaaKpForecast, checkOvation, checkSolarWind } from "@/monitors/noaa/monitor";
+import {
+  checkNoaaHemiPower,
+  checkNoaaKp,
+  checkNoaaKpForecast,
+  checkOvation,
+  checkSolarWind,
+} from "@/monitors/noaa/monitor";
 
 export interface HealthSnapshot {
   checkedAt: string;
@@ -50,6 +56,7 @@ export async function runAllMonitors(options: RunOptions = {}): Promise<HealthSn
     one("noaaKpForecast", "NOAA Kp Forecast", checkNoaaKpForecast({ now, request })),
     one("solarWind", "NOAA Solar Wind", checkSolarWind({ now, request })),
     one("ovation", "NOAA OVATION", checkOvation({ now, request })),
+    one("noaaHemiPower", "NOAA Hemispheric Power", checkNoaaHemiPower({ now, request })),
     one("ecmwf", "ECMWF Cloud Forecast", checkEcmwf({ now, request })),
     one("imo", "IMO Warnings", checkImo({ now, request })),
     {

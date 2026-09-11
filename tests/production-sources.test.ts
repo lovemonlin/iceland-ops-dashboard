@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   IMO_ACTIVE_WARNINGS_URL,
   METNO_FORECAST_URL,
+  SWPC_HEMI_POWER_URL,
   SWPC_KP_FORECAST_URL,
   SWPC_KP_URL,
   SWPC_OVATION_URL,
@@ -16,7 +17,13 @@ import { MONITOR_IDS } from "../src/config/monitors";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
 import { checkImo } from "../src/monitors/imo/monitor";
 import { checkMetno } from "../src/monitors/metno/monitor";
-import { checkNoaaKp, checkNoaaKpForecast, checkOvation, checkSolarWind } from "../src/monitors/noaa/monitor";
+import {
+  checkNoaaHemiPower,
+  checkNoaaKp,
+  checkNoaaKpForecast,
+  checkOvation,
+  checkSolarWind,
+} from "../src/monitors/noaa/monitor";
 import { mergeSource } from "../src/snapshot/mergeSnapshot";
 import { isNoaaKpForecastData } from "../src/snapshot/types";
 
@@ -372,6 +379,79 @@ test("OVATION: malformed, empty and untimed grids are errors with no data", asyn
   }
 });
 
+// ── Hemispheric power ─────────────────────────────────────────────────────────
+
+const hemiTable = `# Aurora Hemispheric Power
+# Observation Time  Forecast Time     North  South
+2026-09-04_08:00  2026-09-04_08:39  18  16
+2026-09-04_08:50  2026-09-04_09:29  21  23
+`;
+
+const hemiRoute = (raw: string): Route => ({ raw, contentType: "text/plain" });
+
+test("Hemispheric power: the last data row supplies north and south GW", async () => {
+  const calls: { url: string; method: string; headers: Record<string, string> }[] = [];
+  const health = await checkNoaaHemiPower({
+    now: NOW,
+    request: stub({ [SWPC_HEMI_POWER_URL]: hemiRoute(hemiTable) }, calls),
+  });
+
+  assert.equal(health.status, "ok");
+  assert.equal(health.id, "noaaHemiPower");
+  assert.equal(health.data?.northGw, 21);
+  assert.equal(health.data?.southGw, 23);
+  assert.equal(health.data?.observedAt, "2026-09-04 08:50 UTC");
+  assert.equal(health.data?.forecastAt, "2026-09-04 09:29 UTC");
+  assert.equal(health.dataTime, "2026-09-04T08:50:00.000Z");
+  assert.equal(health.recordCount, 2);
+  assert.equal(calls[0].headers.accept, "text/plain");
+});
+
+test("Hemispheric power: an old observation is STALE", async () => {
+  const stale = `#\n2026-09-04_05:00  2026-09-04_05:39  12  11\n`;
+  const health = await checkNoaaHemiPower({
+    now: NOW,
+    request: stub({ [SWPC_HEMI_POWER_URL]: hemiRoute(stale) }),
+  });
+  assert.equal(health.status, "stale");
+  assert.equal(health.data?.northGw, 12);
+});
+
+test("Hemispheric power: malformed, empty and untimed tables fail without inventing watts", async () => {
+  const cases: [Route, string][] = [
+    [{ throws: true }, "NETWORK_ERROR"],
+    [hemiRoute("# comment only\n\n"), "EMPTY_DATA"],
+    [hemiRoute("2026-09-04_08:50  2026-09-04_09:29  21\n"), "SCHEMA_ERROR"],
+    [hemiRoute("not-a-time  2026-09-04_09:29  21  23\n"), "INVALID_TIMESTAMP"],
+    [hemiRoute("2026-09-04_08:50  2026-09-04_09:29  twenty  23\n"), "SCHEMA_ERROR"],
+  ];
+  for (const [route, expected] of cases) {
+    const health = await checkNoaaHemiPower({ now: NOW, request: stub({ [SWPC_HEMI_POWER_URL]: route }) });
+    assert.equal(health.status, "error");
+    assert.equal(health.errorType, expected);
+    assert.equal(health.data, undefined);
+  }
+});
+
+test("Hemispheric power: a failed refresh preserves the previous successful reading", async () => {
+  const good = await checkNoaaHemiPower({
+    now: NOW,
+    request: stub({ [SWPC_HEMI_POWER_URL]: hemiRoute(hemiTable) }),
+  });
+  const stored = mergeSource(undefined, good, "2026-09-04T09:00:00.000Z");
+  const failed = await checkNoaaHemiPower({
+    now: NOW,
+    request: stub({ [SWPC_HEMI_POWER_URL]: { throws: true } }),
+  });
+  const after = mergeSource(stored, failed, "2026-09-04T10:00:00.000Z");
+
+  assert.equal(after.status, "error");
+  assert.deepEqual(after.data, good.data);
+  assert.equal(after.dataTime, good.dataTime);
+  assert.equal(after.lastSuccessAt, "2026-09-04T09:00:00.000Z");
+  assert.equal(after.lastAttemptAt, "2026-09-04T10:00:00.000Z");
+});
+
 // ── IMO ───────────────────────────────────────────────────────────────────────
 
 test("IMO: zero active warnings is INFO, never EMPTY_DATA", async () => {
@@ -472,12 +552,17 @@ test("every monitored source points at the endpoint the Android app uses", () =>
   );
   assert.equal(SWPC_SOLAR_WIND_MAG_URL, "https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json");
   assert.equal(SWPC_OVATION_URL, "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json");
+  assert.equal(
+    SWPC_HEMI_POWER_URL,
+    "https://services.swpc.noaa.gov/text/aurora-nowcast-hemi-power.txt",
+  );
   assert.equal(IMO_ACTIVE_WARNINGS_URL, "https://api.vedur.is/cap/capbroker/active/detailed/all");
   // The app's curated list, verbatim.
   assert.equal(WEATHER_SITES.length, 32);
   assert.equal(WEATHER_SITES.some((site) => site.id === "reykjavik"), true);
-  assert.equal(MONITOR_IDS.length, 10);
+  assert.equal(MONITOR_IDS.length, 11);
   assert.equal(MONITOR_IDS.includes("noaaKpForecast"), true);
+  assert.equal(MONITOR_IDS.includes("noaaHemiPower"), true);
   // Deprecated SWPC paths must never come back.
   assert.equal(SWPC_KP_URL.includes("/products/solar-wind/"), false);
 });

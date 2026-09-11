@@ -132,6 +132,8 @@ export const SWPC_KP_FORECAST_URL = `${SWPC_BASE}/products/noaa-planetary-k-inde
 export const SWPC_SOLAR_WIND_MAG_URL = `${SWPC_BASE}/products/summary/solar-wind-mag-field.json`;
 export const SWPC_SOLAR_WIND_SPEED_URL = `${SWPC_BASE}/products/summary/solar-wind-speed.json`;
 export const SWPC_OVATION_URL = `${SWPC_BASE}/json/ovation_aurora_latest.json`;
+/** The app's 功率（GW）dial: last row of this 5-minute text table, north-hemisphere GW. */
+export const SWPC_HEMI_POWER_URL = `${SWPC_BASE}/text/aurora-nowcast-hemi-power.txt`;
 
 // ── Icelandic Met Office (IMO) ────────────────────────────────────────────────
 export const IMO_ACTIVE_WARNINGS_URL = "https://api.vedur.is/cap/capbroker/active/detailed/all";
@@ -163,6 +165,8 @@ export const SOURCE_STALE_AFTER_SECONDS = {
   solarWind: 3600,
   /** ovation_aurora_latest is reissued every few minutes for a +30 min forecast. */
   ovation: 3 * 3600,
+  /** aurora-nowcast-hemi-power.txt is reissued about every five minutes. */
+  noaaHemiPower: 3600,
 } as const;
 
 export const SOURCE_TIMEOUT_MS = 15_000;

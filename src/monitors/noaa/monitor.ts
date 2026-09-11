@@ -1,6 +1,7 @@
 import {
   SOURCE_STALE_AFTER_SECONDS,
   SOURCE_TIMEOUT_MS,
+  SWPC_HEMI_POWER_URL,
   SWPC_KP_FORECAST_URL,
   SWPC_KP_URL,
   SWPC_OVATION_URL,
@@ -30,6 +31,14 @@ function swpcGet<T>(url: string, request: DiagnosticFetcher) {
   });
 }
 
+function swpcGetText(url: string, request: DiagnosticFetcher) {
+  return request<string>(url, {
+    init: { method: "GET", headers: { Accept: "text/plain" } },
+    responseType: "text",
+    timeoutMs: SOURCE_TIMEOUT_MS,
+  });
+}
+
 function number(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -40,6 +49,18 @@ function parseSwpcTime(value: unknown) {
   const normalised = /(Z|[+-]\d\d:?\d\d)$/.test(value) ? value : `${value.replace(" ", "T")}Z`;
   const ms = Date.parse(normalised);
   return Number.isNaN(ms) ? undefined : new Date(ms);
+}
+
+/** Hemispheric-power table times look like `2026-07-23_14:05` and are UTC. */
+function parseUnderscoreUtc(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  return parseSwpcTime(value.trim().replace("_", "T"));
+}
+
+function numberToken(value: string) {
+  if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function utcMinute(date: Date) {
@@ -549,5 +570,121 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
     staleAfter: SOURCE_STALE_AFTER_SECONDS.ovation,
     data,
     details: { ...data, endpoint: SWPC_OVATION_URL },
+  });
+}
+
+// ── Hemispheric power ─────────────────────────────────────────────────────────
+
+/**
+ * `aurora-nowcast-hemi-power.txt` is a commented table. The app reads the last non-comment row:
+ * observation time, forecast time, north GW, south GW. The 功率（GW）dial uses north GW.
+ */
+export async function checkNoaaHemiPower(options: NoaaCheckOptions = {}): Promise<MonitorHealth> {
+  const now = options.now ?? new Date();
+  const request = options.request ?? defaultRequest;
+  const checkedAt = now.toISOString();
+  const base = { id: "noaaHemiPower", name: "NOAA Hemispheric Power" };
+
+  const response = await swpcGetText(SWPC_HEMI_POWER_URL, request);
+  if (!response.ok) return transportFailure(base, checkedAt, response, SWPC_HEMI_POWER_URL);
+
+  if (typeof response.data !== "string") {
+    return evaluateHealth(
+      schemaFailure(
+        base,
+        checkedAt,
+        response,
+        "SCHEMA_ERROR",
+        "Hemispheric power response is not text.",
+        SWPC_HEMI_POWER_URL,
+      ),
+    );
+  }
+
+  const rows = response.data
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+  const lastRow = rows.at(-1);
+  if (!lastRow) {
+    return evaluateHealth(
+      schemaFailure(
+        base,
+        checkedAt,
+        response,
+        "EMPTY_DATA",
+        "Hemispheric power table contains no data rows.",
+        SWPC_HEMI_POWER_URL,
+      ),
+    );
+  }
+
+  const parts = lastRow.split(/\s+/);
+  if (parts.length < 4) {
+    return evaluateHealth(
+      schemaFailure(
+        base,
+        checkedAt,
+        response,
+        "SCHEMA_ERROR",
+        "Newest hemispheric power row does not have observation time, forecast time, north GW and south GW.",
+        SWPC_HEMI_POWER_URL,
+      ),
+    );
+  }
+
+  const observationTime = parseUnderscoreUtc(parts[0]);
+  const forecastTime = parseUnderscoreUtc(parts[1]);
+  if (!observationTime || !forecastTime) {
+    return evaluateHealth(
+      schemaFailure(
+        base,
+        checkedAt,
+        response,
+        "INVALID_TIMESTAMP",
+        "Newest hemispheric power row has no valid observation or forecast time.",
+        SWPC_HEMI_POWER_URL,
+      ),
+    );
+  }
+
+  const northGw = numberToken(parts[2]);
+  const southGw = numberToken(parts[3]);
+  if (northGw === undefined || southGw === undefined) {
+    return evaluateHealth(
+      schemaFailure(
+        base,
+        checkedAt,
+        response,
+        "SCHEMA_ERROR",
+        "Newest hemispheric power row carries a non-numeric north or south GW value.",
+        SWPC_HEMI_POWER_URL,
+      ),
+    );
+  }
+
+  const data = {
+    northGw,
+    southGw,
+    observedAt: utcMinute(observationTime),
+    forecastAt: utcMinute(forecastTime),
+  };
+
+  return evaluateHealth({
+    ...base,
+    checkedAt,
+    provenance: PROVENANCE,
+    latencyMs: response.diagnostics.latencyMs,
+    httpStatus: response.diagnostics.httpStatus,
+    networkOk: true,
+    parseOk: true,
+    schemaOk: true,
+    recordCount: rows.length,
+    dataTime: observationTime.toISOString(),
+    lastSuccess: checkedAt,
+    ageSeconds: (now.getTime() - observationTime.getTime()) / 1000,
+    staleAfter: SOURCE_STALE_AFTER_SECONDS.noaaHemiPower,
+    data,
+    details: { ...data, endpoint: SWPC_HEMI_POWER_URL },
   });
 }

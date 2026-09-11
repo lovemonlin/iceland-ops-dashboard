@@ -375,20 +375,18 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
 }
 
 /**
- * The panel of dials.
- *
- * The app shows five; this shows four. Its 功率（GW）dial is fed by SWPC's hemispheric-power text
- * feed, which this dashboard does not monitor — adding it would change a production monitor's
- * output, so the dial is left out rather than filled with a stand-in.
+ * The panel of dials, in the app's order: Kp, Bz, Bt, wind speed, hemispheric power.
  */
 export function AuroraGauges({
   kpData,
   windData,
+  hemiData,
 }: {
   kpData: Record<string, unknown>;
   windData: Record<string, unknown>;
+  hemiData?: Record<string, unknown>;
 }) {
-  const readings = readGauges(kpData, windData);
+  const readings = readGauges(kpData, windData, hemiData ?? {});
   return (
     <div className="gauges">
       {readings.map((reading, index) => (

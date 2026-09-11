@@ -143,6 +143,13 @@ const speedZones: GaugeZone[] = [
   { upTo: 800, color: DEEP_ORANGE },
 ];
 
+const powerRange = { start: 0, end: 200 };
+const powerZones: GaugeZone[] = [
+  { upTo: 20, color: EXCELLENT },
+  { upTo: 50, color: FAIR },
+  { upTo: 200, color: POOR },
+];
+
 const NO_VALUE = "—";
 const number = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -153,6 +160,7 @@ export const formatBz = (value?: number) =>
   value === undefined ? NO_VALUE : `${value > 0 ? "+" : value < 0 ? "-" : "+"}${Math.abs(value).toFixed(1)}`;
 export const formatBt = (value?: number) => (value === undefined ? NO_VALUE : value.toFixed(1));
 export const formatSpeed = (value?: number) => (value === undefined ? NO_VALUE : String(Math.trunc(value)));
+export const formatPower = (value?: number) => (value === undefined ? NO_VALUE : String(Math.trunc(value)));
 
 /** AuroraGaugeSpecs.kt:82-111 with the app's zh-rTW strings. */
 export const bzStatus = (value?: number) => {
@@ -184,6 +192,7 @@ export const GAUGE_SPECS: GaugeSpec[] = [
   { key: "bz", label: "Bz（nT）", range: bzRange, zones: bzZones, format: formatBz, status: bzStatus, emphasizedBoundary: 0 },
   { key: "bt", label: "Bt（nT）", range: btRange, zones: btZones, format: formatBt, status: btStatus },
   { key: "speed", label: "風速（km/s）", range: speedRange, zones: speedZones, format: formatSpeed, status: speedStatus },
+  { key: "power", label: "功率（GW）", range: powerRange, zones: powerZones, format: formatPower },
 ];
 
 export interface GaugeReading {
@@ -192,21 +201,23 @@ export interface GaugeReading {
 }
 
 /**
- * Pulls the four readings out of the snapshot the dashboard already publishes.
+ * Pulls the five readings out of the snapshot the dashboard already publishes.
  *
- * The app has a fifth dial, 功率（GW）, fed by SWPC's `aurora-nowcast-hemi-power.txt`. This
- * dashboard does not monitor that endpoint, and adding it would change a production monitor's
- * output, so that dial is absent rather than filled with anything invented.
+ * The 功率（GW）dial is the app's fifth instrument, fed by SWPC's `aurora-nowcast-hemi-power.txt`
+ * via the `noaaHemiPower` monitor. A missing snapshot source parks the needle at "—" rather than
+ * inventing a wattage.
  */
 export function readGauges(
   kpData: Record<string, unknown>,
   windData: Record<string, unknown>,
+  hemiData: Record<string, unknown> = {},
 ): GaugeReading[] {
   const values: Record<string, number | undefined> = {
     kp: number(kpData.kp),
     bz: number(windData.bzNt),
     bt: number(windData.btNt),
     speed: number(windData.speedKms),
+    power: number(hemiData.northGw),
   };
   return GAUGE_SPECS.map((spec) => ({ spec, value: values[spec.key] }));
 }

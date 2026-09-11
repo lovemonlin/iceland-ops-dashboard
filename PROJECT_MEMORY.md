@@ -57,7 +57,7 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 
 ### 目前狀態
 
-- 十個 monitor 全部讀真實 production 資料。**runtime 沒有任何 mock 路徑**：
+- 每一個 monitor 都讀真實 production 資料。**runtime 沒有任何 mock 路徑**：
   `src/monitors/mockMonitors.ts` 與 `src/config/freshness.ts` 已經刪除，不是停用。
 - Snapshot schema v2，`trigger` 記為 `windows`。
 - 48 小時極光預測與極光快報 v1 都已完成並在線上。

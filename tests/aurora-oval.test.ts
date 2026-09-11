@@ -479,7 +479,7 @@ test("the aurora card defaults to the gauges", () => {
   const sections = read("src/components/SourceSections.tsx");
   assert.match(sections, /<AuroraModes ovationData=\{ovationData\} snapshot=\{snapshot\} now=\{now\}>/);
   // The gauges and their stats stay exactly where they were, inside the default mode.
-  assert.match(sections, /<AuroraGauges kpData=\{kpData\} windData=\{windData\} \/>/);
+  assert.match(sections, /<AuroraGauges kpData=\{kpData\} windData=\{windData\} hemiData=\{hemiData\} \/>/);
 });
 
 test("MapLibre and the world outline wait until the map mode is chosen", () => {
