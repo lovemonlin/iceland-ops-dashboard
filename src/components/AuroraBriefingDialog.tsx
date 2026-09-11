@@ -19,6 +19,14 @@ import type { DashboardSnapshot } from "@/snapshot/types";
 const value = (number: number | undefined, suffix = "") =>
   number === undefined ? "—" : `${number.toFixed(1)}${suffix}`;
 
+const cloudStyle = (obstruction: number | undefined) =>
+  obstruction === undefined
+    ? undefined
+    : {
+        backgroundColor: obstructionColorFor(obstruction),
+        color: obstruction > 70 ? "#F8FAFC" : "#08111f",
+      };
+
 export function AuroraBriefingDialog({
   snapshot,
   now,
@@ -157,123 +165,171 @@ export function AuroraBriefingDialog({
 
         <section>
           <h3>今晚 18～02 時間軸</h3>
-          <div
-            className="aurora-briefing-table"
-            role="table"
-            aria-label="今晚極光預測時間軸"
-          >
-            <div role="row" className="aurora-briefing-row">
-              <span role="columnheader">時間</span>
-              {briefing.hours.map((hour) => (
-                <strong role="columnheader" key={hour.time}>
-                  {hour.hour}
-                </strong>
-              ))}
-            </div>
-            <div role="row" className="aurora-briefing-row">
-              <span role="rowheader">Kp</span>
-              {briefing.hours.map((hour) => (
-                <span role="cell" key={hour.time}>
-                  {hour.kp.toFixed(0)}
-                </span>
-              ))}
-            </div>
-            <div role="row" className="aurora-briefing-row">
-              <span role="rowheader">最佳分數</span>
-              {briefing.hours.map((hour) => (
-                <strong
-                  role="cell"
-                  key={hour.time}
-                  style={{ color: hour.best.color }}
-                >
-                  {hour.best.score}
-                </strong>
-              ))}
-            </div>
-            <div role="row" className="aurora-briefing-row aurora-briefing-sky">
-              <span role="rowheader">天色</span>
-              {briefing.hours.map((hour) => (
-                <span role="cell" key={hour.time}>
-                  {skyLightLabel(hour.best)}
-                </span>
-              ))}
-            </div>
+          <div className="aurora-briefing-wide">
             <div
-              role="row"
-              className="aurora-briefing-row aurora-briefing-sites"
+              className="aurora-briefing-table"
+              role="table"
+              aria-label="今晚極光預測時間軸"
             >
-              <span role="rowheader">最佳地點</span>
-              {briefing.hours.map((hour) => {
-                const siteLabel = briefingBestSiteLabel(hour.best);
-                return (
-                  <span
+              <div role="row" className="aurora-briefing-row">
+                <span role="columnheader">時間</span>
+                {briefing.hours.map((hour) => (
+                  <strong role="columnheader" key={hour.time}>
+                    {hour.hour}
+                  </strong>
+                ))}
+              </div>
+              <div role="row" className="aurora-briefing-row">
+                <span role="rowheader">Kp</span>
+                {briefing.hours.map((hour) => (
+                  <span role="cell" key={hour.time}>
+                    {hour.kp.toFixed(0)}
+                  </span>
+                ))}
+              </div>
+              <div role="row" className="aurora-briefing-row">
+                <span role="rowheader">最佳分數</span>
+                {briefing.hours.map((hour) => (
+                  <strong
                     role="cell"
                     key={hour.time}
-                    aria-label={siteLabel
-                      ? undefined
-                      : "此時段沒有有效極光觀測地點"}
+                    style={{ color: hour.best.color }}
                   >
-                    {siteLabel ?? "—"}
+                    {hour.best.score}
+                  </strong>
+                ))}
+              </div>
+              <div role="row" className="aurora-briefing-row aurora-briefing-sky">
+                <span role="rowheader">天色</span>
+                {briefing.hours.map((hour) => (
+                  <span role="cell" key={hour.time}>
+                    {skyLightLabel(hour.best)}
                   </span>
-                );
-              })}
+                ))}
+              </div>
+              <div
+                role="row"
+                className="aurora-briefing-row aurora-briefing-sites"
+              >
+                <span role="rowheader">最佳地點</span>
+                {briefing.hours.map((hour) => {
+                  const siteLabel = briefingBestSiteLabel(hour.best);
+                  return (
+                    <span
+                      role="cell"
+                      key={hour.time}
+                      aria-label={siteLabel
+                        ? undefined
+                        : "此時段沒有有效極光觀測地點"}
+                    >
+                      {siteLabel ?? "—"}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
+          <ol className="aurora-briefing-narrow aurora-briefing-hours">
+            {briefing.hours.map((hour) => {
+              const siteLabel = briefingBestSiteLabel(hour.best);
+              const bestHourCard = hour.best === briefing.best;
+              return (
+                <li
+                  key={hour.time}
+                  className={bestHourCard ? "aurora-briefing-hour-card is-best" : "aurora-briefing-hour-card"}
+                >
+                  <div className="aurora-briefing-hour-card-top">
+                    <strong>{formatBriefingHourLabel(hour.hour)}</strong>
+                    <b style={{ color: hour.best.color }}>{hour.best.score}</b>
+                  </div>
+                  <dl>
+                    <div>
+                      <dt>Kp</dt>
+                      <dd>{hour.kp.toFixed(0)}</dd>
+                    </div>
+                    <div>
+                      <dt>天色</dt>
+                      <dd>{skyLightLabel(hour.best)}</dd>
+                    </div>
+                    <div>
+                      <dt>最佳地點</dt>
+                      <dd aria-label={siteLabel ? undefined : "此時段沒有有效極光觀測地點"}>
+                        {siteLabel ?? "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                </li>
+              );
+            })}
+          </ol>
         </section>
 
         <section>
           <h3>今晚雲層分布</h3>
-          <div
-            className="aurora-briefing-table aurora-briefing-heatmap"
-            role="table"
-            aria-label="今晚各區平均有效雲層遮蔽率"
-          >
-            <div role="row" className="aurora-briefing-row">
-              <span role="columnheader">區域</span>
-              {briefing.hours.map((hour) => (
-                <strong role="columnheader" key={hour.time}>
-                  {hour.hour}
-                </strong>
-              ))}
-              <strong role="columnheader">今晚平均</strong>
-            </div>
-            {briefing.regions.map((region) => (
-              <div role="row" className="aurora-briefing-row" key={region.region}>
-                <span role="rowheader">{region.label}</span>
-                {region.obstructions.map((obstruction, index) => (
+          <div className="aurora-briefing-wide">
+            <div
+              className="aurora-briefing-table aurora-briefing-heatmap"
+              role="table"
+              aria-label="今晚各區平均有效雲層遮蔽率"
+            >
+              <div role="row" className="aurora-briefing-row">
+                <span role="columnheader">區域</span>
+                {briefing.hours.map((hour) => (
+                  <strong role="columnheader" key={hour.time}>
+                    {hour.hour}
+                  </strong>
+                ))}
+                <strong role="columnheader">今晚平均</strong>
+              </div>
+              {briefing.regions.map((region) => (
+                <div role="row" className="aurora-briefing-row" key={region.region}>
+                  <span role="rowheader">{region.label}</span>
+                  {region.obstructions.map((obstruction, index) => (
+                    <span
+                      role="cell"
+                      key={`${region.region}-${briefing.hours[index].time}`}
+                      className="aurora-briefing-cloud"
+                      style={cloudStyle(obstruction)}
+                    >
+                      {obstruction === undefined ? "—" : `${Math.round(obstruction)}%`}
+                    </span>
+                  ))}
                   <span
                     role="cell"
-                    key={`${region.region}-${briefing.hours[index].time}`}
-                    className="aurora-briefing-cloud"
-                    style={
-                      obstruction === undefined
-                        ? undefined
-                        : {
-                            backgroundColor: obstructionColorFor(obstruction),
-                            color: obstruction > 70 ? "#F8FAFC" : "#08111f",
-                          }
-                    }
+                    className="aurora-briefing-cloud aurora-briefing-average"
+                    style={cloudStyle(region.average)}
                   >
-                    {obstruction === undefined ? "—" : `${Math.round(obstruction)}%`}
-                </span>
+                    {region.average === undefined ? "—" : `${Math.round(region.average)}%`}
+                  </span>
+                </div>
               ))}
-                <span
-                  role="cell"
-                  className="aurora-briefing-cloud aurora-briefing-average"
-                  style={
-                    region.average === undefined
-                      ? undefined
-                      : {
-                          backgroundColor: obstructionColorFor(region.average),
-                          color: region.average > 70 ? "#F8FAFC" : "#08111f",
-                        }
-                  }
-                >
-                  {region.average === undefined ? "—" : `${Math.round(region.average)}%`}
-                </span>
             </div>
-            ))}
           </div>
+          <ul className="aurora-briefing-narrow aurora-briefing-regions">
+            {briefing.regions.map((region) => (
+              <li key={region.region} className="aurora-briefing-region-card">
+                <div className="aurora-briefing-region-head">
+                  <span>{region.label}</span>
+                  <strong style={cloudStyle(region.average)}>
+                    {region.average === undefined ? "—" : `${Math.round(region.average)}%`}
+                    <small>今晚平均</small>
+                  </strong>
+                </div>
+                <div className="aurora-briefing-region-hours" aria-label={`${region.label} 各小時雲層`}>
+                  {region.obstructions.map((obstruction, index) => (
+                    <span
+                      key={`${region.region}-${briefing.hours[index].time}`}
+                      className="aurora-briefing-cloud"
+                      style={cloudStyle(obstruction)}
+                    >
+                      <em>{briefing.hours[index].hour}</em>
+                      {obstruction === undefined ? "—" : `${Math.round(obstruction)}%`}
+                    </span>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="aurora-briefing-space">

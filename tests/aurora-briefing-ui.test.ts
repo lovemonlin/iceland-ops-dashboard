@@ -66,10 +66,22 @@ test("the briefing remains snapshot-only and never forwards current space weathe
   assert.equal(/fetch\s*\(|XMLHttpRequest|WebSocket|EventSource|https?:\/\//i.test(domain), false);
 });
 
-test("the wide dialog keeps each nine-column table scroll-contained on small screens", () => {
+test("the briefing switches from nine-column tables to hour cards on small screens", () => {
+  const dialog = read("src/components/AuroraBriefingDialog.tsx");
+  assert.match(dialog, /className="aurora-briefing-wide"/);
+  assert.match(dialog, /className="aurora-briefing-narrow aurora-briefing-hours"/);
+  assert.match(dialog, /className="aurora-briefing-narrow aurora-briefing-regions"/);
+  assert.match(dialog, /aurora-briefing-hour-card/);
+  assert.match(dialog, /aurora-briefing-hour-card-top/);
+  assert.equal((dialog.match(/briefing\.hours\.map/g) ?? []).length >= 2, true);
+  assert.equal(/fetch\s*\(|noaa\.gov/i.test(dialog), false);
+
   const css = read("src/app/globals.css");
   assert.match(css, /\.aurora-briefing-dialog[\s\S]*1180px/);
-  assert.match(css, /\.aurora-briefing-table[\s\S]*overflow-x: auto/);
   assert.match(css, /\.aurora-briefing-heatmap[\s\S]*repeat\(10/);
-  assert.match(css, /max-height: 92dvh/);
+  assert.match(css, /\.aurora-briefing-narrow \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 720px\)/);
+  assert.match(css, /\.aurora-briefing-wide \{ display: none; \}/);
+  assert.match(css, /ol\.aurora-briefing-narrow,\s*ul\.aurora-briefing-narrow \{ display: grid; \}/);
+  assert.match(css, /height: 100dvh/);
 });

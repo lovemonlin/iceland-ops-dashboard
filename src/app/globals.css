@@ -893,6 +893,99 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .aurora-briefing-cloud { font-weight: 700; }
 .aurora-briefing-heatmap .aurora-briefing-row { grid-template-columns: 92px repeat(10, minmax(0, 1fr)); }
 .aurora-briefing-average { border-left: 2px solid rgba(248, 250, 252, 0.36); }
+.aurora-briefing-hours,
+.aurora-briefing-regions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.aurora-briefing-narrow { display: none; }
+.aurora-briefing-hour-card,
+.aurora-briefing-region-card {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.aurora-briefing-hour-card.is-best {
+  border-color: rgba(74, 222, 128, 0.55);
+  background: rgba(74, 222, 128, 0.08);
+}
+.aurora-briefing-hour-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.aurora-briefing-hour-card-top strong { font-size: 16px; }
+.aurora-briefing-hour-card-top b {
+  font-size: 22px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.aurora-briefing-hour-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+.aurora-briefing-hour-card dt,
+.aurora-briefing-region-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.aurora-briefing-hour-card dd {
+  margin: 2px 0 0;
+  color: #F8FAFC;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.aurora-briefing-region-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.aurora-briefing-region-head > span { font-size: 14px; color: #F8FAFC; }
+.aurora-briefing-region-head strong {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.aurora-briefing-region-head small {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.aurora-briefing-region-hours {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 8px;
+}
+.aurora-briefing-region-hours .aurora-briefing-cloud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+.aurora-briefing-region-hours em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+}
 .aurora-briefing-space {
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -903,15 +996,33 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .aurora-briefing-space dd small { display: block; margin-top: 2px; color: #BBF7D0; font-size: 11px; font-weight: 600; }
 .aurora-briefing-dialog button:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
 
-@media (max-width: 520px) {
-  .aurora-forecast-guide { align-items: flex-start; flex-direction: column; }
-  .aurora-forecast-actions { justify-content: flex-start; }
-  .aurora-briefing-dialog { width: calc(100% - 16px); max-height: 92dvh; }
+@media (max-width: 720px) {
+  .aurora-briefing-wide { display: none; }
+  ol.aurora-briefing-narrow,
+  ul.aurora-briefing-narrow { display: grid; }
+  .aurora-briefing-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    overflow-x: hidden;
+  }
   .aurora-briefing-head,
   .aurora-briefing-body { padding-left: 13px; padding-right: 13px; }
+  .aurora-briefing-head { flex-wrap: wrap; }
+  .aurora-briefing-head h2 { font-size: 18px; }
   .aurora-briefing-best dl,
   .aurora-briefing-space dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .aurora-briefing-head-actions { flex-wrap: wrap; }
+  .aurora-briefing-hour-card dl { grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1.4fr); }
+}
+
+@media (max-width: 520px) {
+  .aurora-forecast-guide { align-items: flex-start; flex-direction: column; }
+  .aurora-forecast-actions { justify-content: flex-start; }
   .aurora-forecast-detail-head { flex-direction: column; gap: 7px; }
   .aurora-forecast-metrics { grid-template-columns: 1fr; }
   .aurora-score-dialog { width: calc(100% - 16px); max-height: 92dvh; }
