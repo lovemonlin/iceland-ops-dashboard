@@ -23,6 +23,7 @@ import {
   ROAD_STATUS_DEFAULT_COLOR,
   ROAD_STATUS_LINE_COLORS,
   ROAD_TAP_TOLERANCE,
+  roadChineseExplanation,
   roadDisplayTitle,
   roadLayerVisibility,
   roadStatusColor,
@@ -249,6 +250,29 @@ test("titles follow the app's rules for each item type", () => {
   assert.equal(roadDisplayTitle({ ...base, type: "STATION", name: "Hellisheiði" }), "Hellisheiði");
 });
 
+test("incident Chinese explanations map IRCA's one-word codes and do not invent paragraph translations", () => {
+  const base = readFeature({}, "INCIDENT");
+  assert.equal(
+    roadChineseExplanation({ ...base, status: "warning", descriptionIcelandic: "Holur" }),
+    "坑洞",
+  );
+  assert.equal(
+    roadChineseExplanation({
+      ...base,
+      status: "warning",
+      descriptionEnglish: "The bridge is open.",
+      descriptionIcelandic: "Brúin er opin.",
+    }),
+    undefined,
+  );
+  assert.equal(
+    roadChineseExplanation({ ...base, status: "roadworks" }),
+    "道路施工",
+  );
+  assert.equal(roadChineseExplanation({ ...readFeature({}, "ROAD"), status: "slippery" }), "路面濕滑");
+  assert.equal(roadChineseExplanation(readFeature({}, "STATION")), undefined);
+});
+
 // ── 9-11. Collapsed by default, and nothing loads until it is opened ──────────
 
 test("both maps start collapsed and are not mounted until asked for", () => {
@@ -451,12 +475,19 @@ test("the road dialog still shows every field the inline card did", () => {
   assert.match(body, /roadStatusLabel\(item\.status\)/);
   assert.match(body, /<StationDetails item=\{item\} \/>/);
   assert.match(body, /測站數值由官方量測，僅供參考。/);
-  // Road / incident: the English source text and both descriptions.
-  assert.match(body, /英文原文/);
+  // Road / incident: Chinese first, then the official English and Icelandic source text.
+  assert.match(body, /中文說明/);
+  assert.match(body, /roadChineseExplanation\(item\)/);
+  assert.match(body, /ROAD_CHINESE_UNAVAILABLE/);
+  assert.match(body, /ROAD_CHINESE_NOTE/);
+  assert.match(body, /官方英文內容/);
   assert.match(body, /\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}/);
   assert.match(body, /\{item\.descriptionEnglish && <p className="road-note">\{item\.descriptionEnglish\}<\/p>\}/);
-  assert.match(body, /\{item\.descriptionIcelandic && <p className="road-note">\{item\.descriptionIcelandic\}<\/p>\}/);
+  assert.match(body, /官方冰島文原文/);
+  assert.match(body, /\{item\.descriptionIcelandic\}/);
   assert.match(body, /\{ROAD_ATTRIBUTION\}/);
+  assert.equal(body.includes("英文原文"), false);
+  assert.equal(/fetch\s*\(|translate\.googleapis|mlkit/i.test(body), false);
 
   // Every station measurement still has a row, now one label each rather than a run of prose.
   const values = roadMap.split("function StationDetails")[1] ?? "";
@@ -528,6 +559,8 @@ test("the detail body steps down from title to attribution", () => {
   // Note and attribution are their own steps, no longer both `muted-line`.
   assert.match(body, /<p className="road-note">測站數值由官方量測，僅供參考。<\/p>/);
   assert.match(body, /<p className="road-primary">\{item\.titleEnglish \|\| roadStatusEnglish\(item\.status\)\}<\/p>/);
+  assert.match(body, /<p className="road-detail-label">中文說明<\/p>/);
+  assert.match(body, /<p className="road-detail-label">官方英文內容<\/p>/);
   assert.match(body, /<p className="road-attribution">\{ROAD_ATTRIBUTION\}<\/p>/);
   assert.equal(body.includes('className="muted-line"'), false, "the flat muted-line pass is gone");
 });
@@ -555,6 +588,7 @@ test("the road detail palette is applied where it was specified", () => {
   assert.match(rule(".road-value.tone-recent"), /color: #4ADE80/);
   assert.match(rule(".road-value.tone-today"), /color: #FACC15/);
   assert.match(rule(".road-note"), /color: #94A3B8/);
+  assert.match(rule(".road-translation-note"), /color: #FF8F00/);
   assert.match(rule(".road-attribution"), /color: #64748B/);
   // The station name stays the largest, whitest thing in the dialog — and the override must sit
   // after the rule it shares with the weather dialog, or the shared 15px would win instead.

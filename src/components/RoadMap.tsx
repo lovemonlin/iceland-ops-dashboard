@@ -18,6 +18,9 @@ import {
   ROAD_MODES,
   ROAD_QUERY_ORDER,
   ROAD_TAP_TOLERANCE,
+  ROAD_CHINESE_NOTE,
+  ROAD_CHINESE_UNAVAILABLE,
+  roadChineseExplanation,
   roadDisplayTitle,
   roadStatusColor,
   roadStatusEnglish,
@@ -384,6 +387,7 @@ function RoadDetailDialog({ item, onClose }: { item: RoadFeatureItem; onClose: (
 /** The detail fields themselves, unchanged from the inline card — only its shell became a dialog. */
 function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
   const isStation = item.type === "STATION";
+  const chinese = roadChineseExplanation(item);
   return (
     <>
       {isStation && item.updatedAt && (
@@ -406,10 +410,22 @@ function RoadDetailBody({ item }: { item: RoadFeatureItem }) {
         </>
       ) : (
         <>
-          <p className="road-detail-label">英文原文</p>
+          <p className="road-detail-label">中文說明</p>
+          {chinese ? (
+            <p className="road-primary">{chinese}</p>
+          ) : (
+            <p className="road-note">{ROAD_CHINESE_UNAVAILABLE}</p>
+          )}
+          <p className="road-translation-note">{ROAD_CHINESE_NOTE}</p>
+          <p className="road-detail-label">官方英文內容</p>
           <p className="road-primary">{item.titleEnglish || roadStatusEnglish(item.status)}</p>
           {item.descriptionEnglish && <p className="road-note">{item.descriptionEnglish}</p>}
-          {item.descriptionIcelandic && <p className="road-note">{item.descriptionIcelandic}</p>}
+          {item.descriptionIcelandic && (
+            <>
+              <p className="road-detail-label">官方冰島文原文</p>
+              <p className="road-note">{item.descriptionIcelandic}</p>
+            </>
+          )}
           <hr className="road-rule" />
         </>
       )}

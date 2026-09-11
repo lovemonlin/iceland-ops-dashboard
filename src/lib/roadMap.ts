@@ -522,6 +522,31 @@ export function roadDisplayTitle(item: RoadFeatureItem): string {
 }
 
 /**
+ * IRCA's GeoJSON has no Chinese. The app fills 中文說明 with on-device Google Translate
+ * (RoadInfoViewModel.kt). This dashboard cannot do that, so it only maps the official
+ * one-word codes IRCA sometimes sends as the entire description.
+ */
+const ROAD_OFFICIAL_PHRASE_ZH: Record<string, string> = {
+  Holur: "坑洞",
+};
+
+export const ROAD_CHINESE_UNAVAILABLE = "此項目目前沒有可用的中文翻譯。";
+export const ROAD_CHINESE_NOTE =
+  "中文為非官方對照。儀表板沒有 App 的裝置端翻譯，長篇說明請讀下方官方原文。";
+
+/** The app's zh 中文說明 body, without ML Kit. */
+export function roadChineseExplanation(item: RoadFeatureItem): string | undefined {
+  if (item.type === "STATION") return undefined;
+  if (item.type === "ROAD") return roadStatusLabel(item.status);
+  const english = item.descriptionEnglish.trim();
+  const icelandic = item.descriptionIcelandic.trim();
+  const mapped = ROAD_OFFICIAL_PHRASE_ZH[english] ?? ROAD_OFFICIAL_PHRASE_ZH[icelandic];
+  if (mapped) return mapped;
+  if (!english && !icelandic) return roadStatusLabel(item.status);
+  return undefined;
+}
+
+/**
  * The app's two road screens (RoadInfoScreen.kt:146, MainActivity.kt:367-380).
  *
  * Both always draw the road conditions; they differ in what is laid over them. The app reaches
