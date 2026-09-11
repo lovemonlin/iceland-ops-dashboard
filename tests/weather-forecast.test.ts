@@ -10,6 +10,7 @@ import {
   formatForecastDayHour,
   formatForecastHour,
   hourAt,
+  HOUR_AT_MAX_DISTANCE_MS,
   MAX_OFFSET_HOURS,
   nextHours,
   type WeatherHour,
@@ -174,8 +175,12 @@ test("the timeline runs 0..48 and only ever picks a stored hour", () => {
   assert.equal(at(0)?.temperatureC, 0);
   assert.equal(at(12)?.temperatureC, 12);
   assert.equal(at(48)?.temperatureC, 48, "+48h must land on real stored data");
-  // Past the end it holds the nearest entry rather than inventing one.
-  assert.equal(at(99)?.temperatureC, 48);
+  // Past the end is a miss, not the last hour reused as if it were still valid.
+  assert.equal(at(99), undefined);
+  const last = new Date(base.getTime() + 48 * 3_600_000);
+  assert.equal(hourAt(hours, new Date(last.getTime() + HOUR_AT_MAX_DISTANCE_MS))?.temperatureC, 48);
+  assert.equal(hourAt(hours, new Date(last.getTime() + HOUR_AT_MAX_DISTANCE_MS + 1)), undefined);
+  assert.equal(hourAt(hours, new Date(base.getTime() + 60 * 1000), 0), undefined);
   assert.equal(hourAt([], base), undefined);
   assert.equal(hourAt(undefined, base), undefined);
   assert.equal(forecastBaseTime([{}]), undefined);

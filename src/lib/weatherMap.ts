@@ -489,8 +489,18 @@ export interface WeatherHour extends CloudLayers {
 /**
  * The stored hour nearest a moment — `SiteForecast.at`, which takes the smallest absolute
  * difference rather than the next entry forward, so a coarse tail still answers.
+ *
+ * Distance is capped at 59 minutes so a time still snaps to the nearer stored hour, while a time
+ * past the end of the series by a full hour is a miss instead of silently reusing the last cloud
+ * reading. Pass `0` for an exact timestamp match (the aurora briefing's 18:00–02:00 instants).
  */
-export function hourAt(hours: WeatherHour[] | undefined, at: Date): WeatherHour | undefined {
+export const HOUR_AT_MAX_DISTANCE_MS = 59 * 60 * 1000;
+
+export function hourAt(
+  hours: WeatherHour[] | undefined,
+  at: Date,
+  maxDistanceMs: number = HOUR_AT_MAX_DISTANCE_MS,
+): WeatherHour | undefined {
   if (!hours || hours.length === 0) return undefined;
   const target = at.getTime();
   let best: WeatherHour | undefined;
@@ -504,7 +514,7 @@ export function hourAt(hours: WeatherHour[] | undefined, at: Date): WeatherHour 
       best = hour;
     }
   }
-  return best;
+  return best && bestDistance <= maxDistanceMs ? best : undefined;
 }
 
 /** `SiteForecast.nextHours`: everything from `from` onwards, capped at `count`. */

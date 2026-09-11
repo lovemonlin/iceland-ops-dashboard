@@ -59,7 +59,7 @@ test("the briefing remains snapshot-only and never forwards current space weathe
   const domain = read("src/lib/auroraBriefing.ts");
   assert.match(domain, /kpAt\(points, time, fallbackKp\)/);
   assert.match(domain, /assessAuroraVisibility\(\{/);
-  assert.match(domain, /weather: weatherAt\(weather\.get\(site\.id\), time\)/);
+  assert.match(domain, /weather: hourAt\(weather\.get\(site\.id\), time, 0\)/);
   assert.match(domain, /effectiveObstruction\(reading\)/);
   assert.equal(/ovationProbability|bzGsm/.test(domain), false);
   assert.equal(/fetch\s*\(|XMLHttpRequest|WebSocket|EventSource|https?:\/\//i.test(dialog), false);

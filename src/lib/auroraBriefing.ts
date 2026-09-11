@@ -12,7 +12,7 @@ import {
   levelOf,
   type AuroraAssessment,
 } from "@/lib/auroraVisibility";
-import { effectiveObstruction, type WeatherHour } from "@/lib/weatherMap";
+import { effectiveObstruction, hourAt, type WeatherHour } from "@/lib/weatherMap";
 import {
   isNoaaKpForecastData,
   type DashboardSnapshot,
@@ -128,11 +128,6 @@ function weatherBySite(snapshot: DashboardSnapshot) {
   );
 }
 
-function weatherAt(hours: WeatherHour[] | undefined, time: Date) {
-  const target = time.getTime();
-  return hours?.find((hour) => Date.parse(hour.time) === target);
-}
-
 function kpPoints(snapshot: DashboardSnapshot): KpForecastPoint[] {
   const data = snapshot.sources.noaaKpForecast?.data;
   return isNoaaKpForecastData(data) ? data.points : [];
@@ -147,7 +142,7 @@ function regionRows(
     const regionSites = sites.filter((site) => site.region === region);
     const obstructions = hours.map((time) => {
       const values = regionSites.flatMap((site) => {
-        const reading = weatherAt(weather.get(site.id), time);
+        const reading = hourAt(weather.get(site.id), time, 0);
         return reading ? [effectiveObstruction(reading)] : [];
       });
       return values.length
@@ -210,7 +205,7 @@ export function buildAuroraBriefing(
       ...assessAuroraVisibility({
         time,
         site,
-        weather: weatherAt(weather.get(site.id), time),
+        weather: hourAt(weather.get(site.id), time, 0),
         kp,
       }),
       site,
