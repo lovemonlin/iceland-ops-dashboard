@@ -167,7 +167,8 @@ test("10. Pages may use one read-only token, only to compare against the Android
   assert.match(workflow, /repository: lovemonlin\/iceland-aurora/);
   assert.match(workflow, /persist-credentials: false/);
   assert.equal(workflow.includes("ANDROID_REPO: ${{ github.workspace }}/iceland-aurora"), true);
-  assert.equal(workflow.includes("if: ${{ secrets.ANDROID_REPO_TOKEN != '' }}"), true);
+  assert.equal(workflow.includes("HAS_ANDROID_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN != '' }}"), true);
+  assert.equal(workflow.includes("if: env.HAS_ANDROID_TOKEN == 'true'"), true);
   assert.equal(/secrets\./.test(snapshot), false, "the snapshot doorbell must not grow a token");
   assert.equal(/Authorization/.test(workflow), false);
   assert.equal(existsSync(resolve(process.cwd(), ".env")), false);

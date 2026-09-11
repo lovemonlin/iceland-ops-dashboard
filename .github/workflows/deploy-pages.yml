@@ -31,6 +31,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # secrets cannot be read in `if:`; map presence to env first.
+    env:
+      HAS_ANDROID_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN != '' }}
     steps:
       # The branch tip, so a snapshot committed moments ago by the calling workflow is included.
       - uses: actions/checkout@v4
@@ -41,7 +44,7 @@ jobs:
       # Requires repository secret ANDROID_REPO_TOKEN (contents:read on lovemonlin/iceland-aurora).
       # Without it the parity tests skip and this deploy still publishes.
       - name: Checkout Android app for parity tests
-        if: ${{ secrets.ANDROID_REPO_TOKEN != '' }}
+        if: env.HAS_ANDROID_TOKEN == 'true'
         uses: actions/checkout@v4
         with:
           repository: lovemonlin/iceland-aurora
