@@ -15,6 +15,7 @@ import {
   CLOUD_GENERATED_PENDING,
   CLOUD_IMAGE_COORDINATES,
   CLOUD_LEGEND,
+  cloudForecastKpLabel,
   cloudForecastMarkersAt,
   formatCloudForecastTimes,
   formatGeneratedAt,
@@ -27,6 +28,7 @@ import {
 import { getPublicAssetPath } from "@/lib/publicPath";
 import { deviceTimeZone, getIpTimeZone, type LocalTimeZone } from "@/lib/ipTimezone";
 import { effectiveObstruction, forecastBaseTime, hourAt, type WeatherHour } from "@/lib/weatherMap";
+import type { KpForecastPoint } from "@/snapshot/types";
 
 /**
  * The app's forecast-mode map, inside the dashboard's cloud-forecast card.
@@ -78,11 +80,15 @@ export function CloudForecastMap({
   runAt,
   generatedAt,
   sites,
+  kpForecastPoints,
+  currentKp,
 }: {
   frames: CloudFrame[];
   runAt?: string;
   generatedAt?: string;
   sites: CloudForecastSite[];
+  kpForecastPoints?: KpForecastPoint[];
+  currentKp?: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -118,6 +124,7 @@ export function CloudForecastMap({
   );
 
   const frame = useMemo(() => frameAt(frames, selectedTime), [frames, selectedTime]);
+  const kpLabel = cloudForecastKpLabel(kpForecastPoints, selectedTime, currentKp);
   const markers = useMemo(
     // `forecasts[site.id]?.at(time)?.effectiveObstruction` — an hour the site does not have
     // stays undefined rather than being read as clear sky.
@@ -270,14 +277,10 @@ export function CloudForecastMap({
         />
 
         {/*
-          The app prints a forecast Kp here. It reads `kpForecast.kpAt(time, kpNow.estimatedKp)`,
-          a NOAA 3-day Kp *forecast* series; this dashboard's Kp monitor collects only the current
-          planetary index, so there is nothing to put on that line and inventing one would be
-          worse than leaving it out. It is stated rather than silently dropped.
+          The app prints forecast Kp here via kpForecast.kpAt(time, kpNow.estimatedKp).
+          The snapshot already stores that NOAA 3-day series; this line reads it.
         */}
-        <p className="cloud-forecast-missing">
-          Kp 預報：本 Dashboard 只收集目前 Kp，未收集 NOAA 三日 Kp 預報序列，因此不顯示。
-        </p>
+        <p className="cloud-forecast-kp">{kpLabel}</p>
 
         <div className="cloud-forecast-timing">
           <span className="cloud-forecast-generated">

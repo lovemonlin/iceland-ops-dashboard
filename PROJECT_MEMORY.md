@@ -65,8 +65,8 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
   `IP_TIMEZONE_ENDPOINT` 指向 `https://iceland-ops-dashboard-timezone.iceland-ops.workers.dev`。
   2026-09-11 在正式站核對：雲層預報與極光預測都顯示「當地時間」，不是「裝置時間」；
   Worker 回傳 `Asia/Taipei`，與冰島時間差 8 小時。
-- Android parity 測試本機讀 `../iceland-aurora`；CI 要可選的 `ANDROID_REPO_TOKEN` 才能
-  讀取 private 的 `lovemonlin/iceland-aurora`。沒有這個 secret 時測試 skip，Pages 仍會發布。
+- Android parity 測試已在 Pages CI 跑過：21:07 那次建置 checkout 了 `iceland-aurora`，
+  416 個測試、skip 0。secret `ANDROID_REPO_TOKEN` 已在 repo 上。
 
 ## 不可違反的約束
 
@@ -86,6 +86,12 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：雲層預報改顯示已收集的 Kp 預報
+
+雲層預報面板先前寫「未收集 NOAA 三日 Kp 預報」，與 snapshot 事實不符。改為與 App 相同：
+`kpForecast.kpAt(time, kpNow.estimatedKp)`，文案 `Kp 預報：x.x`／`目前沒有 Kp 預報`。
+公式仍只走 `src/lib/auroraVisibility.ts` 的 `kpAt`。
 
 ## 2026-09-11：正式站 Worker 已是當地時間；Android parity 準備進 CI
 

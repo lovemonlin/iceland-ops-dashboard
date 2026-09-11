@@ -23,6 +23,8 @@ import {
   FORECAST_LAND_COLOR,
   FORECAST_OCEAN_COLOR,
   formatCloudForecastTimes,
+  cloudForecastKpLabel,
+  CLOUD_FORECAST_KP_UNAVAILABLE,
   formatIcelandDateTime,
   frameAt,
   type CloudFrame,
@@ -449,8 +451,41 @@ test("the cloud forecast shows browser-local and Iceland clocks for the same ins
   assert.match(component, /localTimeLabel=\{localTimeZone\.source === "ip" \? "當地時間" : "裝置時間"\}/);
   assert.match(component, /cloud-forecast-time-local/);
   assert.match(component, /cloud-forecast-time-iceland/);
-  // The Kp line the app prints is left out rather than invented, and says so.
-  assert.match(component, /未收集 NOAA 三日 Kp 預報序列/);
+  assert.match(component, /cloudForecastKpLabel\(kpForecastPoints, selectedTime, currentKp\)/);
+});
+
+test("the Kp line is the app's kpAt reading, not a missing-data apology", () => {
+  const covered = new Date("2026-09-11T11:00:00Z");
+  const past = new Date("2026-09-11T12:00:00Z");
+  assert.equal(cloudForecastKpLabel(undefined, covered, undefined), CLOUD_FORECAST_KP_UNAVAILABLE);
+  assert.equal(cloudForecastKpLabel([], covered, 2.33), "Kp 預報：2.3");
+  const points = [
+    { time: "2026-09-11T09:00:00.000Z", kp: 4.67, status: "predicted" as const, noaaScale: "G0" },
+  ];
+  assert.equal(cloudForecastKpLabel(points, covered, 1), "Kp 預報：4.7");
+  assert.equal(cloudForecastKpLabel(points, past, 1), "Kp 預報：1.0");
+
+  const component = read("src/components/CloudForecastMap.tsx");
+  assert.match(component, /className="cloud-forecast-kp"/);
+  assert.equal(component.includes("未收集 NOAA 三日 Kp 預報序列"), false);
+
+  const sections = read("src/components/SourceSections.tsx");
+  assert.match(sections, /kpForecastPoints=\{isNoaaKpForecastData\(kpForecast\?\.data\) \? kpForecast\.data\.points : undefined\}/);
+  assert.match(sections, /currentKp=\{typeof kp\?\.data\?\.kp === "number" \? kp\.data\.kp : undefined\}/);
+
+  const dashboard = read("src/components/Dashboard.tsx");
+  assert.match(dashboard, /kp=\{snapshotEntry\(snapshot, "noaaKp"\)\}/);
+  assert.match(dashboard, /kpForecast=\{snapshotEntry\(snapshot, "noaaKpForecast"\)\}/);
+});
+
+test("the Kp wording is the app's strings", { skip: !hasAndroidFile("app/src/main/res/values-zh-rTW/strings.xml") }, () => {
+  const strings = readFileSync(
+    androidPath("app/src/main/res/values-zh-rTW/strings.xml"),
+    "utf8",
+  );
+  assert.match(strings, /<string name="map_forecast_kp">Kp 預報：%1\$\.1f<\/string>/);
+  assert.match(strings, /<string name="map_forecast_kp_unavailable">目前沒有 Kp 預報<\/string>/);
+  assert.equal(CLOUD_FORECAST_KP_UNAVAILABLE, "目前沒有 Kp 預報");
 });
 
 test("the panel carries the app's wording, in the app's order", () => {
@@ -461,6 +496,7 @@ test("the panel carries the app's wording, in the app's order", () => {
     "CLOUD_FORECAST_TITLE",
     "value={selectedTime.toISOString()}",
     'type="range"',
+    "cloud-forecast-kp",
     "cloud-forecast-timing",
     "cloud-forecast-legend",
     "CLOUD_FRAME_AVAILABLE",

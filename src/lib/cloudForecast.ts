@@ -13,6 +13,8 @@
  */
 
 import type { WeatherHour } from "@/lib/weatherMap";
+import { kpAt } from "@/lib/auroraVisibility";
+import type { KpForecastPoint } from "@/snapshot/types";
 
 /** `MapViewModel.MAX_FORECAST_HOURS`. The publisher's +48 h is deliberately not exposed. */
 export const CLOUD_FORECAST_MAX_HOURS = 24;
@@ -109,6 +111,20 @@ export const CLOUD_FRAME_UNAVAILABLE = "尚未設定 ECMWF 區域雲圖服務；
 export const CLOUD_FORECAST_NOTE =
   "地點顏色代表預測雲層遮蔽率；衛星影像與極光帶不是 24 小時預報，因此在此模式隱藏。";
 export const CLOUD_GENERATED_PENDING = "資料更新時間：等待下一次雲圖發布";
+export const CLOUD_FORECAST_KP_UNAVAILABLE = "目前沒有 Kp 預報";
+
+/**
+ * The app's forecast-mode Kp line: `kpForecast.kpAt(time, kpNow.estimatedKp)`.
+ * No current Kp means the line is unavailable rather than inventing a number.
+ */
+export function cloudForecastKpLabel(
+  points: KpForecastPoint[] | undefined,
+  time: Date,
+  currentKp: number | undefined,
+) {
+  if (currentKp === undefined || !Number.isFinite(currentKp)) return CLOUD_FORECAST_KP_UNAVAILABLE;
+  return `Kp 預報：${kpAt(points ?? [], time, currentKp).toFixed(1)}`;
+}
 
 export const formatGeneratedAt = (value: string) => `資料更新時間：冰島當地 ${value}`;
 export const formatRunAt = (value: string) => `模型起報時間：冰島當地 ${value}`;

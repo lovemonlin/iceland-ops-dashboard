@@ -20,7 +20,7 @@ import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
 import type { CloudFrame } from "@/lib/cloudForecast";
 import { decodeSiteForecast } from "@/lib/forecastCodec";
 import { dataAgeMinutes } from "@/monitors/correlate";
-import type { DashboardSnapshot, SnapshotSource } from "@/snapshot/types";
+import { isNoaaKpForecastData, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
 
 /**
  * The four things a traveller came to find out — weather, roads, aurora, warnings — plus the
@@ -50,10 +50,14 @@ const text = (value: unknown, fallback = "—") => (value === undefined || value
 export function WeatherSection({
   metno,
   ecmwf,
+  kp,
+  kpForecast,
   schemaVersion,
 }: {
   metno?: SnapshotSource;
   ecmwf?: SnapshotSource;
+  kp?: SnapshotSource;
+  kpForecast?: SnapshotSource;
   schemaVersion: number;
 }) {
   return (
@@ -61,7 +65,15 @@ export function WeatherSection({
       <h2>天氣</h2>
       <div className="cards">
         {metno && <WeatherCard entry={metno} schemaVersion={schemaVersion} />}
-        {ecmwf && <CloudForecastCard entry={ecmwf} metno={metno} schemaVersion={schemaVersion} />}
+        {ecmwf && (
+          <CloudForecastCard
+            entry={ecmwf}
+            metno={metno}
+            kp={kp}
+            kpForecast={kpForecast}
+            schemaVersion={schemaVersion}
+          />
+        )}
       </div>
     </section>
   );
@@ -111,10 +123,14 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
 function CloudForecastCard({
   entry,
   metno,
+  kp,
+  kpForecast,
   schemaVersion,
 }: {
   entry: SnapshotSource;
   metno?: SnapshotSource;
+  kp?: SnapshotSource;
+  kpForecast?: SnapshotSource;
   schemaVersion: number;
 }) {
   const data = entry.data ?? {};
@@ -152,6 +168,8 @@ function CloudForecastCard({
             runAt={typeof data.forecastRunAt === "string" ? data.forecastRunAt : undefined}
             generatedAt={typeof data.forecastGeneratedAt === "string" ? data.forecastGeneratedAt : undefined}
             sites={sites}
+            kpForecastPoints={isNoaaKpForecastData(kpForecast?.data) ? kpForecast.data.points : undefined}
+            currentKp={typeof kp?.data?.kp === "number" ? kp.data.kp : undefined}
           />
         </MapDisclosure>
       )}
