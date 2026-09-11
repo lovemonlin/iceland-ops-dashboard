@@ -228,14 +228,39 @@ that one file to `main` is what publishes new data: the Pages workflow rebuilds 
 `npm run snapshot` runs the same collection locally, for development, manual validation and
 recovery. Nothing has to run on anyone's machine for the site to stay up.
 
+### Which machine runs what
+
+Development and collection happen on two different machines, and only one of them is a production
+clock:
+
+| Machine | Role | Scheduled tasks |
+| --- | --- | --- |
+| Development | debug, feature work, `git push` to `main` | registered but **disabled** |
+| Execution | `git pull --ff-only` hourly at :07, then collect and push the snapshot | enabled |
+
+A push to `main` therefore has two independent consumers. GitHub Pages rebuilds immediately and
+runs `npm test` before building, so a failing test blocks the deploy and the previous site stays
+up. The execution machine simply pulls the new code at the next :07 and collects with it — there
+is **no test gate on that path**, which is why the checks below are run before pushing, not after.
+
+Two consequences worth knowing:
+
+- **Do not run `npm run snapshot` on the development machine.** It rewrites
+  `public/data/latest-health.json`, which the execution machine owns, so the only result is a
+  conflicting change to a file someone else is about to commit.
+- **A push that changes dependencies installs itself on the execution machine.** When the hourly
+  pull moves `package.json` or `package-lock.json`, the runner runs `npm ci` before collecting;
+  otherwise it does not, so the npm registry is not in the path of every hourly collection. A
+  failed install stops that run, keeps the previous snapshot, and is retried on the next one.
+
 ### The Windows hourly runner
 
 `scripts\hourly-snapshot.ps1` is a single-shot, deliberately conservative collection:
 
 ```
 acquire lock -> verify branch and clean tree -> push anything left unpushed
--> pull --ff-only -> npm run snapshot -> validate -> guard changed files
--> commit only the snapshot -> push -> log -> release lock
+-> pull --ff-only -> install if the pull changed dependencies -> npm run snapshot
+-> validate -> guard changed files -> commit only the snapshot -> push -> log -> release lock
 ```
 
 It never stashes, resets, checks out, cleans, merges, rebases or force-pushes, and it refuses to

@@ -2,7 +2,146 @@
 
 No credential, API key, token, PAT or secret may ever be written in this file.
 
-## 最新更新紀錄（2026-09-10）：雙時區與未來 48 小時極光預測
+## 這份文件怎麼讀
+
+本檔混合了三種壽命不同的內容，分不清它們是過去出錯的主因：
+
+| 區段 | 性質 | 維護方式 |
+| --- | --- | --- |
+| 現況速覽 | 描述「現在」 | 每次改動都必須重寫 |
+| 不可違反的約束 | 極少變動 | 要改必須先取得使用者同意 |
+| 決策紀錄、歷史紀錄 | 描述「當時」 | append-only，只增不改，一律標日期 |
+
+**凡是程式碼已經表達的事實，這裡只放指標，不放副本。** monitor 清單、freshness 門檻、
+測試數量、目前 HEAD 都曾經因為被複製進文件而過期。本檔與程式碼衝突時以程式碼為準，
+並順手修正本檔。
+
+## 現況速覽（最後校對 2026-09-11）
+
+### 每個事實的唯一真相在哪裡
+
+| 想知道 | 去看 |
+| --- | --- |
+| monitor 清單與 id | `MONITOR_IDS`（`src/config/monitors.ts`） |
+| 極光評分公式 | `src/lib/auroraVisibility.ts`，全專案唯一一份 |
+| 各來源 freshness 政策 | `src/config/sources.ts`、`ecmwf.ts`、`irca.ts` |
+| snapshot 結構與 merge 契約 | `src/snapshot/types.ts` |
+| 測試數量與範圍 | `npm.cmd test` 的實際輸出 |
+| 目前 HEAD | `git log`。本檔不把 commit hash 當成現況記錄 |
+
+### 執行拓撲：兩台機器
+
+```text
+本機（開發）                  GitHub main                執行電腦（收集）
+debug / 改功能  ──push──▶                  ◀──pull --ff-only──  每小時 :07
+                                                            npm run snapshot
+                            ◀────────push──  只 commit 一個檔案
+                            │
+                            └──▶ Pages 重新部署（npm ci → npm test → build）
+```
+
+- **本機**只負責開發與 push。本機也註冊了三個 Windows 排程工作，但**全部是 Disabled**，
+  不會執行；`logs/hourly-snapshot.log` 最後一筆是 2026-09-06 02:07 +08:00。不要在本機啟用
+  它們，也不要在本機執行 `npm run snapshot`——那會改到執行電腦負責的
+  `public/data/latest-health.json`，只會製造衝突。
+- **執行電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`。
+- push 到 `main` 有兩個消費者。GitHub Pages 立即重建，而且 `npm test` 不過就不會部署；
+  執行電腦則在下一次 :07 pull 之後直接採用新程式碼，**沒有任何測試把關**。推送前的本機
+  驗證是執行電腦唯一的防線。
+- 動到 dependency 的 push 會在執行電腦上自行安裝：每小時的 pull 若移動了 `package.json` 或
+  `package-lock.json`，runner 會先跑 `npm ci` 才收集；否則不跑，所以 npm registry 不會出現在
+  每一次收集的路徑上。安裝失敗會中止該次收集、保留前一份 snapshot，並在下一次重試。
+
+### 目前狀態
+
+- 十個 monitor 全部讀真實 production 資料。**runtime 沒有任何 mock 路徑**：
+  `src/monitors/mockMonitors.ts` 與 `src/config/freshness.ts` 已經刪除，不是停用。
+- Snapshot schema v2，`trigger` 記為 `windows`。
+- 48 小時極光預測與極光快報 v1 都已完成並在線上。
+
+## 不可違反的約束
+
+1. Browser 只能讀 snapshot，不得直接呼叫 NOAA、MET Norway、OVATION、Solar Wind。唯一核准的
+   例外是 IP timezone Cloudflare Worker。
+2. 極光評分公式只有 `src/lib/auroraVisibility.ts` 一份。任何極光 UI 都從
+   `buildAuroraForecast48()` 或 `assessAuroraVisibility()` 產出的 assessment 顯示，不得自行計算。
+3. 未來時段不得採用 current Bz 或 current OVATION。Bt / Bz / 太陽風在快報中只能標示為
+   目前即時太空天氣。
+4. HTTP 200 永遠不等於健康。
+5. 本 repo 不得寫入 `iceland-aurora`、`iceland-aurora-ios`、`iceland-aurora-cloud`。
+6. 排程收集只允許改動 `public/data/latest-health.json` 這一個檔案。
+7. 未經使用者明確要求，不得 `git reset`、`git restore`、force push，不得修改 production
+   scheduler 或 snapshot schema，不得自行 commit 或 push。
+8. 不得修改 repo 的 NTFS ownership 或 ACL。
+
+# 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：hourly runner 在 pull 帶進 dependency 變更時自行安裝
+
+**問題。** 兩台機器的架構下，執行電腦每小時 `git pull --ff-only` 後直接跑 `npm run snapshot`，
+中間沒有任何安裝步驟。只要開發機推了一個動到 `package.json` / `package-lock.json` 的 commit，
+執行電腦就會拿新程式碼配舊的 `node_modules`，此後每小時都失敗，直到有人登入那台手動安裝。
+失敗本身是安全的（保留前一份 snapshot），但它只會以 SCHEDULED UPDATE OVERDUE 的形式浮現，
+很難反推真正原因。
+
+**為什麼不無條件每小時 `npm ci`。** 那會把 npm registry 放進每一次收集的關鍵路徑，等於用一個
+每小時的新失敗點去換一個罕見的失敗點，常見情況反而更糟。
+
+**做法。** 記住 pull 前的 HEAD，pull 後用 `git diff --name-only` 檢查這個區間是否動到那兩個
+檔案；有才安裝。安裝用 `npm ci --no-audit --no-fund`——這是無人值守的工作，audit 是另一次可以
+獨立失敗的網路呼叫，而且它的輸出對安裝結果沒有任何意義。
+
+**為什麼需要 marker。** 上述判斷問的是「這次 pull 帶進了什麼」，不是「這台機器現在是什麼狀態」。
+少了 marker，一次失敗的安裝（例如 registry 暫時性故障）要等到下一個碰巧動到 dependency 的
+commit 才會再試。所以安裝前先寫 `.runtime/install-required`，成功才刪除；它存在就代表要重試。
+
+**其他。** 同一輪順手修掉腳本裡一句過期註解——它說 GitHub 備援排程「still enabled as a backup」，
+但那個 cron 在 2026-09-04 就移除了。45 分鐘的跳過門檻保留，理由改成正確的那個：手動執行與
+補跑。對應的測試名稱也從「the two schedulers」改為「two collections」。
+
+**測試。** `scripts/test-hourly-snapshot.ps1` 新增三個案例（帶進 dependency 變更會安裝、
+一般 pull 不安裝、失敗過的安裝會重試），並在 harness 產生的 `.gitignore` 補上 `node_modules/`，
+否則安裝產生的目錄會誤觸「只有 snapshot 可以變動」的守則。`tests/hourly-runner.test.ts`
+新增對應斷言。
+
+**生效時機。** Task Scheduler 是從磁碟啟動腳本，而 pull 發生在腳本內部，所以推送後的第一次
+:07 拉到新腳本但執行的仍是舊的，**要到第二次才真正生效**。
+
+## 2026-09-10：極光快報 v1（`540e4fb`）
+
+在 48 小時預測之上加了一個「🌌 極光快報」Dialog，回答「今晚到底要不要出門」。
+
+- 觀測窗**固定**以 `Atlantic/Reykjavik` 的當地今天計算，18:00 到次日 02:00，共 9 個整點。
+  起算日只取冰島日期，與瀏覽器所在時區無關。冰島全年 UTC+0 沒有日光節約時間，所以
+  `getIcelandTonightWindow()` 直接用 `Date.UTC(y, m, d, 18)`——這是刻意的，不要「修正」
+  成一般的本地時間換算，測試已釘住跨月與跨年邊界。
+- 每個整點對 snapshot 裡全部 32 個地點各評一次，取最高分者為該小時最佳。
+- Kp 來自 `noaaKpForecast`，經 `kpAt()` 取用；找不到涵蓋區間時 fallback 到目前即時 Kp。
+- **未來值不吃即時太空天氣**：`buildAuroraBriefing()` 呼叫 `assessAuroraVisibility()` 時只傳
+  `time`、`site`、`weather`、`kp`，完全不傳 `ovationProbability` 或 `bzGsm`。目前的
+  Kp / Bt / Bz / 太陽風 / OVATION 只存在 `briefing.current`，UI 與複製摘要都明寫那是即時值。
+- 雲層熱圖按七個區域平均 `effectiveObstruction()`；某小時該區沒有任何站點資料時保持
+  `undefined` 並顯示「—」，不以鄰近值填補。
+- 逐時「最佳地點」在分數低於 5 或該時段為白晝時隱藏，避免推薦一個看不到極光的地點。
+- 提供純文字摘要複製，結尾固定附註 Bt / Bz / 太陽風為即時值。
+
+主要檔案：`src/lib/auroraBriefing.ts`（領域邏輯）、`src/components/AuroraBriefingDialog.tsx`
+（UI）、`src/components/AuroraForecast.tsx`（入口按鈕）、`src/lib/auroraForecastPresentation.ts`
+（標籤與地點）、`src/app/globals.css`（`.aurora-briefing-*`）。
+
+**測試把架構釘死成字串比對，改這些檔案前先看測試**（`tests/aurora-briefing.test.ts`、
+`tests/aurora-briefing-ui.test.ts`）：
+
+- `auroraBriefing.ts` 全檔不得出現 `ovationProbability` 或 `bzGsm`，連註解都不行。
+- `auroraBriefing.ts` 與 Dialog 都不得出現 `fetch(`、`XMLHttpRequest`、`WebSocket`、
+  `EventSource` 或任何 `http(s)://`。
+- `auroraBriefing.ts` 不得出現寫死的地點清單；地點一律來自 `auroraForecastSites(snapshot)`。
+- `AuroraForecast.tsx` 必須逐字保留 `buildAuroraForecast48(snapshot, site, baseTime)`。
+- `globals.css` 必須含 `1180px`、`92dvh`、`repeat(10`。
+- 有一條測試會讀真實的 `public/data/latest-health.json` 並斷言站點數為 32。這代表執行電腦
+  每小時更新的檔案是測試輸入之一；看到它失敗先確認 snapshot，不要改測試。
+
+## 2026-09-10：雙時區與未來 48 小時極光預測
 
 這一輪已完成並推送到 `main`。功能 commit 依序為：
 
@@ -13,9 +152,6 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 | `f5c6688` | `noaaKpForecast` 納入極光卡片的四來源 health、最舊資料時間與技術來源清單 |
 | `2d2d9df` | 新增「極光預測」第三模式、32 地點選擇、48 小時時間軸與逐時詳細資料 |
 | `64e0779` | 新增「ⓘ 分數怎麼算？」accessible Dialog 與完整計算說明 |
-
-最後已確認本機 `main` 與 `origin/main` 同步在 `64e0779`。本節這次是後續新增的
-專案交接紀錄，本身尚未 commit / push。
 
 ### 最終使用者可看到的結果
 
@@ -108,22 +244,23 @@ buildAuroraForecast48(snapshot, site, baseTime)
 - `git diff --check`：通過。
 - 沒有新增 dependency，沒有修改 Android App、snapshot scheduler 或 upstream API 架構。
 
-### 新對話接續重點
+### 這一輪留下的待辦
 
-1. 先讀本節，再以 git 與目前程式碼驗證記錄仍然有效。
-2. 不要另寫 AuroraVisibility 公式；任何極光 UI 都從 `buildAuroraForecast48()` 的 assessment 顯示。
-3. 不要讓 browser 直接抓 NOAA / MET / OVATION / Solar Wind；僅 IP timezone Worker 是核准例外。
-4. 若要讓正式環境顯示 IP 當地時間，下一個外部操作是部署 `cloudflare/timezone-worker`，並將 Worker URL
-   設為 GitHub repository variable `IP_TIMEZONE_ENDPOINT`；部署與設定在本輪沒有執行。
-5. 目前沒有待使用者決定的極光 UI 細節。
+若要讓正式環境顯示 IP 當地時間，下一個外部操作是部署 `cloudflare/timezone-worker`，並把 Worker
+URL 設為 GitHub repository variable `IP_TIMEZONE_ENDPOINT`。這一輪只加入原始碼與設定，沒有實際
+部署；未設定時 UI 會安全 fallback 成「裝置時間」。
+
+原本列在這裡的「不要另寫評分公式」「browser 不得直連上游」已移到開頭的「不可違反的約束」，
+避免同一條規則存在兩份可能漂移的副本。
+
+# 歷史紀錄（append-only，描述當時，不再更新）
 
 ## Status (2026-09-03)
 
-The dashboard runs on the **scheduled snapshot architecture** (step 9), is published on GitHub
-Pages (step 10), and **every one of its nine monitors reads real production data** (step 11).
-There is no mock data path left in the runtime. The other five
-sources are still mock data. Do not wire NOAA Kp, NOAA Solar Wind, NOAA OVATION, MET Norway or
-IMO without explicit approval.
+當時 dashboard 剛改用 **scheduled snapshot 架構**（step 9）並發布到 GitHub Pages（step 10）；
+其中五個來源仍是 mock，接上真實 production 資料是 step 11 的工作。
+
+> 那項工作已在 2026-09-04 完成，mock 路徑整個刪除。現況請看開頭的「現況速覽」。
 
 ## Completed
 
@@ -143,21 +280,11 @@ IMO without explicit approval.
 
 ## Monitors
 
-| Monitor | id | Source |
-| --- | --- | --- |
-| MET Norway Weather | `metno` | **live production (read-only)** |
-| IRCA Roads | `irca` | **live production (read-only)** |
-| IRCA Road Publisher | `ircaPipeline` | **live GitHub Actions (read-only)** |
-| NOAA Kp | `noaaKp` | **live production (read-only)** |
-| NOAA Solar Wind | `solarWind` | **live production (read-only)** |
-| NOAA OVATION | `ovation` | **live production (read-only)** |
-| ECMWF Cloud Forecast | `ecmwf` | **live production (read-only)** |
-| ECMWF Cloud Publisher | `ecmwfPipeline` | **live GitHub Actions (read-only)** |
-| IMO Warnings | `imo` | **live production (read-only)** |
+monitor 清單的唯一真相是 `src/config/monitors.ts` 的 `MONITOR_IDS`，README 另有一份附來源說明的
+完整表格。這裡刻意不再放第三份副本——原本那份表格漏掉了 `noaaKpForecast`，正是複製造成的漂移。
 
-`MONITOR_IDS` in `src/config/monitors.ts` is the single list, and `LIVE_MONITOR_IDS` records which
-have gone live. A monitor leaves `freshnessThresholds` when it goes live and gains its own freshness
-policy file, so the mock thresholds and the production policies can never drift into each other.
+`LIVE_MONITOR_IDS` 目前等於 `MONITOR_IDS`：每一個 monitor 都已接上真實 production 資料，
+各自的 freshness 政策放在 `src/config/` 底下對應的檔案。
 
 ## Safety boundary
 
@@ -360,8 +487,13 @@ outage is never hidden behind a STALE badge. Two tests pin that behaviour.
 
 ## Hourly update automation (2026-09-04)
 
-**Primary production scheduler: a GitHub Actions hourly schedule**, `cron: "0 * * * *"` (UTC),
-i.e. every hour on the hour, which is 08:00, 09:00, 10:00 ... Taipei.
+> **這一節描述的 GitHub 排程已經不存在。** 該 cron 在 2026-09-04 稍後就從
+> `.github/workflows/update-dashboard-snapshot.yml` 移除了（理由見下方「The remaining GitHub
+> triggers」與 README）。現在的 production 時鐘是執行電腦上的 Windows Task Scheduler，
+> 見開頭的「現況速覽」。以下保留當時的決策脈絡。
+
+當時的設計是 **GitHub Actions 每小時排程**，`cron: "0 * * * *"`（UTC），
+即每小時整點，換算台北時間是 08:00、09:00、10:00……
 
 ```
 GitHub schedule (hourly)  →  Update Dashboard Snapshot  →  npm run snapshot
@@ -572,11 +704,10 @@ snapshot it cannot parse, so a human sees the problem before history is lost.
 2. **Source freshness** — the data's own timestamp (IRCA `generated_at`, ECMWF model run).
 3. **Collection freshness** — when we last successfully fetched that source (`lastSuccessAt`).
 
-### Not done on purpose
+### Not done on purpose（2026-09-03 當時）
 
-No database and no history directory yet; only `latest-health.json` exists. No GitHub write path —
-publishing the snapshot to the dashboard repository is the next step and needs a decision from the
-user (see below). No new data sources: NOAA, MET Norway, IMO and EUMETSAT remain mock.
+當時沒有 database、沒有 history 目錄，只有 `latest-health.json`，也還沒有 GitHub 寫入路徑。
+NOAA、MET Norway、IMO 當時仍是 mock，隔天（2026-09-04）全部產品化。EUMETSAT 至今仍未納入監控。
 
 ## GitHub Actions pipeline monitor
 
@@ -724,16 +855,17 @@ Notes:
 - The schema branch honours a caller `errorType`, so ECMWF can report `INVALID_TIMESTAMP` or
   `EMPTY_DATA` instead of a blanket `SCHEMA_ERROR`.
 
-## Freshness thresholds (mock monitors only)
+## Freshness thresholds（`src/config/freshness.ts` 已刪除）
 
-`src/config/freshness.ts`, in seconds. **Conservative placeholders, not official guarantees.**
-metno 7200 · noaaKp 21600 · solarWind 1800 · ovation 14400 · imo 10800.
-ECMWF and IRCA have left this file; each owns its policy in `src/config/`.
+這個檔案在 2026-09-04 全面產品化時，連同 mock 路徑一起刪除了。每個來源現在各自持有 freshness
+政策：`src/config/sources.ts`（MET Norway、NOAA Kp、solar wind、OVATION）、`src/config/ecmwf.ts`
+（model-cycle 發布時程，不是年齡門檻）、`src/config/irca.ts`（45 分 STALE / 120 分 ERROR）。
+IMO 沒有年齡政策——broker 列出的是「現在有效」的警報，沒有可比對的時間。
 
-The unused `warningAfter` placeholder was removed: no code read it and the status model has no
-warning band. Do not reintroduce it without adding a real status for it.
+當時一併移除了未使用的 `warningAfter` placeholder：沒有程式讀它，狀態模型也沒有 warning 級別。
+不要在沒有對應狀態的情況下加回來。
 
-TODO: confirm each production source's documented update cadence before enabling its monitor.
+這些全部是 dashboard 的營運選擇，不是上游的保證。
 
 ## Network diagnostics
 
@@ -774,12 +906,19 @@ the header adds Taipei.
   could not be checked". What it still cannot do is name the cause *inside* a failed step — an
   IRCA HTTP 503, an empty measurement table, a rejected git push all look the same. That needs a
   Failed Run Log Inspector, deliberately out of scope for this step.
-- The git working copy was created under a different Windows account; the current user needs
-  `git config --global --add safe.directory C:/dev/iceland-ops-dashboard` (that one path only).
+- **已解決（記錄以免重演）**：本機 working copy 一度被工具把 `.git` 的 NTFS owner 改成
+  `CodexSandboxOffline`，導致 git 拒絕操作。owner 已修回正常 Windows 使用者。
+  **不要修改本 repo 的 NTFS ownership 或 ACL。** 若再遇到 git 抱怨 dubious ownership，
+  先確認 owner，必要時才用 `git config --global --add safe.directory C:/dev/iceland-ops-dashboard`
+  （只加這一個路徑）。
 
 ## Tests
 
-`npm test` — 203 fully offline tests, no network access:
+`npm.cmd test` 全離線，不連任何網路。**測試數量以實際輸出為準，本檔不記錄數字**：
+`aurora-gauge`、`road-map`、`aurora-oval`、`cloud-forecast` 這幾個測試檔會用 `existsSync`
+檢查 `../iceland-aurora` 是否存在，缺席時整批跳過，所以不同機器的總數本來就不一樣。
+
+以下是涵蓋範圍（隨功能增加，非窮舉）：
 
 - health evaluator, including `stale`, `fatalError` and the schema error-type override
 - ECMWF schedule: cycle detection, deadlines, month/year rollover, expected-run boundaries at
