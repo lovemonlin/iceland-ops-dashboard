@@ -7,13 +7,16 @@
 
 ## Two machines (permanent)
 
-This checkout is the **development machine**. It is never the production clock.
+Canonical names from 2026-09-11. Do not say "execution machine" or 「執行機」 anymore.
 
-- **Never run `npm run snapshot` here.** Not for debug, not for "just once", not to refresh the dashboard. That command rewrites `public/data/latest-health.json`, which only the execution machine may collect and push.
-- **Do not re-register** Windows scheduled tasks on this machine. Collection belongs on the execution machine only.
-- Development work: edit, test, `git pull --ff-only`, commit, push **code**. The execution machine pulls `main` hourly at :07, runs `npm run snapshot`, and is the only machine that pushes snapshot commits.
+| Name | Which computer | Role |
+| --- | --- | --- |
+| **開發電腦** | this checkout | edit, test, commit, push **code**. Never the production clock. |
+| **推播電腦** | the other computer | hourly at :07: pull `main`, `npm run snapshot`, push only `public/data/latest-health.json`. |
 
-If a snapshot on this machine looks stale, pull from GitHub. Do not regenerate it.
+- **Never run `npm run snapshot` on the 開發電腦.** Not for debug, not for "just once", not to refresh the dashboard. That command rewrites `public/data/latest-health.json`, which only the 推播電腦 may collect and push.
+- **Do not re-register** Windows scheduled tasks on the 開發電腦. Collection belongs on the 推播電腦 only.
+- If a snapshot on the 開發電腦 looks stale, `git pull --ff-only`. Do not regenerate it.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

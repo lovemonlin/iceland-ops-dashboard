@@ -31,8 +31,10 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 
 ### 執行拓撲：兩台機器
 
+正式名稱（2026-09-11 起）：**開發電腦**、**推播電腦**。舊稱「開發機／執行機／execution machine」都是同一對，不要再用舊稱。
+
 ```text
-本機（開發）                  GitHub main                執行電腦（收集）
+開發電腦（這台）              GitHub main                推播電腦（收集）
 debug / 改功能  ──push──▶                  ◀──pull --ff-only──  每小時 :07
                                                             npm run snapshot
                             ◀────────push──  只 commit 一個檔案
@@ -40,18 +42,18 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
                             └──▶ Pages 重新部署（npm ci → npm test → build）
 ```
 
-- **開發機（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機曾註冊過三個
+- **開發電腦（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機曾註冊過三個
   Windows 排程工作，已於 2026-09-11 **解除註冊**，不要再 `Register-ScheduledTask`。
   `logs/hourly-snapshot.log` 最後一筆是 2026-09-06 02:07 +08:00，只是歷史殘渣。
-- **永遠不要在開發機執行 `npm run snapshot`。** 沒有例外。那條指令會改寫
-  `public/data/latest-health.json`。收集與把 snapshot **push 回 GitHub** 只屬於執行機。
-  開發機上的 snapshot 過期時，用 `git pull --ff-only` 取回執行機已發布的那份，不要自己重收。
-- **執行電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`，
+- **永遠不要在開發電腦執行 `npm run snapshot`。** 沒有例外。那條指令會改寫
+  `public/data/latest-health.json`。收集與把 snapshot **push 回 GitHub** 只屬於推播電腦。
+  開發電腦上的 snapshot 過期時，用 `git pull --ff-only` 取回推播電腦已發布的那份，不要自己重收。
+- **推播電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`，
   並 push 那一個 snapshot 檔。
 - push 到 `main` 有兩個消費者。GitHub Pages 立即重建，而且 `npm test` 不過就不會部署；
-  執行電腦則在下一次 :07 pull 之後直接採用新程式碼，**沒有任何測試把關**。推送前的本機
-  驗證是執行電腦唯一的防線。
-- 動到 dependency 的 push 會在執行電腦上自行安裝：每小時的 pull 若移動了 `package.json` 或
+  推播電腦則在下一次 :07 pull 之後直接採用新程式碼，**沒有任何測試把關**。推送前在開發電腦
+  上的驗證是推播電腦唯一的防線。
+- 動到 dependency 的 push 會在推播電腦上自行安裝：每小時的 pull 若移動了 `package.json` 或
   `package-lock.json`，runner 會先跑 `npm ci` 才收集；否則不跑，所以 npm registry 不會出現在
   每一次收集的路徑上。安裝失敗會中止該次收集、保留前一份 snapshot，並在下一次重試。
 
@@ -80,13 +82,18 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 4. HTTP 200 永遠不等於健康。
 5. 本 repo 不得寫入 `iceland-aurora`、`iceland-aurora-ios`、`iceland-aurora-cloud`。
 6. 排程收集只允許改動 `public/data/latest-health.json` 這一個檔案。
-7. **開發機永遠不得執行 `npm run snapshot`。** 收集與 snapshot 的 push 只由執行機做。開發機
-   只 push 程式；snapshot 過期就 `git pull --ff-only`，不要自己重收。
+7. **開發電腦永遠不得執行 `npm run snapshot`。** 收集與 snapshot 的 push 只由推播電腦做。
+   開發電腦只 push 程式；snapshot 過期就 `git pull --ff-only`，不要自己重收。
 8. 未經使用者明確要求，不得 `git reset`、`git restore`、force push，不得修改 production
    scheduler 或 snapshot schema，不得自行 commit 或 push。
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：兩台電腦的正式名稱是開發電腦與推播電腦
+
+使用者指定：這台以後都叫**開發電腦**；另外那台負責 hourly snapshot 並 push 的叫**推播電腦**。
+職責不變，只改稱呼。舊文件裡的「開發機／執行機／execution machine」讀成這兩個名字。
 
 ## 2026-09-11：極光位置圖地點改顯示當前小時可見度分數
 

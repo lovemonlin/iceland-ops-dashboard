@@ -173,13 +173,13 @@ To work on it:
 
 ```powershell
 npm install
-git pull --ff-only   # take the snapshot the execution machine already published
+git pull --ff-only   # take the snapshot the 推播電腦 already published
 npm run dev          # serve the dashboard from that snapshot
 npm run build        # static export into out/
 ```
 
-**Never run `npm run snapshot` on the development machine.** That command is the scheduled
-collection: it is the only thing that contacts production, and only the execution machine may
+**Never run `npm run snapshot` on the 開發電腦.** That command is the scheduled
+collection: it is the only thing that contacts production, and only the 推播電腦 may
 invoke it (hourly via `scripts\hourly-snapshot.ps1`) and push the resulting
 `public/data/latest-health.json`. There is deliberately no built-in cron. On this machine, a stale
 snapshot is fixed by pulling, not by collecting.
@@ -230,31 +230,32 @@ The scheduled collection is only ever allowed to change one file: `public/data/l
 It must not touch source code, `package.json`, the workflow, configuration or this README. Pushing
 that one file to `main` is what publishes new data: the Pages workflow rebuilds and redeploys.
 
-`npm run snapshot` is not a development command. Only the execution machine runs it. Nothing has
-to run on the development machine for the site to stay up.
+`npm run snapshot` is not a development command. Only the 推播電腦 runs it. Nothing has
+to run on the 開發電腦 for the site to stay up.
 
 ### Which machine runs what
 
 Development and collection happen on two different machines, and only one of them is a production
-clock:
+clock. Canonical names: **開發電腦** (this computer) and **推播電腦** (the computer that publishes
+the hourly snapshot).
 
 | Machine | Role | Scheduled tasks |
 | --- | --- | --- |
-| Development | debug, feature work, `git push` to `main` | **none** (unregistered) |
-| Execution | `git pull --ff-only` hourly at :07, then collect and push the snapshot | enabled |
+| 開發電腦 | debug, feature work, `git push` of **code** to `main` | **none** (unregistered) |
+| 推播電腦 | `git pull --ff-only` hourly at :07, then collect and push the snapshot | enabled |
 
 A push to `main` therefore has two independent consumers. GitHub Pages rebuilds immediately and
 runs `npm test` before building, so a failing test blocks the deploy and the previous site stays
-up. The execution machine simply pulls the new code at the next :07 and collects with it — there
+up. The 推播電腦 simply pulls the new code at the next :07 and collects with it — there
 is **no test gate on that path**, which is why the checks below are run before pushing, not after.
 
 Two consequences worth knowing:
 
-- **Never run `npm run snapshot` on the development machine. No exceptions.** It rewrites
-  `public/data/latest-health.json`, which only the execution machine may collect and push. A stale
+- **Never run `npm run snapshot` on the 開發電腦. No exceptions.** It rewrites
+  `public/data/latest-health.json`, which only the 推播電腦 may collect and push. A stale
   snapshot on this machine is fixed with `git pull --ff-only`, not by collecting. Do not
   re-register the Windows scheduled tasks on this machine.
-- **A push that changes dependencies installs itself on the execution machine.** When the hourly
+- **A push that changes dependencies installs itself on the 推播電腦.** When the hourly
   pull moves `package.json` or `package-lock.json`, the runner runs `npm ci` before collecting;
   otherwise it does not, so the npm registry is not in the path of every hourly collection. A
   failed install stops that run, keeps the previous snapshot, and is retried on the next one.
