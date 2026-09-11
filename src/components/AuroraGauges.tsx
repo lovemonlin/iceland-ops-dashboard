@@ -32,17 +32,20 @@ const RADIUS = DIAMETER * 0.38;
 const CENTRE = DIAMETER / 2;
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
+/** Same digits on the server and in the browser; raw IEEE floats disagree in the last bit. */
+const svgNum = (value: number) => Number(value.toFixed(4));
 const pointOn = (radius: number, degrees: number) => ({
-  x: CENTRE + radius * Math.cos(radians(degrees)),
-  y: CENTRE + radius * Math.sin(radians(degrees)),
+  x: svgNum(CENTRE + radius * Math.cos(radians(degrees))),
+  y: svgNum(CENTRE + radius * Math.sin(radians(degrees))),
 });
 
 /** An SVG arc stroked the way Compose's drawArc strokes one. */
 function arcPath(radius: number, startAngle: number, sweep: number) {
   const from = pointOn(radius, startAngle);
   const to = pointOn(radius, startAngle + sweep);
+  const r = svgNum(radius);
   const largeArc = Math.abs(sweep) > 180 ? 1 : 0;
-  return `M${from.x} ${from.y} A${radius} ${radius} 0 ${largeArc} ${sweep >= 0 ? 1 : 0} ${to.x} ${to.y}`;
+  return `M${from.x} ${from.y} A${r} ${r} 0 ${largeArc} ${sweep >= 0 ? 1 : 0} ${to.x} ${to.y}`;
 }
 
 /**
@@ -131,11 +134,16 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
   const perpendicular = { x: -Math.sin(radians(needleAngle)), y: Math.cos(radians(needleAngle)) };
   const root = 2.7 / 2;
   const tip = 0.7 / 2;
+  const needlePoint = (
+    point: { x: number; y: number },
+    width: number,
+    sign: 1 | -1,
+  ) => `${svgNum(point.x + perpendicular.x * width * sign)} ${svgNum(point.y + perpendicular.y * width * sign)}`;
   const needlePath = [
-    `M${needleTail.x + perpendicular.x * root} ${needleTail.y + perpendicular.y * root}`,
-    `L${needleTip.x + perpendicular.x * tip} ${needleTip.y + perpendicular.y * tip}`,
-    `L${needleTip.x - perpendicular.x * tip} ${needleTip.y - perpendicular.y * tip}`,
-    `L${needleTail.x - perpendicular.x * root} ${needleTail.y - perpendicular.y * root}`,
+    `M${needlePoint(needleTail, root, 1)}`,
+    `L${needlePoint(needleTip, tip, 1)}`,
+    `L${needlePoint(needleTip, tip, -1)}`,
+    `L${needlePoint(needleTail, root, -1)}`,
     "Z",
   ].join(" ");
 
@@ -171,27 +179,27 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
           </defs>
 
           {/* The recessed radar face the dial is sunk into. */}
-          <circle cx={CENTRE} cy={CENTRE} r={RADIUS * 0.84} fill={`url(#${gradientId}-radar)`} />
+          <circle cx={CENTRE} cy={CENTRE} r={svgNum(RADIUS * 0.84)} fill={`url(#${gradientId}-radar)`} />
 
           {/* Three metal rings: dark shell, a highlight pass, then the inner shadow. */}
           <path
             d={arcPath(RADIUS, GAUGE_START_ANGLE, GAUGE_SWEEP_ANGLE)}
             fill="none"
             stroke={GAUGE_COLORS.outerMetalDark}
-            strokeWidth={STROKE * GAUGE_STYLE.outerRingWidth}
+            strokeWidth={svgNum(STROKE * GAUGE_STYLE.outerRingWidth)}
           />
           <path
             d={arcPath(RADIUS, GAUGE_START_ANGLE, GAUGE_SWEEP_ANGLE)}
             fill="none"
             stroke={`url(#${gradientId}-metal)`}
-            strokeWidth={STROKE * GAUGE_STYLE.metalRingWidth}
+            strokeWidth={svgNum(STROKE * GAUGE_STYLE.metalRingWidth)}
           />
           <path
             d={arcPath(RADIUS - STROKE * 0.5, GAUGE_START_ANGLE, GAUGE_SWEEP_ANGLE)}
             fill="none"
             stroke={GAUGE_COLORS.innerMetalShadow}
             strokeOpacity={0.7}
-            strokeWidth={STROKE * GAUGE_STYLE.radarRecessWidth}
+            strokeWidth={svgNum(STROKE * GAUGE_STYLE.radarRecessWidth)}
           />
 
           {/* The data ring as 24 separate LED modules: a dim wide body and a bright core. */}
@@ -208,14 +216,14 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
                   fill="none"
                   stroke={color}
                   strokeOpacity={active ? 0.78 : 0.62}
-                  strokeWidth={STROKE * GAUGE_STYLE.segmentWidth}
+                  strokeWidth={svgNum(STROKE * GAUGE_STYLE.segmentWidth)}
                 />
                 <path
                   d={arcPath(RADIUS, start, sweep)}
                   fill="none"
                   stroke={color}
                   strokeOpacity={active ? 1 : 0.9}
-                  strokeWidth={STROKE * (active ? GAUGE_STYLE.activeSegmentWidth : GAUGE_STYLE.segmentCoreWidth)}
+                  strokeWidth={svgNum(STROKE * (active ? GAUGE_STYLE.activeSegmentWidth : GAUGE_STYLE.segmentCoreWidth))}
                 />
               </g>
             );
@@ -231,7 +239,7 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
                 return { x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y };
               })()}
               stroke={GAUGE_COLORS.boundaryMarker}
-              strokeWidth={STROKE * GAUGE_STYLE.boundaryMarkerWidth}
+              strokeWidth={svgNum(STROKE * GAUGE_STYLE.boundaryMarkerWidth)}
               strokeLinecap="round"
             />
           )}
@@ -253,7 +261,7 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
                 x2={to.x}
                 y2={to.y}
                 stroke={major ? GAUGE_COLORS.majorTick : GAUGE_COLORS.minorTick}
-                strokeWidth={STROKE * (major ? 0.15 : 0.09)}
+                strokeWidth={svgNum(STROKE * (major ? 0.15 : 0.09))}
                 strokeLinecap="round"
               />
             );
@@ -265,11 +273,11 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
               key={scale}
               cx={CENTRE}
               cy={CENTRE}
-              r={RADIUS * scale}
+              r={svgNum(RADIUS * scale)}
               fill="none"
               stroke={GAUGE_COLORS.innerRing}
               strokeOpacity={GAUGE_STYLE.radarGridAlpha / 0.3}
-              strokeWidth={STROKE * GAUGE_STYLE.innerRingWidth}
+              strokeWidth={svgNum(STROKE * GAUGE_STYLE.innerRingWidth)}
             />
           ))}
           {(() => {
@@ -284,13 +292,13 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
             return lines.map(([x1, y1, x2, y2], index) => (
               <line
                 key={index}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
+                x1={svgNum(x1)}
+                y1={svgNum(y1)}
+                x2={svgNum(x2)}
+                y2={svgNum(y2)}
                 stroke={GAUGE_COLORS.crosshair}
                 strokeOpacity={GAUGE_STYLE.crosshairAlpha / 0.32}
-                strokeWidth={STROKE * 0.075}
+                strokeWidth={svgNum(STROKE * 0.075)}
               />
             ));
           })()}

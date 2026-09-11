@@ -243,6 +243,8 @@ test("the panel is drawn with the app's fifth dial, from the snapshot only", () 
   // guarantees the true reading arrives if no animation frame is ever delivered.
   assert.match(component, /prefers-reduced-motion: reduce/);
   assert.match(component, /setTimeout\(\(\) => setDisplayed\(target\), delayMs \+ duration \+ 80\)/);
+  // SVG path floats must serialize identically on the server and in the browser.
+  assert.match(component, /const svgNum = \(value: number\) => Number\(value\.toFixed\(4\)\)/);
 
   const lib = read("src/lib/auroraGauge.ts");
   assert.match(lib, /功率（GW）/);
