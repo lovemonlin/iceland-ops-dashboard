@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { androidPath, hasAndroidFile } from "./androidRepo";
 import {
   bzStatus,
   btStatus,
@@ -20,8 +21,10 @@ import {
 } from "../src/lib/auroraGauge";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const ANDROID_SPECS = "../iceland-aurora/app/src/main/java/com/iceland/aurora/ui/home/AuroraGaugeSpecs.kt";
-const hasAndroid = existsSync(resolve(process.cwd(), ANDROID_SPECS));
+const ANDROID_SPECS = androidPath(
+  "app/src/main/java/com/iceland/aurora/ui/home/AuroraGaugeSpecs.kt",
+);
+const hasAndroid = hasAndroidFile("app/src/main/java/com/iceland/aurora/ui/home/AuroraGaugeSpecs.kt");
 
 test("the dial geometry is the app's 270° arc, open at the bottom", () => {
   assert.equal(GAUGE_START_ANGLE, 135);

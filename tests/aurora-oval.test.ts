@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { androidPath, hasAndroidFile } from "./androidRepo";
 import { WEATHER_SITES } from "../src/config/sources";
 import {
   AURORA_LAYER_ANCHOR,
@@ -38,9 +39,10 @@ import { mergeSource } from "../src/snapshot/mergeSnapshot";
 import { serializeSnapshot } from "../src/snapshot/serializeSnapshot";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const ANDROID = "../iceland-aurora/app/src/main/java/com/iceland/aurora";
-const androidFile = (path: string) => resolve(process.cwd(), `${ANDROID}/${path}`);
-const hasAndroid = existsSync(androidFile("ui/auroraoval/AuroraProbabilityContours.kt"));
+const androidFile = (...parts: string[]) => androidPath("app/src/main/java/com/iceland/aurora", ...parts);
+const hasAndroid = hasAndroidFile(
+  "app/src/main/java/com/iceland/aurora/ui/auroraoval/AuroraProbabilityContours.kt",
+);
 const readAndroid = (path: string) => readFileSync(androidFile(path), "utf8");
 
 const NOW = new Date("2026-09-04T09:00:00Z");

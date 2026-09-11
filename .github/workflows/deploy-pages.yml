@@ -37,6 +37,18 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
+      # Read-only: compare dashboard colours, sites and styles to the Android app.
+      # Requires repository secret ANDROID_REPO_TOKEN (contents:read on lovemonlin/iceland-aurora).
+      # Without it the parity tests skip and this deploy still publishes.
+      - name: Checkout Android app for parity tests
+        if: ${{ secrets.ANDROID_REPO_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: lovemonlin/iceland-aurora
+          path: iceland-aurora
+          token: ${{ secrets.ANDROID_REPO_TOKEN }}
+          persist-credentials: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -45,6 +57,8 @@ jobs:
       - run: npm ci
 
       - run: npm test
+        env:
+          ANDROID_REPO: ${{ github.workspace }}/iceland-aurora
 
       - name: Build static export
         # GitHub Pages serves project sites from /<repository>/, so the site is built with that base path.

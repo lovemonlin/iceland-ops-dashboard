@@ -151,11 +151,25 @@ test("9. the Pages workflow deploys on push and is not a scheduled job", () => {
   assert.match(workflow, /path:\s*\.\/out/);
 });
 
-test("10. no credential or token is referenced anywhere in the tree", () => {
+test("10. Pages may use one read-only token, only to compare against the Android app", () => {
   const workflow = workflowDirectives();
-  // The Pages deploy uses the job's OIDC identity; no personal token is involved.
-  assert.equal(/PERSONAL_ACCESS_TOKEN|secrets\./.test(workflow), false);
-  assert.equal(/Authorization/.test(workflow), false);
+  const snapshot = read(".github/workflows/update-dashboard-snapshot.yml");
+  // Publishing still uses the job's OIDC identity. The Android checkout token is optional:
+  // without it the parity tests skip and the site still deploys.
+  assert.equal(/PERSONAL_ACCESS_TOKEN/.test(workflow), false);
+  const secrets = [...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
+  assert.ok(secrets.length > 0);
+  assert.equal(
+    secrets.every((name) => name === "ANDROID_REPO_TOKEN"),
+    true,
+    "no other secret may appear in the Pages workflow",
+  );
+  assert.match(workflow, /repository: lovemonlin\/iceland-aurora/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.equal(workflow.includes("ANDROID_REPO: ${{ github.workspace }}/iceland-aurora"), true);
+  assert.equal(workflow.includes("if: ${{ secrets.ANDROID_REPO_TOKEN != '' }}"), true);
+  assert.equal(/secrets\./.test(snapshot), false, "the snapshot doorbell must not grow a token");
+  assert.equal(/Authorization/.test(workflow), false);
   assert.equal(existsSync(resolve(process.cwd(), ".env")), false);
 });
 

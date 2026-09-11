@@ -61,6 +61,12 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
   `src/monitors/mockMonitors.ts` 與 `src/config/freshness.ts` 已經刪除，不是停用。
 - Snapshot schema v2，`trigger` 記為 `windows`。
 - 48 小時極光預測與極光快報 v1 都已完成並在線上。
+- IP timezone Worker **已在正式站運作**（不是未部署）。GitHub repository variable
+  `IP_TIMEZONE_ENDPOINT` 指向 `https://iceland-ops-dashboard-timezone.iceland-ops.workers.dev`。
+  2026-09-11 在正式站核對：雲層預報與極光預測都顯示「當地時間」，不是「裝置時間」；
+  Worker 回傳 `Asia/Taipei`，與冰島時間差 8 小時。
+- Android parity 測試本機讀 `../iceland-aurora`；CI 要可選的 `ANDROID_REPO_TOKEN` 才能
+  讀取 private 的 `lovemonlin/iceland-aurora`。沒有這個 secret 時測試 skip，Pages 仍會發布。
 
 ## 不可違反的約束
 
@@ -80,6 +86,15 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-09-11：正式站 Worker 已是當地時間；Android parity 準備進 CI
+
+在正式站核對 Cloudflare IP timezone Worker：已部署、Pages 已注入 endpoint，UI 顯示
+「當地時間」而非「裝置時間」。MET `Expires` 與 ECMWF 期限仍不動（優化，不是 bug）。
+
+Android 顏色／地點／樣式對齊被視為重心。parity 測試改由 `ANDROID_REPO` 指向 checkout；
+Pages workflow 可選讀取 `secrets.ANDROID_REPO_TOKEN` 做 read-only checkout。沒有 token
+時測試 skip、部署不失敗。snapshot doorbell 不加這個 secret。
 
 ## 2026-09-11：天氣取值共用 `hourAt`，預設最多 59 分鐘
 

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { androidPath, hasAndroidFile } from "./androidRepo";
 import {
   ALL_MARKER_IDS,
   buildRoadStyle,
@@ -34,8 +35,12 @@ import {
 } from "../src/lib/roadMap";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const ANDROID_STYLE = "../iceland-aurora/app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoStyleFactory.kt";
-const hasAndroid = existsSync(resolve(process.cwd(), ANDROID_STYLE));
+const ANDROID_STYLE = androidPath(
+  "app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoStyleFactory.kt",
+);
+const hasAndroid = hasAndroidFile(
+  "app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoStyleFactory.kt",
+);
 
 // ── 7. Road status colours ────────────────────────────────────────────────────
 
@@ -134,7 +139,9 @@ test("incident kinds map to the app's marker artwork, with warning as the fallba
 });
 
 test("the marker ids are the app's own constants", { skip: !hasAndroid }, () => {
-  const kotlin = read("../iceland-aurora/app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadMarkerIconFactory.kt");
+  const kotlin = read(
+    androidPath("app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadMarkerIconFactory.kt"),
+  );
   for (const id of ALL_MARKER_IDS) {
     assert.equal(kotlin.includes(`"${id}"`), true, `${id} is not an app marker id`);
   }
@@ -325,12 +332,14 @@ test("both of the app's road screens exist, under the app's own names", () => {
 });
 
 test("the mode names are the app's strings, not a paraphrase", { skip: !hasAndroid }, () => {
-  const strings = read("../iceland-aurora/app/src/main/res/values-zh-rTW/strings.xml");
+  const strings = read(androidPath("app/src/main/res/values-zh-rTW/strings.xml"));
   for (const entry of ROAD_MODES) {
     assert.equal(strings.includes(`>${entry.label}<`), true, `${entry.label} is not an app string`);
   }
   // And the app really does define exactly these two.
-  const screen = read("../iceland-aurora/app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoScreen.kt");
+  const screen = read(
+    androidPath("app/src/main/java/com/iceland/aurora/ui/roadinfo/RoadInfoScreen.kt"),
+  );
   assert.match(screen, /enum class RoadInfoMode \{ EVENTS, STATIONS \}/);
 });
 

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { METNO_FORECAST_URL, WEATHER_SITES } from "../src/config/sources";
+import { androidPath, hasAndroidFile } from "./androidRepo";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
 import {
   clampPan,
@@ -89,13 +90,14 @@ test("the snapshot carries all 32 sites with everything the map needs to draw th
 });
 
 /**
- * The app is the source of truth for this list, so when a checkout of it is beside this repository
- * the two are compared directly. CI has no such checkout, hence the guard rather than a copy of the
- * data that could silently drift.
+ * The app is the source of truth for this list, so when a checkout of it is available
+ * the two are compared directly. Missing checkout skips rather than copying data that could drift.
  */
-const ANDROID_SITES = "../iceland-aurora/app/src/main/java/com/iceland/aurora/data/sites/IcelandAuroraSites.kt";
+const ANDROID_SITES = androidPath(
+  "app/src/main/java/com/iceland/aurora/data/sites/IcelandAuroraSites.kt",
+);
 
-test("the site list still matches the app, one for one", { skip: !existsSync(resolve(process.cwd(), ANDROID_SITES)) }, () => {
+test("the site list still matches the app, one for one", { skip: !hasAndroidFile("app/src/main/java/com/iceland/aurora/data/sites/IcelandAuroraSites.kt") }, () => {
   const kotlin = read(ANDROID_SITES);
   const ids = [...kotlin.matchAll(/id = "([^"]+)"/g)].map((match) => match[1]);
   assert.equal(ids.length, 32);
