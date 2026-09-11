@@ -40,9 +40,9 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
                             └──▶ Pages 重新部署（npm ci → npm test → build）
 ```
 
-- **開發機（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機也註冊了三個
-  Windows 排程工作，但**全部是 Disabled**，必須維持停用；`logs/hourly-snapshot.log` 最後一筆
-  是 2026-09-06 02:07 +08:00。
+- **開發機（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機曾註冊過三個
+  Windows 排程工作，已於 2026-09-11 **解除註冊**，不要再 `Register-ScheduledTask`。
+  `logs/hourly-snapshot.log` 最後一筆是 2026-09-06 02:07 +08:00，只是歷史殘渣。
 - **永遠不要在開發機執行 `npm run snapshot`。** 沒有例外。那條指令會改寫
   `public/data/latest-health.json`。收集與把 snapshot **push 回 GitHub** 只屬於執行機。
   開發機上的 snapshot 過期時，用 `git pull --ff-only` 取回執行機已發布的那份，不要自己重收。
@@ -98,7 +98,7 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 - 執行機：每小時 pull 後跑 `npm run snapshot`，並且是**唯一**把
   `public/data/latest-health.json` push 回 GitHub 的機器。
 - 開發機上的 snapshot 以 GitHub 上執行機已發布的那份為準。過期就 pull，不要重收。
-- 本機那三個 Windows 排程工作維持 Disabled，不得啟用。
+- 本機那三個 Windows 排程工作已解除註冊，不得再註冊。
 
 寫進 `AGENTS.md` 與本檔「不可違反的約束」，避免下一個 agent 為了 debug 或「更新畫面」
 而在這台跑收集。
