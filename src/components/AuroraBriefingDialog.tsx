@@ -49,6 +49,8 @@ export function AuroraBriefingDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const resizeDrag = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
+  const dismissPointer = useRef<{ x: number; y: number } | null>(null);
+  const skipBackdropClose = useRef(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [hourOverride, setHourOverride] = useState<number | null>(null);
   const [dialogHeight, setDialogHeight] = useState<number>();
@@ -88,7 +90,9 @@ export function AuroraBriefingDialog({
       applyHeight(drag.startHeight + event.clientY - drag.startY);
     };
     const end = (event: PointerEvent) => {
-      if (resizeDrag.current?.pointerId === event.pointerId) resizeDrag.current = null;
+      if (resizeDrag.current?.pointerId !== event.pointerId) return;
+      resizeDrag.current = null;
+      skipBackdropClose.current = true;
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", end);
@@ -110,9 +114,12 @@ export function AuroraBriefingDialog({
     if (!dialog) return;
     const box = dialog.getBoundingClientRect();
     resizeDrag.current = { pointerId: event.pointerId, startY: event.clientY, startHeight: box.height };
+    skipBackdropClose.current = true;
+    dismissPointer.current = null;
     dialog.style.marginTop = `${box.top}px`;
     dialog.style.marginBottom = "auto";
     event.preventDefault();
+    event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
   };
   const copy = async () => {
@@ -147,8 +154,23 @@ export function AuroraBriefingDialog({
         event.preventDefault();
         close();
       }}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) {
+          dismissPointer.current = { x: event.clientX, y: event.clientY };
+        } else {
+          dismissPointer.current = null;
+        }
+      }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) close();
+        const start = dismissPointer.current;
+        dismissPointer.current = null;
+        if (skipBackdropClose.current) {
+          skipBackdropClose.current = false;
+          return;
+        }
+        if (!start || event.target !== event.currentTarget) return;
+        if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 5) return;
+        close();
       }}
     >
       <header className="aurora-briefing-head">
@@ -486,6 +508,7 @@ export function AuroraBriefingDialog({
         className="aurora-briefing-resize"
         aria-label="拖曳以調整快報視窗高度"
         onPointerDown={beginResize}
+        onClick={(event) => event.stopPropagation()}
       />
 
     </dialog>

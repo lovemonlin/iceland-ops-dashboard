@@ -95,9 +95,10 @@ test("the briefing dialog can be resized vertically with a mouse drag handle", (
   assert.match(dialog, /拖曳以調整快報視窗高度/);
   assert.match(dialog, /onPointerDown=\{beginResize\}/);
   assert.match(dialog, /window\.addEventListener\("pointermove"/);
+  assert.match(dialog, /skipBackdropClose/);
   assert.match(css, /cursor: ns-resize/);
-  assert.match(css, /resize: vertical/);
   assert.match(css, /height: min\(88dvh, 860px\)/);
+  assert.doesNotMatch(css, /resize:\s*vertical/);
 });
 
 test("the briefing score map is schematic, slider-driven, and never loads a cloud overlay", () => {
