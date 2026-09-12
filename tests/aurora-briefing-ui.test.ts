@@ -85,6 +85,19 @@ test("the briefing switches from nine-column tables to hour cards on small scree
   assert.match(css, /\.aurora-briefing-wide \{ display: none; \}/);
   assert.match(css, /ol\.aurora-briefing-narrow,\s*ul\.aurora-briefing-narrow \{ display: grid; \}/);
   assert.match(css, /height: 100dvh/);
+  assert.match(css, /\.aurora-briefing-resize \{ display: none; \}/);
+});
+
+test("the briefing dialog can be resized vertically with a mouse drag handle", () => {
+  const dialog = read("src/components/AuroraBriefingDialog.tsx");
+  const css = read("src/app/globals.css");
+  assert.match(dialog, /className="aurora-briefing-resize"/);
+  assert.match(dialog, /拖曳以調整快報視窗高度/);
+  assert.match(dialog, /onPointerDown=\{beginResize\}/);
+  assert.match(dialog, /window\.addEventListener\("pointermove"/);
+  assert.match(css, /cursor: ns-resize/);
+  assert.match(css, /resize: vertical/);
+  assert.match(css, /height: min\(88dvh, 860px\)/);
 });
 
 test("the briefing score map is schematic, slider-driven, and never loads a cloud overlay", () => {

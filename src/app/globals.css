@@ -780,9 +780,13 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 /* ── Aurora briefing ────────────────────────────────────────────────────── */
 .aurora-briefing-dialog {
   width: min(1180px, calc(100% - 32px));
+  height: min(88dvh, 860px);
+  min-height: 280px;
   max-height: min(96dvh, 960px);
   margin: auto;
   padding: 0;
+  overflow: hidden;
+  resize: vertical;
   border: 1px solid #49617c;
   border-radius: 14px;
   background: var(--panel);
@@ -838,10 +842,34 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 }
 .aurora-briefing-head-actions button:last-child:hover { color: var(--text); }
 .aurora-briefing-body {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 8px 18px 10px;
+}
+.aurora-briefing-resize {
+  flex: none;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 14px 14px;
+  background: #152033;
+  color: inherit;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+.aurora-briefing-resize::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 4px;
+  margin: 5px auto 0;
+  border-radius: 99px;
+  background: #64748b;
 }
 .aurora-briefing-body section { margin-top: 10px; }
 .aurora-briefing-body h3 { margin: 0 0 5px; font-size: 14px; color: #F8FAFC; }
@@ -1109,7 +1137,9 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
     border: 0;
     border-radius: 0;
     overflow-x: hidden;
+    resize: none;
   }
+  .aurora-briefing-resize { display: none; }
   .aurora-briefing-head,
   .aurora-briefing-body { padding-left: 13px; padding-right: 13px; }
   .aurora-briefing-head { flex-wrap: wrap; }

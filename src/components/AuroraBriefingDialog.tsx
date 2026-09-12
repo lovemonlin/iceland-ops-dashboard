@@ -48,8 +48,10 @@ export function AuroraBriefingDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const resizeDrag = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [hourOverride, setHourOverride] = useState<number | null>(null);
+  const [dialogHeight, setDialogHeight] = useState<number>();
   const briefing = useMemo(() => buildAuroraBriefing(snapshot, now), [snapshot, now]);
   const bestHourIndex = useMemo(() => {
     if (!briefing) return 0;
@@ -67,9 +69,51 @@ export function AuroraBriefingDialog({
     };
   }, []);
 
+  useEffect(() => {
+    const clampHeight = (height: number) => {
+      const minHeight = 280;
+      const maxHeight = Math.round(window.innerHeight * 0.96);
+      return Math.min(maxHeight, Math.max(minHeight, Math.round(height)));
+    };
+    const applyHeight = (height: number) => {
+      const dialog = dialogRef.current;
+      const next = clampHeight(height);
+      dialog?.style.setProperty("height", `${next}px`, "important");
+      dialog?.style.setProperty("max-height", `${Math.round(window.innerHeight * 0.96)}px`, "important");
+      setDialogHeight(next);
+    };
+    const move = (event: PointerEvent) => {
+      const drag = resizeDrag.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      applyHeight(drag.startHeight + event.clientY - drag.startY);
+    };
+    const end = (event: PointerEvent) => {
+      if (resizeDrag.current?.pointerId === event.pointerId) resizeDrag.current = null;
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+  }, []);
+
   const close = () => {
     dialogRef.current?.close();
     onClose();
+  };
+
+  const beginResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const box = dialog.getBoundingClientRect();
+    resizeDrag.current = { pointerId: event.pointerId, startY: event.clientY, startHeight: box.height };
+    dialog.style.marginTop = `${box.top}px`;
+    dialog.style.marginBottom = "auto";
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
   const copy = async () => {
     if (!briefing) return;
@@ -92,6 +136,11 @@ export function AuroraBriefingDialog({
     <dialog
       ref={dialogRef}
       className="aurora-briefing-dialog"
+      style={
+        dialogHeight === undefined
+          ? undefined
+          : { height: dialogHeight, maxHeight: "96dvh" }
+      }
       aria-labelledby="aurora-briefing-title"
       aria-describedby="aurora-briefing-description"
       onCancel={(event) => {
@@ -432,6 +481,12 @@ export function AuroraBriefingDialog({
           </dl>
         </section>
       </div>
+      <button
+        type="button"
+        className="aurora-briefing-resize"
+        aria-label="拖曳以調整快報視窗高度"
+        onPointerDown={beginResize}
+      />
 
     </dialog>
   );
