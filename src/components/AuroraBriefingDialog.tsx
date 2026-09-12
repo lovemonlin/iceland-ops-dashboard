@@ -48,12 +48,17 @@ export function AuroraBriefingDialog({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const resizeDrag = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
+  const dragRef = useRef<
+    | { type: "resize"; pointerId: number; startY: number; startHeight: number }
+    | { type: "move"; pointerId: number; startX: number; startY: number; startLeft: number; startTop: number }
+    | null
+  >(null);
   const dismissPointer = useRef<{ x: number; y: number } | null>(null);
   const skipBackdropClose = useRef(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [hourOverride, setHourOverride] = useState<number | null>(null);
   const [dialogHeight, setDialogHeight] = useState<number>();
+  const [dialogPlace, setDialogPlace] = useState<{ left: number; top: number }>();
   const briefing = useMemo(() => buildAuroraBriefing(snapshot, now), [snapshot, now]);
   const bestHourIndex = useMemo(() => {
     if (!briefing) return 0;
@@ -72,6 +77,7 @@ export function AuroraBriefingDialog({
   }, []);
 
   useEffect(() => {
+    const compact = () => window.matchMedia("(max-width: 720px)").matches;
     const clampHeight = (height: number) => {
       const minHeight = 280;
       const maxHeight = Math.round(window.innerHeight * 0.96);
@@ -84,14 +90,35 @@ export function AuroraBriefingDialog({
       dialog?.style.setProperty("max-height", `${Math.round(window.innerHeight * 0.96)}px`, "important");
       setDialogHeight(next);
     };
+    const applyPlace = (left: number, top: number, width: number) => {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const nextLeft = Math.min(window.innerWidth - 80, Math.max(80 - width, Math.round(left)));
+      const nextTop = Math.min(window.innerHeight - 48, Math.max(0, Math.round(top)));
+      dialog.style.position = "fixed";
+      dialog.style.margin = "0";
+      dialog.style.left = `${nextLeft}px`;
+      dialog.style.top = `${nextTop}px`;
+      setDialogPlace({ left: nextLeft, top: nextTop });
+    };
     const move = (event: PointerEvent) => {
-      const drag = resizeDrag.current;
-      if (!drag || drag.pointerId !== event.pointerId) return;
-      applyHeight(drag.startHeight + event.clientY - drag.startY);
+      const drag = dragRef.current;
+      const dialog = dialogRef.current;
+      if (!drag || drag.pointerId !== event.pointerId || !dialog || compact()) return;
+      if (drag.type === "resize") {
+        applyHeight(drag.startHeight + event.clientY - drag.startY);
+        return;
+      }
+      const box = dialog.getBoundingClientRect();
+      applyPlace(
+        drag.startLeft + event.clientX - drag.startX,
+        drag.startTop + event.clientY - drag.startY,
+        box.width,
+      );
     };
     const end = (event: PointerEvent) => {
-      if (resizeDrag.current?.pointerId !== event.pointerId) return;
-      resizeDrag.current = null;
+      if (dragRef.current?.pointerId !== event.pointerId) return;
+      dragRef.current = null;
       skipBackdropClose.current = true;
     };
     window.addEventListener("pointermove", move);
@@ -109,15 +136,44 @@ export function AuroraBriefingDialog({
     onClose();
   };
 
+  const pinDialog = (dialog: HTMLDialogElement, box: DOMRect) => {
+    dialog.style.position = "fixed";
+    dialog.style.margin = "0";
+    dialog.style.left = `${box.left}px`;
+    dialog.style.top = `${box.top}px`;
+    setDialogPlace({ left: box.left, top: box.top });
+  };
+
+  const beginMove = (event: React.PointerEvent<HTMLElement>) => {
+    if (window.matchMedia("(max-width: 720px)").matches) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if ((event.target as Element).closest("button, a, input")) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const box = dialog.getBoundingClientRect();
+    pinDialog(dialog, box);
+    dragRef.current = {
+      type: "move",
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: box.left,
+      startTop: box.top,
+    };
+    skipBackdropClose.current = true;
+    dismissPointer.current = null;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
   const beginResize = (event: React.PointerEvent<HTMLButtonElement>) => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     const box = dialog.getBoundingClientRect();
-    resizeDrag.current = { pointerId: event.pointerId, startY: event.clientY, startHeight: box.height };
+    pinDialog(dialog, box);
+    dragRef.current = { type: "resize", pointerId: event.pointerId, startY: event.clientY, startHeight: box.height };
     skipBackdropClose.current = true;
     dismissPointer.current = null;
-    dialog.style.marginTop = `${box.top}px`;
-    dialog.style.marginBottom = "auto";
     event.preventDefault();
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -143,11 +199,12 @@ export function AuroraBriefingDialog({
     <dialog
       ref={dialogRef}
       className="aurora-briefing-dialog"
-      style={
-        dialogHeight === undefined
-          ? undefined
-          : { height: dialogHeight, maxHeight: "96dvh" }
-      }
+      style={{
+        ...(dialogHeight === undefined ? {} : { height: dialogHeight, maxHeight: "96dvh" }),
+        ...(dialogPlace
+          ? { position: "fixed", margin: 0, left: dialogPlace.left, top: dialogPlace.top }
+          : {}),
+      }}
       aria-labelledby="aurora-briefing-title"
       aria-describedby="aurora-briefing-description"
       onCancel={(event) => {
@@ -173,7 +230,7 @@ export function AuroraBriefingDialog({
         close();
       }}
     >
-      <header className="aurora-briefing-head">
+      <header className="aurora-briefing-head" onPointerDown={beginMove}>
         <div>
           <h2 id="aurora-briefing-title">🌌 冰島極光快報</h2>
           <p id="aurora-briefing-description">

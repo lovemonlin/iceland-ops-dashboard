@@ -800,7 +800,13 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   gap: 14px;
   padding: 11px 18px;
   border-bottom: 1px solid var(--line);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
+.aurora-briefing-head:active { cursor: grabbing; }
+.aurora-briefing-head-actions { cursor: default; }
+.aurora-briefing-head-actions button { cursor: pointer; }
 .aurora-briefing-head h2 { margin: 0; font-size: 21px; }
 .aurora-briefing-head p,
 .aurora-briefing-note,
@@ -1140,7 +1146,7 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   .aurora-briefing-resize { display: none; }
   .aurora-briefing-head,
   .aurora-briefing-body { padding-left: 13px; padding-right: 13px; }
-  .aurora-briefing-head { flex-wrap: wrap; }
+  .aurora-briefing-head { flex-wrap: wrap; cursor: default; touch-action: auto; }
   .aurora-briefing-head h2 { font-size: 18px; }
   .aurora-briefing-best dl,
   .aurora-briefing-space dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
