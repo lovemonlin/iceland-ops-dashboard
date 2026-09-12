@@ -187,7 +187,7 @@ test("the Iceland probability is read at the app's own coordinate", () => {
   const grid = gridOf([[341, 65, 37]]);
   assert.equal(icelandProbability(grid), 37);
   assert.equal(icelandProbability(undefined), undefined);
-  assert.equal(formatIcelandProbability(37), "冰島模型機率：37%");
+  assert.equal(formatIcelandProbability(37), "OVATION 極光活動機率：37%");
   assert.equal(formatOvalTimes("09/04 08:55", "09/04 09:25"), "觀測 09/04 08:55 · 預測 09/04 09:25");
 });
 

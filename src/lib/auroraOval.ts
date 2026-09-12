@@ -449,9 +449,9 @@ export function formatOvalTimes(observation: string, forecast: string): string {
   return `觀測 ${observation} · 預測 ${forecast}`;
 }
 
-/** `aurora_position_iceland_probability`: 冰島模型機率：%1$d%% */
+/** Overlay copy for the Iceland OVATION lookup — activity probability, not seeing odds. */
 export function formatIcelandProbability(probability: number): string {
-  return `冰島模型機率：${probability}%`;
+  return `OVATION 極光活動機率：${probability}%`;
 }
 
 /**

@@ -55,14 +55,14 @@ test("each dial carries the app's range and zone thresholds", () => {
     { upTo: 9, color: "#FB923C" },
   ]);
 
-  // Bz runs negative to positive and the warm end is the favourable one — the reverse of the rest.
+  // Bz: more negative (southward) is favourable, so the cool green end is the left.
   assert.deepEqual(spec("bz").range, { start: -20, end: 20 });
   assert.deepEqual(spec("bz").zones, [
-    { upTo: -10, color: "#F97316" },
-    { upTo: -5, color: "#FB923C" },
+    { upTo: -10, color: "#2DD4BF" },
+    { upTo: -5, color: "#4ADE80" },
     { upTo: 0, color: "#FDE047" },
-    { upTo: 5, color: "#4ADE80" },
-    { upTo: 20, color: "#2DD4BF" },
+    { upTo: 5, color: "#FB923C" },
+    { upTo: 20, color: "#F97316" },
   ]);
   assert.equal(spec("bz").emphasizedBoundary, 0, "only Bz marks its zero crossing");
   assert.equal(spec("kp").emphasizedBoundary, undefined);
@@ -87,6 +87,13 @@ test("zone colours are picked by the app's own rule", () => {
   assert.equal(zoneColorFor(kp, 9), "#FB923C");
   // Past the last bound it stays on the last colour rather than falling back to grey.
   assert.equal(zoneColorFor(kp, 99), "#FB923C");
+
+  const bz = GAUGE_SPECS.find((spec) => spec.key === "bz")!.zones;
+  assert.equal(zoneColorFor(bz, -12), "#2DD4BF");
+  assert.equal(zoneColorFor(bz, -6), "#4ADE80");
+  assert.equal(zoneColorFor(bz, -1), "#FDE047");
+  assert.equal(zoneColorFor(bz, 2), "#FB923C");
+  assert.equal(zoneColorFor(bz, 10), "#F97316");
 
   const power = GAUGE_SPECS.find((spec) => spec.key === "power")!.zones;
   assert.equal(zoneColorFor(power, 0), "#4ADE80");
@@ -250,4 +257,23 @@ test("the panel is drawn with the app's fifth dial, from the snapshot only", () 
   assert.match(lib, /功率（GW）/);
   assert.match(lib, /noaaHemiPower/);
   assert.match(lib, /northGw/);
+  assert.match(component, /spec\.format\(value\)/);
+  assert.equal(/spec\.format\(animated\)/.test(component), false);
+});
+
+test("the gauges and the aurora stats quote the same snapshot fields", () => {
+  const lib = read("src/lib/auroraGauge.ts");
+  const sections = read("src/components/SourceSections.tsx");
+  assert.match(lib, /kp: number\(kpData\.kp\)/);
+  assert.match(lib, /bz: number\(windData\.bzNt\)/);
+  assert.match(lib, /bt: number\(windData\.btNt\)/);
+  assert.match(lib, /speed: number\(windData\.speedKms\)/);
+  assert.match(lib, /power: number\(hemiData\.northGw\)/);
+  assert.match(sections, /formatNumber\(kpData\.kp\)/);
+  assert.match(sections, /formatNumber\(windData\.speedKms, "km\/s"\)/);
+  assert.match(sections, /formatNumber\(windData\.btNt, "nT"\)/);
+  assert.match(sections, /formatSigned\(windData\.bzNt, "nT"\)/);
+  assert.match(sections, /formatNumber\(hemiData\.northGw, "GW"\)/);
+  assert.match(sections, /冰島區域 OVATION 峰值/);
+  assert.equal(/冰島上空機率|看到極光機率|頭頂看到機率/.test(sections), false);
 });

@@ -298,7 +298,7 @@ export function AuroraSection({
             <Stat label="Bt" value={formatNumber(windData.btNt, "nT")} />
             <Stat label="Bz" value={formatSigned(windData.bzNt, "nT")} />
             <Stat label="北半球功率" value={formatNumber(hemiData.northGw, "GW")} />
-            <Stat label="冰島上空機率" value={formatPercent(ovationData.icelandPeakProbabilityPercent)} />
+            <Stat label="冰島區域 OVATION 峰值" value={formatPercent(ovationData.icelandPeakProbabilityPercent)} />
           </div>
           <p className="muted-line">資料更新：約 {formatRelativeAge(oldest)}</p>
           <details className="technical">

@@ -262,7 +262,9 @@ export function AuroraOvalMap({
         {grid ? (
           <>
             <p className="aurora-oval-times">{formatOvalTimes(observation, forecast)}</p>
-            <p className="aurora-oval-probability">{formatIcelandProbability(probability ?? 0)}</p>
+            <p className="aurora-oval-probability">
+              {probability === undefined ? "—" : formatIcelandProbability(probability)}
+            </p>
           </>
         ) : (
           <p className="aurora-oval-times">{OVAL_LOADING}</p>
@@ -294,7 +296,7 @@ export function AuroraOvalMap({
             綜合可見度 {selected.score} 分（{selected.levelLabel}）
           </p>
           <p className="aurora-oval-note">
-            OVATION 模型機率 {grid ? grid.probabilityAt(selected.lat, selected.lon) : 0}%
+            OVATION 極光活動機率 {grid ? `${grid.probabilityAt(selected.lat, selected.lon)}%` : "—"}
             （{selected.lat.toFixed(3)}, {selected.lon.toFixed(3)}）
           </p>
           <button type="button" onClick={() => setSelected(null)}>

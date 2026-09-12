@@ -53,7 +53,7 @@ function arcPath(radius: number, startAngle: number, sweep: number) {
  * 850 ms on first appearance, 600 ms afterwards (AuroraGaugeStyle.animationDuration).
  */
 function useAnimatedValue(target: number | undefined, start: number, delayMs: number) {
-  const [displayed, setDisplayed] = useState(start);
+  const [displayed, setDisplayed] = useState(target ?? start);
   const played = useRef(false);
   const frame = useRef(0);
   const timer = useRef(0);
@@ -82,7 +82,7 @@ function useAnimatedValue(target: number | undefined, start: number, delayMs: nu
       return stop;
     }
 
-    const from = played.current ? displayed : start;
+    const from = displayed;
     const first = !played.current;
     const duration = first ? 850 : 600;
     const begin = performance.now() + (first ? delayMs : 0);
@@ -368,7 +368,7 @@ function Dial({ reading, delayMs }: { reading: GaugeReading; delayMs: number }) 
 
         {/* The glass readout sits at the bottom of the face, as it does in the app. */}
         <div className="gauge-readout">
-          <strong>{hasValue ? spec.format(animated) : spec.format(undefined)}</strong>
+          <strong>{spec.format(value)}</strong>
           <span>{spec.label}</span>
         </div>
       </div>

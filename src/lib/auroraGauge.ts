@@ -117,14 +117,14 @@ const kpGaugeZones: GaugeZone[] = [
   { upTo: 9, color: POOR },
 ];
 
-/** Bz runs negative to positive; more negative is more favourable, so the warm end is the left. */
+/** Bz: southward / negative couples better, so the cool green end is the left. */
 const bzRange = { start: -20, end: 20 };
 const bzZones: GaugeZone[] = [
-  { upTo: -10, color: DEEP_ORANGE },
-  { upTo: -5, color: ORANGE },
+  { upTo: -10, color: COOL_GREEN },
+  { upTo: -5, color: GREEN },
   { upTo: 0, color: YELLOW },
-  { upTo: 5, color: GREEN },
-  { upTo: 20, color: COOL_GREEN },
+  { upTo: 5, color: ORANGE },
+  { upTo: 20, color: DEEP_ORANGE },
 ];
 
 const btRange = { start: 0, end: 20 };
