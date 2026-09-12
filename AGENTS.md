@@ -18,6 +18,10 @@ Canonical names from 2026-09-11. Do not say "execution machine" or 「執行機�
 - **Do not re-register** Windows scheduled tasks on the 開發電腦. Collection belongs on the 推播電腦 only.
 - If a snapshot on the 開發電腦 looks stale, `git pull --ff-only`. Do not regenerate it.
 
+## Ship code immediately
+
+禎禎：功能改完（含該做的驗證）後**立刻 `commit` 並 `push`**，不必再問。有錯再從頭修。不要停在「還沒 commit」。不要跑 `npm run snapshot`。
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
