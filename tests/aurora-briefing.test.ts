@@ -6,6 +6,7 @@ import { encodeSiteForecast } from "../src/lib/forecastCodec";
 import {
   BRIEFING_CLOUD_REGIONS,
   briefingCloudRegion,
+  briefingMapRegion,
   briefingSummary,
   buildAuroraBriefing,
   formatBriefingDate,
@@ -13,6 +14,10 @@ import {
   formatBriefingKp,
   getIcelandTonightWindow,
 } from "../src/lib/auroraBriefing";
+import {
+  BRIEFING_MAP_REGIONS,
+  BRIEFING_MAP_SHAPES,
+} from "../src/lib/briefingIcelandMap";
 import {
   auroraForecastSites,
   briefingBestSiteLabel,
@@ -177,6 +182,28 @@ test("the cloud matrix remaps the 32 snapshot sites onto the travel-circuit rows
   for (const site of sites) {
     assert.equal(BRIEFING_CLOUD_REGIONS.includes(briefingCloudRegion(site)), true, site.id);
   }
+});
+
+test("the score map merges 首都圈 into 西南部 and keeps seven travel blobs", () => {
+  const model = buildAuroraBriefing(fixture(), new Date("2026-09-10T01:00:00Z"))!;
+  assert.deepEqual(model.mapRegions.map((region) => region.region), [...BRIEFING_MAP_REGIONS]);
+  assert.equal(briefingMapRegion({ id: "reykjavik", region: "CAPITAL" }), "SOUTHWEST");
+  assert.equal(briefingMapRegion({ id: "vik", region: "SOUTH" }), "SOUTHWEST");
+  const southwest = model.mapRegions.find((region) => region.region === "SOUTHWEST")!;
+  const northeast = model.mapRegions.find((region) => region.region === "NORTHEAST")!;
+  const westfjords = model.mapRegions.find((region) => region.region === "WESTFJORDS")!;
+  assert.equal(southwest.scores.length, 9);
+  assert.equal(southwest.scores.every((score) => score !== undefined), true);
+  assert.equal(northeast.scores.every((score) => score !== undefined), true);
+  assert.equal(westfjords.scores.every((score) => score === undefined), true);
+  assert.equal(BRIEFING_MAP_SHAPES.length, 7);
+
+  const snapshot = JSON.parse(
+    readFileSync(resolve(process.cwd(), "public/data/latest-health.json"), "utf8"),
+  ) as DashboardSnapshot;
+  const live = buildAuroraBriefing(snapshot, new Date("2026-09-10T01:00:00Z"))!;
+  const liveSouthwest = live.mapRegions.find((region) => region.region === "SOUTHWEST")!;
+  assert.equal(liveSouthwest.scores.every((score) => typeof score === "number"), true);
 });
 
 test("the published 32 sites remain the briefing''s sole site source", () => {

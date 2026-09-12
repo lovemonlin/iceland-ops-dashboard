@@ -86,3 +86,19 @@ test("the briefing switches from nine-column tables to hour cards on small scree
   assert.match(css, /ol\.aurora-briefing-narrow,\s*ul\.aurora-briefing-narrow \{ display: grid; \}/);
   assert.match(css, /height: 100dvh/);
 });
+
+test("the briefing score map is schematic, slider-driven, and never loads a cloud overlay", () => {
+  const dialog = read("src/components/AuroraBriefingDialog.tsx");
+  const map = read("src/components/AuroraBriefingMap.tsx");
+  const css = read("src/app/globals.css");
+  assert.match(dialog, /今晚各區極光分數/);
+  assert.match(dialog, /<AuroraBriefingMap/);
+  assert.match(dialog, /type="range"/);
+  assert.match(dialog, /is-hour-selected/);
+  assert.match(dialog, /西南部含首都圈/);
+  assert.match(map, /clipPath="url\(#aurora-briefing-land\)"/);
+  assert.match(map, /levelOf\(score\)/);
+  assert.equal(/ecmwf|cloud-forecast|fetch\s*\(/i.test(map), false);
+  assert.equal(/ecmwf|cloud-forecast/i.test(dialog), false);
+  assert.match(css, /\.aurora-briefing-slider input\[type="range"\]/);
+});

@@ -862,6 +862,78 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 }
 .aurora-briefing-judgement h3 { margin-bottom: 3px; }
 .aurora-briefing-judgement p { margin: 0; color: #E2E8F0; font-size: 13px; line-height: 1.5; }
+.aurora-briefing-map-panel {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.aurora-briefing-map-panel > p {
+  margin: 4px 0 8px;
+  color: #CBD5E1;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.aurora-briefing-map {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #141B2D;
+}
+.aurora-briefing-map svg {
+  display: block;
+  width: 100%;
+  height: min(38vh, 300px);
+}
+.aurora-briefing-slider {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.aurora-briefing-slider-label { color: var(--muted); font-size: 11px; }
+.aurora-briefing-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--info);
+}
+.aurora-briefing-slider-hours {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 4px;
+}
+.aurora-briefing-slider-hours button {
+  border: 1px solid #49617c;
+  border-radius: 7px;
+  padding: 6px 0;
+  background: #1b2a3b;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.aurora-briefing-slider-hours button.is-hour-selected,
+.aurora-briefing-row > .is-hour-selected,
+.aurora-briefing-cloud.is-hour-selected,
+.aurora-briefing-hour-card.is-hour-selected {
+  outline: 2px solid #38BDF8;
+  outline-offset: -1px;
+}
+.aurora-briefing-slider-hours button.is-hour-selected {
+  background: rgba(56, 189, 248, 0.18);
+  outline-offset: 0;
+}
+.aurora-briefing-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.aurora-briefing-map-legend span { display: flex; align-items: center; gap: 5px; }
+.aurora-briefing-map-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
 .aurora-briefing-best dl,
 .aurora-briefing-space dl {
   display: grid;

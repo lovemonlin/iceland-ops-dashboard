@@ -10,6 +10,11 @@ import {
   levelOf,
   type AuroraAssessment,
 } from "@/lib/auroraVisibility";
+import {
+  BRIEFING_MAP_REGION_LABEL,
+  BRIEFING_MAP_REGIONS,
+  type BriefingMapRegionId,
+} from "@/lib/briefingIcelandMap";
 import { effectiveObstruction, hourAt, type WeatherHour } from "@/lib/weatherMap";
 import {
   isNoaaKpForecastData,
@@ -106,11 +111,25 @@ export function briefingCloudRegion(
   return BRIEFING_CLOUD_REGION_BY_SITE[site.id] ?? BRIEFING_CLOUD_REGION_FALLBACK[site.region];
 }
 
+/** Map blobs merge 首都圈 into 西南部; the cloud table still lists them separately. */
+export function briefingMapRegion(
+  site: Pick<AuroraForecastDisplaySite, "id" | "region">,
+): BriefingMapRegionId {
+  const region = briefingCloudRegion(site);
+  return region === "CAPITAL" ? "SOUTHWEST" : region;
+}
+
 export interface BriefingRegion {
   region: BriefingCloudRegion;
   label: string;
   obstructions: (number | undefined)[];
   average?: number;
+}
+
+export interface BriefingMapRegion {
+  region: BriefingMapRegionId;
+  label: string;
+  scores: (number | undefined)[];
 }
 
 export interface AuroraBriefing {
@@ -120,6 +139,7 @@ export interface AuroraBriefing {
   highestKp: number;
   lowestKp: number;
   regions: BriefingRegion[];
+  mapRegions: BriefingMapRegion[];
   bestCloudRegions: BriefingRegion[];
   judgement: string;
   current: {
@@ -271,7 +291,10 @@ export function buildAuroraBriefing(
   const weather = weatherBySite(snapshot);
   const points = kpPoints(snapshot);
   const fallbackKp = finite(snapshot.sources.noaaKp?.data?.kp) ?? 0;
-  const hours = window.hours.map((time) => {
+  const mapBuckets: Record<BriefingMapRegionId, number[][]> = Object.fromEntries(
+    BRIEFING_MAP_REGIONS.map((region) => [region, window.hours.map(() => [] as number[])]),
+  ) as Record<BriefingMapRegionId, number[][]>;
+  const hours = window.hours.map((time, index) => {
     const kp = kpAt(points, time, fallbackKp);
     const candidates = sites.map((site) => ({
       ...assessAuroraVisibility({
@@ -282,6 +305,9 @@ export function buildAuroraBriefing(
       }),
       site,
     }));
+    for (const candidate of candidates) {
+      mapBuckets[briefingMapRegion(candidate.site)][index].push(candidate.score);
+    }
     const best = candidates.reduce((winner, candidate) =>
       candidate.score > winner.score ? candidate : winner,
     );
@@ -291,6 +317,15 @@ export function buildAuroraBriefing(
     point.best.score > winner.best.score ? point : winner,
   ).best;
   const regions = regionRows(sites, weather, window.hours);
+  const mapRegions = BRIEFING_MAP_REGIONS.map((region) => ({
+    region,
+    label: BRIEFING_MAP_REGION_LABEL[region],
+    scores: mapBuckets[region].map((values) =>
+      values.length
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : undefined,
+    ),
+  }));
   const bestCloudRegions = regions
     .filter((region) => region.average !== undefined)
     .sort((a, b) => a.average! - b.average!)
@@ -306,6 +341,7 @@ export function buildAuroraBriefing(
     highestKp: Math.max(...hours.map((hour) => hour.kp)),
     lowestKp: Math.min(...hours.map((hour) => hour.kp)),
     regions,
+    mapRegions,
     bestCloudRegions,
     judgement: judgementText(best, bestHour, lowestKp, highestKp, regions),
     current: {

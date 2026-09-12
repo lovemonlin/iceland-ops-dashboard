@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AuroraBriefingMap } from "@/components/AuroraBriefingMap";
 import {
   BRIEFING_CLOUD_REGION_LABEL,
   briefingCloudRegion,
@@ -16,6 +17,14 @@ import {
 import { bzStatus, btStatus, speedStatus } from "@/lib/auroraGauge";
 import { obstructionColorFor } from "@/lib/weatherMap";
 import type { DashboardSnapshot } from "@/snapshot/types";
+
+const SCORE_LEGEND = [
+  ["#64748B", "看不到"],
+  ["#FB923C", "不佳"],
+  ["#FDE047", "普通"],
+  ["#86EFAC", "良好"],
+  ["#4ADE80", "極佳"],
+] as const;
 
 const value = (number: number | undefined, suffix = "") =>
   number === undefined ? "—" : `${number.toFixed(1)}${suffix}`;
@@ -40,7 +49,14 @@ export function AuroraBriefingDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [hourOverride, setHourOverride] = useState<number | null>(null);
   const briefing = useMemo(() => buildAuroraBriefing(snapshot, now), [snapshot, now]);
+  const bestHourIndex = useMemo(() => {
+    if (!briefing) return 0;
+    const index = briefing.hours.findIndex((hour) => hour.best === briefing.best);
+    return index < 0 ? 0 : index;
+  }, [briefing]);
+  const hourIndex = hourOverride ?? bestHourIndex;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -70,6 +86,7 @@ export function AuroraBriefingDialog({
   const end = briefing.window.hours[8];
   const bestHour =
     briefing.hours.find((hour) => hour.best === briefing.best)?.hour ?? "—";
+  const hourCell = (index: number) => (index === hourIndex ? "is-hour-selected" : undefined);
 
   return (
     <dialog
@@ -164,6 +181,51 @@ export function AuroraBriefingDialog({
           </p>
         </section>
 
+        <section className="aurora-briefing-map-panel">
+          <h3>今晚各區極光分數</h3>
+          <p>
+            {formatBriefingHourLabel(briefing.hours[hourIndex]?.hour ?? "—")}
+            {" "}示意分區平均分數；西南部含首都圈。拉動時段可對照下方表格。
+          </p>
+          <AuroraBriefingMap
+            regions={briefing.mapRegions}
+            hourIndex={hourIndex}
+            hourLabel={formatBriefingHourLabel(briefing.hours[hourIndex]?.hour ?? "—")}
+          />
+          <label className="aurora-briefing-slider">
+            <span className="aurora-briefing-slider-label">觀測時段</span>
+            <input
+              type="range"
+              min={0}
+              max={briefing.hours.length - 1}
+              step={1}
+              value={hourIndex}
+              aria-valuetext={formatBriefingHourLabel(briefing.hours[hourIndex]?.hour ?? "—")}
+              onChange={(event) => setHourOverride(Number(event.target.value))}
+            />
+            <span className="aurora-briefing-slider-hours">
+              {briefing.hours.map((hour, index) => (
+                <button
+                  key={hour.time}
+                  type="button"
+                  className={index === hourIndex ? "is-hour-selected" : undefined}
+                  onClick={() => setHourOverride(index)}
+                >
+                  {hour.hour}
+                </button>
+              ))}
+            </span>
+          </label>
+          <p className="aurora-briefing-map-legend">
+            {SCORE_LEGEND.map(([color, label]) => (
+              <span key={label}>
+                <i style={{ background: color }} />
+                {label}
+              </span>
+            ))}
+          </p>
+        </section>
+
         <section>
           <h3>今晚 18～02 時間軸</h3>
           <div className="aurora-briefing-wide">
@@ -174,26 +236,27 @@ export function AuroraBriefingDialog({
             >
               <div role="row" className="aurora-briefing-row">
                 <span role="columnheader">時間</span>
-                {briefing.hours.map((hour) => (
-                  <strong role="columnheader" key={hour.time}>
+                {briefing.hours.map((hour, index) => (
+                  <strong role="columnheader" key={hour.time} className={hourCell(index)}>
                     {hour.hour}
                   </strong>
                 ))}
               </div>
               <div role="row" className="aurora-briefing-row">
                 <span role="rowheader">Kp</span>
-                {briefing.hours.map((hour) => (
-                  <span role="cell" key={hour.time}>
+                {briefing.hours.map((hour, index) => (
+                  <span role="cell" key={hour.time} className={hourCell(index)}>
                     {hour.kp.toFixed(0)}
                   </span>
                 ))}
               </div>
               <div role="row" className="aurora-briefing-row">
                 <span role="rowheader">最佳分數</span>
-                {briefing.hours.map((hour) => (
+                {briefing.hours.map((hour, index) => (
                   <strong
                     role="cell"
                     key={hour.time}
+                    className={hourCell(index)}
                     style={{ color: hour.best.color }}
                   >
                     {hour.best.score}
@@ -202,8 +265,8 @@ export function AuroraBriefingDialog({
               </div>
               <div role="row" className="aurora-briefing-row aurora-briefing-sky">
                 <span role="rowheader">天色</span>
-                {briefing.hours.map((hour) => (
-                  <span role="cell" key={hour.time}>
+                {briefing.hours.map((hour, index) => (
+                  <span role="cell" key={hour.time} className={hourCell(index)}>
                     {skyLightLabel(hour.best)}
                   </span>
                 ))}
@@ -213,12 +276,13 @@ export function AuroraBriefingDialog({
                 className="aurora-briefing-row aurora-briefing-sites"
               >
                 <span role="rowheader">最佳地點</span>
-                {briefing.hours.map((hour) => {
+                {briefing.hours.map((hour, index) => {
                   const siteLabel = briefingBestSiteLabel(hour.best);
                   return (
                     <span
                       role="cell"
                       key={hour.time}
+                      className={hourCell(index)}
                       aria-label={siteLabel
                         ? undefined
                         : "此時段沒有有效極光觀測地點"}
@@ -231,13 +295,17 @@ export function AuroraBriefingDialog({
             </div>
           </div>
           <ol className="aurora-briefing-narrow aurora-briefing-hours">
-            {briefing.hours.map((hour) => {
+            {briefing.hours.map((hour, index) => {
               const siteLabel = briefingBestSiteLabel(hour.best);
               const bestHourCard = hour.best === briefing.best;
               return (
                 <li
                   key={hour.time}
-                  className={bestHourCard ? "aurora-briefing-hour-card is-best" : "aurora-briefing-hour-card"}
+                  className={[
+                    "aurora-briefing-hour-card",
+                    bestHourCard ? "is-best" : "",
+                    index === hourIndex ? "is-hour-selected" : "",
+                  ].filter(Boolean).join(" ")}
                 >
                   <div className="aurora-briefing-hour-card-top">
                     <strong>{formatBriefingHourLabel(hour.hour)}</strong>
@@ -275,8 +343,8 @@ export function AuroraBriefingDialog({
             >
               <div role="row" className="aurora-briefing-row">
                 <span role="columnheader">區域</span>
-                {briefing.hours.map((hour) => (
-                  <strong role="columnheader" key={hour.time}>
+                {briefing.hours.map((hour, index) => (
+                  <strong role="columnheader" key={hour.time} className={hourCell(index)}>
                     {hour.hour}
                   </strong>
                 ))}
@@ -289,7 +357,7 @@ export function AuroraBriefingDialog({
                     <span
                       role="cell"
                       key={`${region.region}-${briefing.hours[index].time}`}
-                      className="aurora-briefing-cloud"
+                      className={index === hourIndex ? "aurora-briefing-cloud is-hour-selected" : "aurora-briefing-cloud"}
                       style={cloudStyle(obstruction)}
                     >
                       {obstruction === undefined ? "—" : `${Math.round(obstruction)}%`}
@@ -320,7 +388,7 @@ export function AuroraBriefingDialog({
                   {region.obstructions.map((obstruction, index) => (
                     <span
                       key={`${region.region}-${briefing.hours[index].time}`}
-                      className="aurora-briefing-cloud"
+                      className={index === hourIndex ? "aurora-briefing-cloud is-hour-selected" : "aurora-briefing-cloud"}
                       style={cloudStyle(obstruction)}
                     >
                       <em>{briefing.hours[index].hour}</em>
