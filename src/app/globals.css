@@ -918,7 +918,8 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .aurora-briefing-sites > span:not(:first-child) { font-size: 10px; line-height: 1.2; }
 .aurora-briefing-sky > span:not(:first-child) { color: #CBD5E1; font-size: 10px; }
 .aurora-briefing-cloud { font-weight: 700; }
-.aurora-briefing-heatmap .aurora-briefing-row { grid-template-columns: 92px repeat(10, minmax(0, 1fr)); }
+.aurora-briefing-heatmap .aurora-briefing-row { grid-template-columns: 108px repeat(10, minmax(0, 1fr)); }
+.aurora-briefing-heatmap .aurora-briefing-row > :first-child { white-space: nowrap; }
 .aurora-briefing-average { border-left: 2px solid rgba(248, 250, 252, 0.36); }
 .aurora-briefing-hours,
 .aurora-briefing-regions {

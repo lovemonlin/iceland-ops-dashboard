@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { encodeSiteForecast } from "../src/lib/forecastCodec";
 import {
+  BRIEFING_CLOUD_REGIONS,
+  briefingCloudRegion,
   briefingSummary,
   buildAuroraBriefing,
   formatBriefingDate,
@@ -12,7 +14,6 @@ import {
   getIcelandTonightWindow,
 } from "../src/lib/auroraBriefing";
 import {
-  AURORA_REGIONS,
   auroraForecastSites,
   briefingBestSiteLabel,
 } from "../src/lib/auroraForecastPresentation";
@@ -129,11 +130,53 @@ test("future briefing points use NOAA forecast Kp without current Bz or OVATION"
 test("region heatmap excludes missing site-hours instead of inventing cloud", () => {
   const model = buildAuroraBriefing(fixture(), new Date("2026-09-10T01:00:00Z"))!;
   const capital = model.regions.find((row) => row.region === "CAPITAL")!;
-  const north = model.regions.find((row) => row.region === "NORTH")!;
+  const northeast = model.regions.find((row) => row.region === "NORTHEAST")!;
   assert.deepEqual(capital.obstructions, new Array(9).fill(0));
-  assert.deepEqual(north.obstructions, new Array(9).fill(undefined));
-  assert.equal(north.average, undefined);
-  assert.deepEqual(model.regions.map((region) => region.region), AURORA_REGIONS);
+  assert.deepEqual(northeast.obstructions, new Array(9).fill(undefined));
+  assert.equal(northeast.average, undefined);
+  assert.deepEqual(model.regions.map((region) => region.region), [...BRIEFING_CLOUD_REGIONS]);
+  assert.deepEqual(
+    model.regions.map((region) => region.label),
+    [
+      "首都圈",
+      "西南部",
+      "東南部",
+      "東峽灣",
+      "東北部",
+      "西北部",
+      "西峽灣",
+      "斯奈山半島",
+    ],
+  );
+});
+
+test("the cloud matrix remaps the 32 snapshot sites onto the travel-circuit rows", () => {
+  const snapshot = JSON.parse(
+    readFileSync(resolve(process.cwd(), "public/data/latest-health.json"), "utf8"),
+  ) as DashboardSnapshot;
+  const sites = auroraForecastSites(snapshot);
+  assert.equal(sites.length, 32);
+  const expected: Record<string, (typeof BRIEFING_CLOUD_REGIONS)[number]> = {
+    reykjavik: "CAPITAL",
+    vik: "SOUTHWEST",
+    landmannalaugar: "SOUTHWEST",
+    jokulsarlon: "SOUTHEAST",
+    stokksnes: "SOUTHEAST",
+    egilsstadir: "EASTFJORDS",
+    myvatn: "NORTHEAST",
+    hvitserkur: "NORTHWEST",
+    borgarnes: "NORTHWEST",
+    isafjordur: "WESTFJORDS",
+    kirkjufell: "SNAEFELLSNES",
+  };
+  for (const [id, region] of Object.entries(expected)) {
+    const site = sites.find((row) => row.id === id);
+    assert.ok(site, `${id} missing from snapshot`);
+    assert.equal(briefingCloudRegion(site), region);
+  }
+  for (const site of sites) {
+    assert.equal(BRIEFING_CLOUD_REGIONS.includes(briefingCloudRegion(site)), true, site.id);
+  }
 });
 
 test("the published 32 sites remain the briefing''s sole site source", () => {

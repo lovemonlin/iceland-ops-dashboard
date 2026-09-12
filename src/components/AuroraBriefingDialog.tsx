@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  BRIEFING_CLOUD_REGION_LABEL,
+  briefingCloudRegion,
   briefingSummary,
   buildAuroraBriefing,
   formatBriefingDate,
   formatBriefingHourLabel,
 } from "@/lib/auroraBriefing";
 import {
-  AURORA_REGION_LABEL,
   briefingBestSiteLabel,
   skyLightLabel,
 } from "@/lib/auroraForecastPresentation";
@@ -146,7 +147,7 @@ export function AuroraBriefingDialog({
             </div>
             <div>
               <dt>最佳極光區域</dt>
-              <dd>{AURORA_REGION_LABEL[briefing.best.site.region]}</dd>
+              <dd>{BRIEFING_CLOUD_REGION_LABEL[briefingCloudRegion(briefing.best.site)]}</dd>
             </div>
             <div>
               <dt>預測最高 Kp</dt>

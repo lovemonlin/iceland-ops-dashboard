@@ -79,6 +79,7 @@ test("the briefing switches from nine-column tables to hour cards on small scree
   const css = read("src/app/globals.css");
   assert.match(css, /\.aurora-briefing-dialog[\s\S]*1180px/);
   assert.match(css, /\.aurora-briefing-heatmap[\s\S]*repeat\(10/);
+  assert.match(css, /\.aurora-briefing-heatmap \.aurora-briefing-row \{ grid-template-columns: 108px repeat\(10/);
   assert.match(css, /\.aurora-briefing-narrow \{ display: none; \}/);
   assert.match(css, /@media \(max-width: 720px\)/);
   assert.match(css, /\.aurora-briefing-wide \{ display: none; \}/);

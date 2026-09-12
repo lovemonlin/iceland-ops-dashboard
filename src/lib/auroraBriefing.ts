@@ -1,7 +1,5 @@
 import { decodeSiteForecast } from "@/lib/forecastCodec";
 import {
-  AURORA_REGION_LABEL,
-  AURORA_REGIONS,
   auroraForecastSites,
   type AuroraForecastDisplaySite,
   type AuroraRegion,
@@ -34,8 +32,82 @@ export interface BriefingHour {
   best: AuroraAssessment & { site: AuroraForecastDisplaySite };
 }
 
+/** Cloud-matrix rows follow the travel-map circuit, with the capital kept first. */
+export const BRIEFING_CLOUD_REGIONS = [
+  "CAPITAL",
+  "SOUTHWEST",
+  "SOUTHEAST",
+  "EASTFJORDS",
+  "NORTHEAST",
+  "NORTHWEST",
+  "WESTFJORDS",
+  "SNAEFELLSNES",
+] as const;
+export type BriefingCloudRegion = (typeof BRIEFING_CLOUD_REGIONS)[number];
+export const BRIEFING_CLOUD_REGION_LABEL: Record<BriefingCloudRegion, string> = {
+  CAPITAL: "首都圈",
+  SOUTHWEST: "西南部",
+  SOUTHEAST: "東南部",
+  EASTFJORDS: "東峽灣",
+  NORTHEAST: "東北部",
+  NORTHWEST: "西北部",
+  WESTFJORDS: "西峽灣",
+  SNAEFELLSNES: "斯奈山半島",
+};
+
+const BRIEFING_CLOUD_REGION_BY_SITE: Record<string, BriefingCloudRegion> = {
+  grotta: "CAPITAL",
+  reykjavik: "CAPITAL",
+  keflavik: "CAPITAL",
+  blue_lagoon: "CAPITAL",
+  thingvellir: "SOUTHWEST",
+  geysir: "SOUTHWEST",
+  gullfoss: "SOUTHWEST",
+  kerid: "SOUTHWEST",
+  selfoss: "SOUTHWEST",
+  seljalandsfoss: "SOUTHWEST",
+  skogafoss: "SOUTHWEST",
+  vik: "SOUTHWEST",
+  reynisfjara: "SOUTHWEST",
+  landmannalaugar: "SOUTHWEST",
+  jokulsarlon: "SOUTHEAST",
+  diamond_beach: "SOUTHEAST",
+  hofn: "SOUTHEAST",
+  stokksnes: "SOUTHEAST",
+  egilsstadir: "EASTFJORDS",
+  akureyri: "NORTHEAST",
+  godafoss: "NORTHEAST",
+  myvatn: "NORTHEAST",
+  husavik: "NORTHEAST",
+  dettifoss: "NORTHEAST",
+  asbyrgi: "NORTHEAST",
+  borgarnes: "NORTHWEST",
+  hvitserkur: "NORTHWEST",
+  isafjordur: "WESTFJORDS",
+  kirkjufell: "SNAEFELLSNES",
+  budir: "SNAEFELLSNES",
+  snaefellsjokull: "SNAEFELLSNES",
+  hellissandur: "SNAEFELLSNES",
+};
+
+const BRIEFING_CLOUD_REGION_FALLBACK: Record<AuroraRegion, BriefingCloudRegion> = {
+  CAPITAL: "CAPITAL",
+  SOUTH: "SOUTHWEST",
+  WEST: "SNAEFELLSNES",
+  WESTFJORDS: "WESTFJORDS",
+  NORTH: "NORTHEAST",
+  EAST: "EASTFJORDS",
+  HIGHLANDS: "SOUTHWEST",
+};
+
+export function briefingCloudRegion(
+  site: Pick<AuroraForecastDisplaySite, "id" | "region">,
+): BriefingCloudRegion {
+  return BRIEFING_CLOUD_REGION_BY_SITE[site.id] ?? BRIEFING_CLOUD_REGION_FALLBACK[site.region];
+}
+
 export interface BriefingRegion {
-  region: AuroraRegion;
+  region: BriefingCloudRegion;
   label: string;
   obstructions: (number | undefined)[];
   average?: number;
@@ -138,8 +210,8 @@ function regionRows(
   weather: Map<string, WeatherHour[]>,
   hours: Date[],
 ): BriefingRegion[] {
-  return AURORA_REGIONS.map((region) => {
-    const regionSites = sites.filter((site) => site.region === region);
+  return BRIEFING_CLOUD_REGIONS.map((region) => {
+    const regionSites = sites.filter((site) => briefingCloudRegion(site) === region);
     const obstructions = hours.map((time) => {
       const values = regionSites.flatMap((site) => {
         const reading = hourAt(weather.get(site.id), time, 0);
@@ -152,7 +224,7 @@ function regionRows(
     const present = obstructions.filter((value): value is number => value !== undefined);
     return {
       region,
-      label: AURORA_REGION_LABEL[region],
+      label: BRIEFING_CLOUD_REGION_LABEL[region],
       obstructions,
       average: present.length
         ? present.reduce((sum, value) => sum + value, 0) / present.length
