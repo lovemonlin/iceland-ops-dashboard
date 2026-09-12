@@ -15,6 +15,7 @@ import {
   getIcelandTonightWindow,
 } from "../src/lib/auroraBriefing";
 import {
+  BRIEFING_MAP_LAND_PATH,
   BRIEFING_MAP_REGIONS,
   BRIEFING_MAP_SHAPES,
 } from "../src/lib/briefingIcelandMap";
@@ -197,6 +198,12 @@ test("the score map merges 首都圈 into 西南部 and keeps seven travel blobs
   assert.equal(northeast.scores.every((score) => score !== undefined), true);
   assert.equal(westfjords.scores.every((score) => score === undefined), true);
   assert.equal(BRIEFING_MAP_SHAPES.length, 7);
+  assert.match(BRIEFING_MAP_SHAPES[0].path, /^M[\d.]+ [\d.]+ C/);
+});
+
+test("briefing map uses a rounded Iceland coastline instead of boxy polylines", () => {
+  assert.match(BRIEFING_MAP_LAND_PATH, /^M[\d.]+ [\d.]+ C/);
+  assert.equal(BRIEFING_MAP_LAND_PATH.includes(" L"), false);
 
   const snapshot = JSON.parse(
     readFileSync(resolve(process.cwd(), "public/data/latest-health.json"), "utf8"),

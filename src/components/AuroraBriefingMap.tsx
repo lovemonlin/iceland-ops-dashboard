@@ -9,7 +9,8 @@ import type { BriefingMapRegion } from "@/lib/auroraBriefing";
 
 const LAND_FILL = "rgba(30, 39, 64, 0.72)";
 const SEA_FILL = "#141B2D";
-const COAST = "#9CB1BF";
+const COAST = "#C5D4DE";
+const SEAM = "rgba(20, 27, 45, 0.55)";
 
 function scorePaint(score: number | undefined) {
   if (score === undefined) {
@@ -56,11 +57,22 @@ export function AuroraBriefingMap({
                 d={shape.path}
                 fill={scorePaint(score).fill}
                 opacity={score === undefined ? 0.35 : 0.92}
+                stroke={SEAM}
+                strokeWidth="10"
+                strokeLinejoin="round"
+                strokeLinecap="round"
               />
             );
           })}
         </g>
-        <path d={BRIEFING_MAP_LAND_PATH} fill="none" stroke={COAST} strokeWidth="3" />
+        <path
+          d={BRIEFING_MAP_LAND_PATH}
+          fill="none"
+          stroke={COAST}
+          strokeWidth="2.6"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
         {BRIEFING_MAP_SHAPES.map((shape) => {
           const score = byId.get(shape.region)?.scores[hourIndex];
           const paint = scorePaint(score);
