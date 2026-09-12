@@ -179,7 +179,9 @@ function catmullRomPath(ring: LonLat[]) {
   return `${parts.join(" ")} Z`;
 }
 
-const coast = icelandCoastRing as LonLat[];
+const coast: LonLat[] = (icelandCoastRing as number[][]).flatMap((point) =>
+  point.length >= 2 ? [[point[0], point[1]] as LonLat] : [],
+);
 
 export const BRIEFING_MAP_LAND_PATH = catmullRomPath(coast);
 
