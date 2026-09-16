@@ -117,7 +117,8 @@ test("the briefing score map is schematic, slider-driven, and never loads a clou
   assert.match(map, /className="aurora-briefing-map-credit"/);
   assert.match(map, /冰島旅遊神器 \/ 賀禎禎/);
   assert.match(map, /mailto:hojenjen2018@gmail.com/);
-  assert.match(css, /\.aurora-briefing-map-credit/);
+  assert.match(css, /\.aurora-briefing-map-credit[\s\S]*font-size: 24px/);
+  assert.match(css, /\.aurora-briefing-map-credit[\s\S]*color: #F8FAFC/);
   assert.equal(/ecmwf|cloud-forecast|fetch\s*\(/i.test(map), false);
   assert.equal(/ecmwf|cloud-forecast/i.test(dialog), false);
   assert.match(css, /\.aurora-briefing-slider input\[type="range"\]/);
