@@ -371,20 +371,28 @@ export function briefingSummary(briefing: AuroraBriefing) {
         : `太陽風 ${Math.trunc(current.speed)} km/s`,
     ]
       .filter((value): value is string => value !== undefined)
-      .join("｜") || "資料不足";
+      .join("、") || "資料不足";
   const bestHour =
     briefing.hours.find((hour) => hour.best === briefing.best)?.hour ?? "—";
+  const spaceLine = space === "資料不足" ? "資料不足。" : `${space}。`;
 
   return [
-    `冰島極光快報｜${start} ${briefing.hours[0].hour}:00–${end} ${briefing.hours[8].hour}:00`,
-    `今晚判讀摘要：${briefing.judgement}`,
-    `今晚最佳可觀測條件：${levelOf(briefing.best.score).levelLabel}`,
-    `最佳時間：${formatBriefingHourLabel(bestHour)}`,
-    `最佳地點：${briefing.best.site.nameZh}`,
-    `最高預測分數：${briefing.best.score}`,
-    `預測 ${formatBriefingKp(briefing.lowestKp, briefing.highestKp)}`,
-    `雲況相對較佳區域：${clouds}`,
-    `目前太空天氣：${space}`,
-    "※ Bt / Bz / 太陽風為目前即時值；今晚資料為預測。",
+    "🌌 冰島極光快報",
+    `📅 ${start} ${briefing.hours[0].hour}:00 – ${end} ${briefing.hours[8].hour}:00（冰島時間）`,
+    "",
+    "📝 今晚判讀摘要",
+    briefing.judgement,
+    "",
+    `✨ 今晚最佳可觀測條件：${levelOf(briefing.best.score).levelLabel}`,
+    `⏰ 最佳時間：${formatBriefingHourLabel(bestHour)}`,
+    `📍 最佳地點：${briefing.best.site.nameZh}`,
+    `📊 最高預測分數：${briefing.best.score} 分`,
+    `⚡ 預測 ${formatBriefingKp(briefing.lowestKp, briefing.highestKp)}`,
+    `☁️ 雲況相對較佳區域：${clouds}`,
+    "",
+    "🛰️ 目前太空天氣",
+    spaceLine,
+    "",
+    "※ Bt、Bz、太陽風為目前即時值；今晚資料為預測。",
   ].join("\n");
 }

@@ -230,20 +230,26 @@ test("the copy summary carries forecast, cloud and current-only context", () => 
   const model = buildAuroraBriefing(fixture(), new Date("2026-09-10T01:00:00Z"))!;
   const summary = briefingSummary(model);
   for (const text of [
-    "冰島極光快報｜09/10 18:00–09/11 02:00",
-    "今晚最佳可觀測條件：",
-    "最佳時間：",
-    "最佳地點：",
-    "最高預測分數：",
-    "預測 Kp 約 2～4",
-    "今晚判讀摘要：預測顯示今晚",
+    "🌌 冰島極光快報",
+    "📅 09/10 18:00 – 09/11 02:00（冰島時間）",
+    "✨ 今晚最佳可觀測條件：",
+    "⏰ 最佳時間：",
+    "📍 最佳地點：",
+    "📊 最高預測分數：",
+    " 分",
+    "⚡ 預測 Kp 約 2～4",
+    "📝 今晚判讀摘要",
+    "預測顯示今晚",
     "全島多數區域雲層遮蔽偏低",
-    "雲況相對較佳區域：首都圈 0%",
-    "目前太空天氣：Bt 6.0 nT｜Bz -15.0 nT｜太陽風 450 km/s",
-    "Bt / Bz / 太陽風為目前即時值；今晚資料為預測。",
+    "☁️ 雲況相對較佳區域：首都圈 0%",
+    "🛰️ 目前太空天氣",
+    "Bt 6.0 nT、Bz -15.0 nT、太陽風 450 km/s。",
+    "※ Bt、Bz、太陽風為目前即時值；今晚資料為預測。",
   ]) {
     assert.equal(summary.includes(text), true, `${text} missing`);
   }
+  assert.match(summary, /\n\n📝 今晚判讀摘要\n/);
+  assert.match(summary, /\n\n🛰️ 目前太空天氣\n/);
 });
 
 test("briefing labels keep full hours and collapse a flat Kp range", () => {
