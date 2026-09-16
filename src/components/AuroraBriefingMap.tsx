@@ -99,6 +99,10 @@ export function AuroraBriefingMap({
           );
         })}
       </svg>
+      <p className="aurora-briefing-map-credit">
+        冰島旅遊神器 / 賀禎禎 /{" "}
+        <a href="mailto:hojenjen2018@gmail.com">hojenjen2018@gmail.com</a>
+      </p>
     </div>
   );
 }
