@@ -3,6 +3,7 @@ import {
   higherImoRank,
   imoEventIcon,
   imoLevelLabel,
+  sortImoWarnings,
   type ImoWarningFeed,
   type ImoWarningRank,
   type PresentedImoWarning,
@@ -137,15 +138,7 @@ function uniqueEvents(cards: PresentedImoWarning[]): ImoWarningMapEvent[] {
   return events;
 }
 
-export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
-  const coast = coastRing;
-  if (feed.state === "clear" || feed.state === "unavailable" || feed.state === "undetailed") {
-    return { status: "hidden", stale: false, regions: [], coast };
-  }
-  if (feed.state === "stale-expired") {
-    return { status: "blocked", stale: true, regions: [], coast };
-  }
-
+export function groupImoWarningRegions(feed: ImoWarningFeed): ImoWarningMapRegion[] {
   const groups = new Map<string, PresentedImoWarning[]>();
   for (const card of feed.cards.filter(mapEligible)) {
     const key = areaKey(card);
@@ -154,7 +147,7 @@ export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
     else groups.set(key, [card]);
   }
 
-  const regions: ImoWarningMapRegion[] = [...groups.entries()]
+  return [...groups.entries()]
     .map(([id, cards]) => {
       const official = cards.filter(colorsFromOfficial);
       const paint: "official" | "unknown-time" = official.length > 0 ? "official" : "unknown-time";
@@ -165,7 +158,7 @@ export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
         name: cards[0]?.areaLabel ?? "區域未提供",
         rank,
         paint,
-        cards,
+        cards: sortImoWarnings(cards),
         events: uniqueEvents(cards),
         rings: uniqueRings(cards),
       };
@@ -177,7 +170,31 @@ export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
       if (name !== 0) return name;
       return left.id.localeCompare(right.id);
     });
+}
 
+export function resolveImoWarningDialog(
+  feed: ImoWarningFeed,
+  open: { regionId?: string; warningId?: string },
+): { region: ImoWarningMapRegion; active: PresentedImoWarning; tabs: PresentedImoWarning[] } | undefined {
+  const regions = groupImoWarningRegions(feed);
+  const region = open.warningId
+    ? regions.find((entry) => entry.cards.some((card) => card.warning.identifier === open.warningId))
+    : regions.find((entry) => entry.id === open.regionId);
+  if (!region || region.cards.length === 0) return undefined;
+  const active = region.cards.find((card) => card.warning.identifier === open.warningId) ?? region.cards[0];
+  return { region, active, tabs: region.cards };
+}
+
+export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
+  const coast = coastRing;
+  if (feed.state === "clear" || feed.state === "unavailable" || feed.state === "undetailed") {
+    return { status: "hidden", stale: false, regions: [], coast };
+  }
+  if (feed.state === "stale-expired") {
+    return { status: "blocked", stale: true, regions: [], coast };
+  }
+
+  const regions = groupImoWarningRegions(feed);
   const drawable = regions.filter((region) => region.rings.length > 0);
   if (drawable.length === 0) {
     return { status: feed.cards.some(mapEligible) ? "no-geometry" : "hidden", stale: feed.state === "stale-current", regions: [], coast };

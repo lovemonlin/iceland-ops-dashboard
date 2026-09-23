@@ -162,14 +162,16 @@ test("source health wording and the warnings UI do not call IMO from the browser
   assert.equal(imoSourceHealthLabel({ status: "ok" }), "🟢 資料來源正常");
   assert.equal(imoSourceHealthLabel({ status: "info" }), "🟢 資料來源正常");
   const panel = read("src/components/ImoWarningsPanel.tsx");
+  const dialog = read("src/components/ImoWarningDetailDialog.tsx");
   const sections = read("src/components/SourceSections.tsx");
   const dashboard = read("src/components/Dashboard.tsx");
   const presentation = read("src/lib/imoWarningPresentation.ts");
   assert.match(presentation, /資料來源正常/);
   assert.match(panel, /imoSourceHealthLabel/);
-  assert.match(panel, /查看完整警報內容/);
+  assert.match(dialog, /查看詳情/);
+  assert.match(panel, /ImoWarningDetailDialog/);
   assert.match(panel, /技術詳細資料|TechnicalDetails/);
-  assert.equal(/vedur\.is|fetch\s*\(/.test(panel + sections), false);
+  assert.equal(/vedur\.is|fetch\s*\(/.test(panel + dialog + sections), false);
   assert.match(dashboard, /imoWarningsLead/);
   assert.equal(readImoWarnings({ warnings: [{ identifier: "x", severity: "Moderate" }] })[0].warningColor, undefined);
 });

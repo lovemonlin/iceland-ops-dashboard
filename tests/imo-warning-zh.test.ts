@@ -116,17 +116,19 @@ test("instructions reuse the same safety phrases", () => {
   assert.match(zh.text, /不建議出行/);
 });
 
-test("summary, map, selected panel, and cards use Chinese without dropping English originals", () => {
+test("summary, map, dialog, and cards use Chinese without dropping English originals", () => {
   const panel = read("src/components/ImoWarningsPanel.tsx");
+  const dialog = read("src/components/ImoWarningDetailDialog.tsx");
   const map = read("src/components/ImoWarningMap.tsx");
   const presentation = read("src/lib/imoWarningPresentation.ts");
   const normalize = read("src/monitors/imo/normalize.ts");
   assert.match(panel, /translateImoArea\(area, "short"\)/);
-  assert.match(panel, /translateImoEvent/);
-  assert.match(panel, /IMO 英文原文/);
-  assert.match(panel, /查看完整警報內容/);
+  assert.match(dialog, /translateImoEvent/);
+  assert.match(dialog, /English \/ IMO/);
+  assert.match(dialog, /Íslenska \/ IMO/);
+  assert.match(dialog, /查看詳情/);
   assert.match(map, /translateImoArea\(region\.name, "short"\)/);
-  assert.equal(/vedur\.is|translate\.googleapis|openai|fetch\s*\(/.test(read("src/lib/imoWarningZhTw.ts") + panel + map), false);
+  assert.equal(/vedur\.is|translate\.googleapis|openai|fetch\s*\(/.test(read("src/lib/imoWarningZhTw.ts") + panel + dialog + map), false);
   assert.equal(/Translator/.test(read("src/lib/imoWarningZhTw.ts")), false);
   assert.match(presentation, /areaNameEn \?\? warning.areaNameIs/);
   assert.match(normalize, /warning.areaNameEn = areaNameEn/);

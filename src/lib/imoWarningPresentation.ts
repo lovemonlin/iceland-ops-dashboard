@@ -110,6 +110,18 @@ function icelandParts(iso: string) {
   return { stamp: `${bag.month}/${bag.day} ${bag.hour}:${bag.minute}`, day: `${bag.month}/${bag.day}`, clock: `${bag.hour}:${bag.minute}` };
 }
 
+export const IMO_PHASE_LABEL: Record<ImoWarningPhase, string> = {
+  active: "● 目前生效",
+  upcoming: "○ 尚未生效",
+  expired: "✓ 已結束",
+  unknown: "時間狀態未知",
+};
+
+export function formatIcelandStamp(iso?: string): string {
+  if (!iso) return "—";
+  return icelandParts(iso)?.stamp ?? "—";
+}
+
 /** Iceland clock only. Same local day drops the end date; a midnight crossing keeps both dates. */
 export function formatIcelandWarningWindow(onset?: string, expires?: string): string {
   const start = onset ? icelandParts(onset) : undefined;

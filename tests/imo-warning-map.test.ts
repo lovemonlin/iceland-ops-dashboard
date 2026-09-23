@@ -201,5 +201,7 @@ test("the warning map UI does not fetch IMO from the browser", () => {
   assert.match(component, /tabIndex/);
   assert.match(component, /aria-label/);
   assert.match(panel, /ImoWarningMap/);
-  assert.match(panel, /查看下方詳細警報/);
+  assert.match(panel, /ImoWarningDetailDialog/);
+  assert.match(component, /mode/);
+  assert.match(component, /activeWarningId/);
 });
