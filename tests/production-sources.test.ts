@@ -467,6 +467,7 @@ test("IMO: zero active warnings is INFO, never EMPTY_DATA", async () => {
     assert.equal(health.status, "info");
     assert.equal(health.errorType, undefined);
     assert.equal(health.data?.activeWarnings, 0);
+    assert.deepEqual(health.data?.warnings, []);
     assert.match(String(health.note), /no active weather warnings/);
   }
 });
