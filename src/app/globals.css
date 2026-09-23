@@ -191,7 +191,11 @@ button:disabled { opacity: .6; cursor: default; }
 .imo-warning-more { margin-top: 10px; }
 .imo-warning-more summary { cursor: pointer; }
 .imo-warning-more h4 { margin: 10px 0 4px; font-size: 13px; }
-.imo-warning-more p { margin: 0; white-space: pre-wrap; }
+.imo-warning-zh-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
 
 .imo-warning-map {
   max-width: min(860px, 100%);

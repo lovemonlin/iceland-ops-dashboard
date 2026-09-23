@@ -13,6 +13,15 @@ import {
   type ImoWarningRank,
   type PresentedImoWarning,
 } from "@/lib/imoWarningPresentation";
+import {
+  IMO_ZH_UNTRANSLATED,
+  imoZhDisplay,
+  translateImoArea,
+  translateImoDescription,
+  translateImoEvent,
+  translateImoHeadline,
+  translateImoInstruction,
+} from "@/lib/imoWarningZhTw";
 import type { SnapshotSource } from "@/snapshot/types";
 
 const PHASE_LABEL: Record<ImoWarningPhase, string> = {
@@ -29,10 +38,16 @@ function preview(text: string | undefined) {
 
 function WarningCard({ card, selected }: { card: PresentedImoWarning; selected: boolean }) {
   const warning = card.warning;
-  const description = warning.descriptionEn;
-  const instruction = warning.instructionEn;
+  const area = translateImoArea(card.areaLabel);
+  const event = translateImoEvent(warning.eventEn ?? warning.eventIs);
+  const headline = translateImoHeadline(warning.headlineEn);
+  const description = translateImoDescription(warning.descriptionEn);
+  const instruction = translateImoInstruction(warning.instructionEn);
+  const descriptionView = imoZhDisplay(description);
+  const instructionView = imoZhDisplay(instruction);
   const icelandic = [warning.headlineIs, warning.descriptionIs, warning.instructionIs].filter(Boolean).join("\n\n");
-  const expandable = Boolean(description || instruction || icelandic);
+  const officialEn = [warning.headlineEn, warning.descriptionEn, warning.instructionEn].filter(Boolean).join("\n\n");
+  const expandable = Boolean(descriptionView.text || instructionView.text || officialEn || icelandic);
   return (
     <article
       id={`imo-warning-${warning.identifier}`}
@@ -40,41 +55,50 @@ function WarningCard({ card, selected }: { card: PresentedImoWarning; selected: 
     >
       <header className="imo-warning-card-head">
         <strong>{imoLevelLabel(card.rank)}</strong>
-        <span>{card.areaLabel}</span>
+        <span>{area.text || card.areaLabel}</span>
       </header>
       <p className="imo-warning-event">
-        <span aria-hidden="true">{card.icon}</span> {warning.eventEn ?? warning.eventIs ?? "事件未提供"}
+        <span aria-hidden="true">{card.icon}</span> {event.translated ? event.text : `🌐 ${event.text || "事件未提供"}`}
       </p>
+      {!event.translated && event.text && <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>}
       <p className="imo-warning-phase">{PHASE_LABEL[card.phase]}</p>
       <p className="imo-warning-time">
         <span>冰島時間</span>
         {card.windowLabel}
       </p>
-      {warning.headlineEn && <p className="imo-warning-headline">{warning.headlineEn}</p>}
-      {description && <p className="imo-warning-copy">{preview(description)}</p>}
-      {instruction && (
+      {headline.text && <p className="imo-warning-headline">{headline.text}</p>}
+      {!headline.translated && warning.headlineEn && <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>}
+      {descriptionView.text && <p className="imo-warning-copy">{preview(descriptionView.text)}</p>}
+      {descriptionView.untranslated && descriptionView.text && <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>}
+      {instructionView.text && (
         <p className="imo-warning-instruction">
-          <span aria-hidden="true">⚠</span> {preview(instruction)}
+          <span aria-hidden="true">⚠</span> {preview(instructionView.text)}
         </p>
       )}
       {expandable && (
         <details className="imo-warning-more">
-          <summary>查看完整官方說明</summary>
-          {description && (
+          <summary>查看完整警報內容</summary>
+          {descriptionView.text && (
             <>
-              <h4>官方說明</h4>
-              <p>{description}</p>
+              <h4>官方警報說明</h4>
+              <p>{descriptionView.text}</p>
             </>
           )}
-          {instruction && (
+          {instructionView.text && (
             <>
               <h4>安全建議</h4>
-              <p>{instruction}</p>
+              <p>{instructionView.text}</p>
+            </>
+          )}
+          {officialEn && (
+            <>
+              <h4>IMO 英文原文</h4>
+              <p>{officialEn}</p>
             </>
           )}
           {icelandic && (
             <>
-              <h4>冰島文</h4>
+              <h4>IMO 冰島文原文</h4>
               <p>{icelandic}</p>
             </>
           )}
@@ -158,7 +182,9 @@ export function ImoWarningsPanel({
             ))}
             <li>📍 {summary.areas.length} 個影響區域</li>
           </ul>
-          {summary.areas.length > 0 && <p className="imo-warning-areas">主要影響：{summary.areas.join(" · ")}</p>}
+          {summary.areas.length > 0 && (
+            <p className="imo-warning-areas">主要影響：{summary.areas.map((area) => translateImoArea(area, "short").text).join(" · ")}</p>
+          )}
           {(summary.earliestOnset || summary.latestExpires) && (
             <p className="imo-warning-span">
               冰島時間 {formatIcelandWarningWindow(summary.earliestOnset, summary.latestExpires)}
@@ -181,12 +207,12 @@ export function ImoWarningsPanel({
           {map.status === "blocked" && <p className="imo-warnings-stale">目前警報狀態無法確認</p>}
           {selectedSummary && (
             <div className="imo-warning-selection">
-              <h3>{selectedSummary.name}</h3>
+              <h3>{translateImoArea(selectedSummary.name).text}</h3>
               <p>{selectedSummary.countLine}</p>
               <ul>
                 {selectedSummary.events.map((event) => (
                   <li key={event.eventEn}>
-                    {event.icon} {event.eventEn}
+                    {event.icon} {translateImoEvent(event.eventEn).text}
                   </li>
                 ))}
               </ul>

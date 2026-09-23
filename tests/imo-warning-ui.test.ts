@@ -167,7 +167,7 @@ test("source health wording and the warnings UI do not call IMO from the browser
   const presentation = read("src/lib/imoWarningPresentation.ts");
   assert.match(presentation, /資料來源正常/);
   assert.match(panel, /imoSourceHealthLabel/);
-  assert.match(panel, /查看完整官方說明/);
+  assert.match(panel, /查看完整警報內容/);
   assert.match(panel, /技術詳細資料|TechnicalDetails/);
   assert.equal(/vedur\.is|fetch\s*\(/.test(panel + sections), false);
   assert.match(dashboard, /imoWarningsLead/);

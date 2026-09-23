@@ -8,6 +8,7 @@ import {
   summarizeWarningRegion,
   type ImoWarningMapModel,
 } from "@/lib/imoWarningMap";
+import { translateImoArea, translateImoEvent } from "@/lib/imoWarningZhTw";
 
 const FILL: Record<string, string> = {
   yellow: "rgba(253, 224, 71, 0.55)",
@@ -58,8 +59,12 @@ export function ImoWarningMap({
         <path d={coastPath} className="imo-warning-map-land" />
         {model.regions.map((region) => {
           const summary = summarizeWarningRegion(region);
+          const areaZh = translateImoArea(region.name);
+          const shortZh = translateImoArea(region.name, "short");
+          const eventZh = region.events.map((event) => translateImoEvent(event.eventEn).text).join("、");
           const paintKey = region.paint === "unknown-time" ? "unknown-time" : region.rank;
           const selected = selectedId === region.id;
+          const aria = `${areaZh.text}，${region.paint === "unknown-time" ? "時間狀態未知" : summary.countLine}，${eventZh}`;
           return region.rings.map((ring, index) => {
             const label = index === 0 ? regionLabelAt(ring, projection.project) : undefined;
             return (
@@ -73,7 +78,7 @@ export function ImoWarningMap({
                   className={selected ? "imo-warning-map-region is-selected" : "imo-warning-map-region"}
                   tabIndex={0}
                   role="button"
-                  aria-label={summary.ariaLabel}
+                  aria-label={aria}
                   aria-pressed={selected ? true : undefined}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={(event) => {
@@ -85,7 +90,7 @@ export function ImoWarningMap({
                 />
                 {label?.wide && (
                   <text className="imo-warning-map-label" x={label.x.toFixed(1)} y={label.y.toFixed(1)} textAnchor="middle">
-                    {region.name}
+                    {shortZh.text}
                   </text>
                 )}
               </g>
