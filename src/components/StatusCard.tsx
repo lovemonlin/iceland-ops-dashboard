@@ -57,13 +57,16 @@ function Row({ label, value }: { label: string; value: string }) {
 export function TechnicalDetails({
   entries,
   schemaVersion,
+  preface,
 }: {
   entries: SnapshotSource[];
   schemaVersion?: number;
+  preface?: string;
 }) {
   return (
     <details className="technical">
       <summary>技術詳細資料</summary>
+      {preface && <p className="technical-message">{preface}</p>}
       {entries.map((entry) => {
         const values = Object.entries(entry.data ?? {});
         return (

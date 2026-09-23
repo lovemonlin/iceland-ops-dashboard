@@ -112,6 +112,87 @@ button:disabled { opacity: .6; cursor: default; }
 .headline { margin-top: 10px; font-size: 15px; }
 .emphasis { margin-top: 10px; font-size: 17px; font-weight: 700; }
 
+.imo-warnings { min-width: 0; }
+.imo-warnings-quiet { opacity: 0.92; }
+.imo-warnings-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.imo-warnings-head h2 { margin: 0; }
+.imo-warnings-status {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.imo-warnings-lead,
+.imo-warnings-stale,
+.imo-warning-areas,
+.imo-warning-span { margin: 8px 0 0; }
+.imo-warnings-stale { color: #FDE68A; }
+.imo-warning-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.imo-warning-chips li {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #152033;
+}
+.imo-warning-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: 12px;
+  margin-top: 14px;
+  min-width: 0;
+}
+.imo-warning-card {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #334155;
+  border-left-width: 4px;
+  border-radius: 12px;
+  background: #101826;
+  overflow-wrap: anywhere;
+}
+.imo-warning-card.warning-yellow { border-left-color: #FDE047; }
+.imo-warning-card.warning-orange { border-left-color: #FB923C; }
+.imo-warning-card.warning-red { border-left-color: #F87171; }
+.imo-warning-card.warning-unknown { border-left-color: #94A3B8; }
+.imo-warnings-status.warning-yellow { color: #FDE047; }
+.imo-warnings-status.warning-orange { color: #FB923C; }
+.imo-warnings-status.warning-red { color: #F87171; }
+.imo-warnings-status.warning-unknown { color: #E2E8F0; }
+.imo-warning-card-head,
+.imo-warning-event,
+.imo-warning-phase,
+.imo-warning-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  justify-content: space-between;
+}
+.imo-warning-card-head { margin-bottom: 8px; }
+.imo-warning-event { margin: 0; font-size: 18px; font-weight: 700; }
+.imo-warning-phase,
+.imo-warning-time,
+.imo-warning-headline,
+.imo-warning-copy,
+.imo-warning-instruction { margin: 6px 0 0; }
+.imo-warning-time span,
+.imo-warning-phase { color: #CBD5E1; font-size: 13px; }
+.imo-warning-more { margin-top: 10px; }
+.imo-warning-more summary { cursor: pointer; }
+.imo-warning-more h4 { margin: 10px 0 4px; font-size: 13px; }
+.imo-warning-more p { margin: 0; white-space: pre-wrap; }
+
 /* Values people came for, sized so they are read before anything else on the card. */
 .stats { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 14px; }
 .stat { display: flex; flex-direction: column; gap: 2px; }

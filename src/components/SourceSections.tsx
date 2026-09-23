@@ -8,11 +8,11 @@ import {
   formatSigned,
   formatSourceStatus,
   formatTaipeiTime,
-  formatWarningsHeadline,
   TONE_DOT,
 } from "@/lib/display";
 import dynamic from "next/dynamic";
 import { AuroraGauges } from "@/components/AuroraGauges";
+import { ImoWarningsPanel } from "@/components/ImoWarningsPanel";
 import { AuroraModes } from "@/components/AuroraModes";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
@@ -323,32 +323,17 @@ export function AuroraSection({
   );
 }
 
-export function WarningsSection({ imo, schemaVersion }: { imo?: SnapshotSource; schemaVersion: number }) {
+export function WarningsSection({
+  imo,
+  now,
+  schemaVersion,
+}: {
+  imo?: SnapshotSource;
+  now: Date;
+  schemaVersion: number;
+}) {
   if (!imo) return null;
-
-  const active = imo.data?.activeWarnings;
-  const count = typeof active === "number" ? active : undefined;
-  const headline = formatWarningsHeadline(imo);
-
-  return (
-    <section>
-      <h2>天氣警報</h2>
-      <div className="cards">
-        <SourceCard
-          icon="⚠"
-          title="冰島天氣警報"
-          entry={imo}
-          schemaVersion={schemaVersion}
-          headline={headline}
-          dataTimeLabel="來源資料時間"
-        >
-          <p className={`emphasis ${count === 0 ? "ok" : "warn"}`}>
-            {count === 0 ? "目前無警報" : count === undefined ? "—" : `${count} 則警報`}
-          </p>
-        </SourceCard>
-      </div>
-    </section>
-  );
+  return <ImoWarningsPanel imo={imo} now={now} schemaVersion={schemaVersion} />;
 }
 
 /**

@@ -16,6 +16,7 @@ import {
   TONE_DOT,
 } from "@/lib/display";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
+import { imoWarningsLead } from "@/lib/imoWarningPresentation";
 import { getSnapshotUrl } from "@/lib/publicPath";
 import { formatShortClock, ICELAND_TIME_ZONE } from "@/lib/time";
 import { buildIncidents, dataAgeMinutes, type IncidentGroup } from "@/monitors/correlate";
@@ -100,6 +101,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
   const pipelines = PIPELINE_MONITOR_IDS.map((id) => snapshotEntry(snapshot, id)).filter(
     (entry): entry is SnapshotSource => entry !== undefined,
   );
+  const imo = snapshotEntry(snapshot, "imo");
+  const warningsFirst = imoWarningsLead(imo, now);
 
   return (
     <main>
@@ -169,6 +172,8 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
         </div>
       </section>
 
+      {warningsFirst && <WarningsSection imo={imo} now={now} schemaVersion={snapshot.schemaVersion} />}
+
       <WeatherSection
         metno={snapshotEntry(snapshot, "metno")}
         ecmwf={snapshotEntry(snapshot, "ecmwf")}
@@ -218,7 +223,7 @@ export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnaps
         </details>
       </section>
 
-      <WarningsSection imo={snapshotEntry(snapshot, "imo")} schemaVersion={snapshot.schemaVersion} />
+      {!warningsFirst && <WarningsSection imo={imo} now={now} schemaVersion={snapshot.schemaVersion} />}
     </main>
   );
 }
