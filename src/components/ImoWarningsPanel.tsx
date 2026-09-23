@@ -1,4 +1,9 @@
+"use client";
+
+import { useState } from "react";
+import { ImoWarningMap } from "@/components/ImoWarningMap";
 import { TechnicalDetails } from "@/components/StatusCard";
+import { buildImoWarningMap, summarizeWarningRegion } from "@/lib/imoWarningMap";
 import {
   formatIcelandWarningWindow,
   imoLevelLabel,
@@ -22,14 +27,17 @@ function preview(text: string | undefined) {
   return text.length > 180 ? `${text.slice(0, 180)}…` : text;
 }
 
-function WarningCard({ card }: { card: PresentedImoWarning }) {
+function WarningCard({ card, selected }: { card: PresentedImoWarning; selected: boolean }) {
   const warning = card.warning;
   const description = warning.descriptionEn;
   const instruction = warning.instructionEn;
   const icelandic = [warning.headlineIs, warning.descriptionIs, warning.instructionIs].filter(Boolean).join("\n\n");
   const expandable = Boolean(description || instruction || icelandic);
   return (
-    <article className={`imo-warning-card warning-${card.rank}`}>
+    <article
+      id={`imo-warning-${warning.identifier}`}
+      className={`imo-warning-card warning-${card.rank}${selected ? " is-selected" : ""}`}
+    >
       <header className="imo-warning-card-head">
         <strong>{imoLevelLabel(card.rank)}</strong>
         <span>{card.areaLabel}</span>
@@ -86,6 +94,10 @@ export function ImoWarningsPanel({
   schemaVersion: number;
 }) {
   const feed = presentImoWarnings(imo, now);
+  const map = buildImoWarningMap(feed);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = map.regions.find((region) => region.id === selectedId);
+  const selectedSummary = selected ? summarizeWarningRegion(selected) : undefined;
   const summary = feed.summary;
   const headlineRank: ImoWarningRank | "none" =
     feed.state === "stale-expired" || feed.state === "unavailable" || feed.state === "clear" || feed.state === "undetailed"
@@ -152,9 +164,42 @@ export function ImoWarningsPanel({
               冰島時間 {formatIcelandWarningWindow(summary.earliestOnset, summary.latestExpires)}
             </p>
           )}
+          {map.status === "ready" && (
+            <ImoWarningMap
+              model={map}
+              selectedId={selectedId}
+              onSelect={(id) => {
+                setSelectedId(id);
+                const first = map.regions.find((region) => region.id === id)?.cards[0]?.warning.identifier;
+                if (first) document.getElementById(`imo-warning-${first}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }}
+            />
+          )}
+          {map.status === "no-geometry" && (
+            <p className="imo-warnings-lead">目前警報有詳細文字資料，但沒有可用的區域圖形資料。</p>
+          )}
+          {map.status === "blocked" && <p className="imo-warnings-stale">目前警報狀態無法確認</p>}
+          {selectedSummary && (
+            <div className="imo-warning-selection">
+              <h3>{selectedSummary.name}</h3>
+              <p>{selectedSummary.countLine}</p>
+              <ul>
+                {selectedSummary.events.map((event) => (
+                  <li key={event.eventEn}>
+                    {event.icon} {event.eventEn}
+                  </li>
+                ))}
+              </ul>
+              <a href={`#imo-warning-${selectedSummary.identifiers[0]}`}>查看下方詳細警報</a>
+            </div>
+          )}
           <div className="imo-warning-grid">
             {feed.cards.map((card) => (
-              <WarningCard key={card.warning.identifier} card={card} />
+              <WarningCard
+                key={card.warning.identifier}
+                card={card}
+                selected={Boolean(selectedSummary?.identifiers.includes(card.warning.identifier))}
+              />
             ))}
           </div>
         </>

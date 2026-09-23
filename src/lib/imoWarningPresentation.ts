@@ -69,6 +69,10 @@ export function imoLevelLabel(rank: ImoWarningRank): string {
   return `${LEVEL_MARK[rank]} ${LEVEL_LABEL[rank]}`;
 }
 
+export function higherImoRank(left: ImoWarningRank, right: ImoWarningRank): ImoWarningRank {
+  return RANK_ORDER[left] < RANK_ORDER[right] ? left : right;
+}
+
 export function imoEventIcon(eventEn: string | undefined, eventIs?: string): { icon: string; chip: string } {
   const text = `${eventEn ?? ""} ${eventIs ?? ""}`;
   if (/snow|blizzard/i.test(text)) return { icon: "❄️", chip: "降雪" };
