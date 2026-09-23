@@ -27,6 +27,8 @@ const AREA_FULL: Record<string, string> = {
   "north fjords": "北峽灣",
   "central highlands - uninhabited part of iceland": "中央高地（無人居住區）",
   "central highlands": "中央高地",
+  "southward eastfjords": "東峽灣南部",
+  "southern eastfjords": "東峽灣南部",
   "faxafloi - southwest iceland": "西南部（Faxaflói）",
   faxafloi: "Faxaflói",
   faxaflói: "Faxaflói",
@@ -38,6 +40,8 @@ const AREA_SHORT: Record<string, string> = {
 };
 
 const EVENT_ZH: [RegExp, string][] = [
+  [/^landslides?$/i, "山崩／土石流警報"],
+  [/viðvörun:\s*landslides?/i, "山崩／土石流警報"],
   [/weather warning:\s*blizzard/i, "暴風雪警報"],
   [/weather warning:\s*thunderstorm/i, "雷暴警報"],
   [/weather warning:\s*thunder/i, "雷暴警報"],
@@ -72,9 +76,15 @@ const WEEKDAY_ZH: [RegExp, string][] = [
 
 const PLACE_NAMES = [
   "Eyjafjallajökull",
-  "Vestmannaeyjar",
+  "Mýrdalsjökull",
+  "Myrdalsjokull",
+  "Vatnajökull",
+  "Vatnajokull",
   "Öræfajökull",
   "Oraefajokull",
+  "Öræfi",
+  "Oraefi",
+  "Vestmannaeyjar",
   "Mýrdalur",
   "Myrdalur",
   "Reykjanes",
@@ -93,8 +103,9 @@ function fromMap(value: string | undefined, table: Record<string, string>): stri
 export function translateImoArea(name: string | undefined, mode: "full" | "short" = "full"): ImoZhText {
   const source = name?.trim() ?? "";
   if (!source) return { text: "", translated: false };
-  const short = mode === "short" ? fromMap(source, AREA_SHORT) : undefined;
-  const mapped = short ?? fromMap(source, AREA_FULL);
+  const geography = source.replace(/^(?:landslides?|skriður)\s*:\s*/i, "").trim() || source;
+  const short = mode === "short" ? fromMap(geography, AREA_SHORT) ?? fromMap(source, AREA_SHORT) : undefined;
+  const mapped = short ?? fromMap(geography, AREA_FULL) ?? fromMap(source, AREA_FULL);
   return mapped ? { text: mapped, translated: true } : { text: source, translated: false };
 }
 
@@ -137,6 +148,8 @@ export function translateImoHeadline(headlineEn: string | undefined): ImoZhText 
     "northeast strong gale": "強勁東北風",
     "east storm and heavy rain": "東風暴風與強降雨",
     "southeast gales": "東南大風",
+    "possibility of landslides due to significant rainfall": "因顯著降雨可能發生山崩或土石流",
+    "possibility of landslides due to very heavy rainfall": "因強烈降雨可能發生山崩或土石流",
   };
   const mapped = exact[key(source)] ?? headlineWind(source);
   if (!mapped) return { text: source, translated: false };
@@ -144,6 +157,32 @@ export function translateImoHeadline(headlineEn: string | undefined): ImoZhText 
 }
 
 const DESCRIPTION_PHRASES: [RegExp, string][] = [
+  [
+    /Rising water levels may occur in rivers and streams, and slope movements such as rockfalls, channelized debris flows and shallow landslides may occur suddenly and without warning\.?/gi,
+    "河川與溪流水位可能上升。可能在短時間、甚至幾乎無預警的情況下發生落石、溝道型土石流及淺層山崩。",
+  ],
+  [
+    /Rising water levels may occur in rivers and streams, and slope movements such as rockfalls, channelized debris flows and shallow landslides may occur with little warning\.?/gi,
+    "河川與溪流水位可能上升。可能在短時間、甚至幾乎無預警的情況下發生落石、溝道型土石流及淺層山崩。",
+  ],
+  [
+    /The highest rainfall accumulations are expected in this area, especially in Öræfi and near Vatnajökull\.?/gi,
+    "此區降雨累積量可能最高，尤其是 Öræfi 以及 Vatnajökull 附近。",
+  ],
+  [
+    /The heaviest rainfall is expected near glaciers, including Eyjafjallajökull and Mýrdalsjökull\.?/gi,
+    "最顯著降雨預期出現在冰川附近，包括 Eyjafjallajökull 與 Mýrdalsjökull。",
+  ],
+  [
+    /Significant rainfall is expected from the early hours of (週[一二三四五六日]) (\d+) (?:September|september) into (週[一二三四五六日]) (\d+) (?:September|september)\.?/gi,
+    "預計自$1$2日起至$3$4日將有顯著降雨。",
+  ],
+  [
+    /Significant rainfall is expected from (週[一二三四五六日]) (\d+) (?:September|september) into (週[一二三四五六日]) (\d+) (?:September|september)\.?/gi,
+    "預計自$1$2日起至$3$4日將有顯著降雨。",
+  ],
+  [/Avoid stopping below steep slopes and exercise caution on roads\.?/gi, "請避免停留於陡坡下方，行車時務必提高警覺。"],
+  [/Avoid steep slopes and exercise caution while travelling\.?/gi, "請避免停留於陡坡下方，行車與旅行時務必提高警覺。"],
   [
     /People are advised to show caution and clear grates to prevent flood damage\.?/gi,
     "請提高警覺，並保持排水口暢通以降低淹水損害。",

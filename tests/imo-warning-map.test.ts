@@ -196,6 +196,7 @@ test("the warning map UI does not fetch IMO from the browser", () => {
   const mapFile = read("src/lib/imoWarningMap.ts");
   const component = read("src/components/ImoWarningMap.tsx");
   const panel = read("src/components/ImoWarningsPanel.tsx");
+  const css = read("src/app/globals.css");
   assert.equal(/vedur\.is|fetch\s*\(/.test(mapFile + component + panel), false);
   assert.match(component, /role="group"/);
   assert.match(component, /tabIndex/);
@@ -204,4 +205,36 @@ test("the warning map UI does not fetch IMO from the browser", () => {
   assert.match(panel, /ImoWarningDetailDialog/);
   assert.match(component, /mode/);
   assert.match(component, /activeWarningId/);
+  assert.match(component, /orderedImoMapRegions/);
+  assert.match(component, /地圖顏色表示目前類型中該區域的最高官方警報等級/);
+  assert.equal(/fill=\{FILL|rgba\(253/.test(component), false);
+  assert.match(css, /--imo-warning-yellow/);
+  assert.match(css, /--imo-warning-orange/);
+  assert.match(css, /--imo-warning-red/);
+  assert.match(css, /--imo-warning-green/);
+  assert.match(css, /--imo-wind-speed-alert/);
+  assert.match(css, /fill-opacity: 1/);
+  assert.notEqual(css.indexOf("--imo-wind-speed-alert"), css.indexOf("--imo-warning-red"));
+});
+
+test("green cancelled warnings stay in the feed but are not painted as an active region", () => {
+  const map = mapOf("ok", [
+    warning({ identifier: "gone", warningColor: "Green" }),
+    warning({ identifier: "now", warningColor: "Yellow" }),
+  ]);
+  assert.equal(map.regions.length, 1);
+  assert.equal(map.regions[0].rank, "yellow");
+  assert.equal(map.regions[0].cards.some((card) => card.warning.warningColor === "Green"), false);
+});
+
+test("two yellow polygons in one region keep one overview region and do not encode count in fill", () => {
+  const map = mapOf("ok", [
+    warning({ identifier: "w1", eventEn: "Weather Warning: Wind" }),
+    warning({ identifier: "w2", eventEn: "Weather Warning: Precipitation" }),
+  ]);
+  assert.equal(map.regions.length, 1);
+  assert.equal(map.regions[0].rank, "yellow");
+  assert.equal(map.regions[0].cards.length, 2);
+  assert.equal(map.regions[0].rings.length, 1);
+  assert.match(read("src/components/ImoWarningMap.tsx"), /is-\$\{region\.rank\}/);
 });

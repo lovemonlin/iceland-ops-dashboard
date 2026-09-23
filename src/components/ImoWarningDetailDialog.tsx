@@ -33,6 +33,7 @@ import {
   clampImoDialogSize,
   IMO_DIALOG_COMPACT,
 } from "@/lib/imoWarningDialogLayout";
+import { classifyImoWarningFamily, imoFamilyKicker } from "@/lib/imoWarningFamily";
 import { isWindRelatedImoWarning, splitImoWindSpeeds } from "@/lib/imoWindSpeed";
 import { formatDateTime } from "@/lib/time";
 
@@ -394,7 +395,7 @@ export function ImoWarningDetailDialog({
     >
       <header className="imo-warning-dialog-header" onPointerDown={beginMove}>
         <div className="imo-warning-dialog-header-copy">
-          <p className="imo-warning-dialog-kicker">WEATHER ALERT / IMO</p>
+          <p className="imo-warning-dialog-kicker">{imoFamilyKicker(classifyImoWarningFamily(active.warning))}</p>
           <h2 id="imo-warning-dialog-title">{event.text || "天氣警報"}</h2>
           <p className="imo-warning-dialog-region">
             {area.text || region.name}

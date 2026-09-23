@@ -253,7 +253,7 @@ test("the dialog UI follows the native dialog pattern and compact cards", () => 
   assert.match(panel, /setOpen\(\{ regionId: id \}\)/);
   assert.match(panel, /setOpen\(\{ warningId: card.warning.identifier \}\)/);
   assert.match(panel, /TechnicalDetails/);
-  assert.match(panel, /feed.cards.map/);
+  assert.match(panel, /visible\.cards.map/);
   assert.match(map, /is-active-warning/);
   assert.match(css, /overflow-x:\s*auto/);
   assert.match(css, /imo-warning-dialog-pane/);

@@ -116,6 +116,36 @@ test("instructions reuse the same safety phrases", () => {
   assert.match(zh.text, /不建議出行/);
 });
 
+test("landslide events, areas, headlines, and descriptions have Traditional Chinese presentation", () => {
+  assert.equal(translateImoEvent("Landslide").text, "山崩／土石流警報");
+  assert.equal(translateImoArea("Landslides: Central highlands").text, "中央高地");
+  assert.equal(translateImoArea("Landslides: South Iceland").text, "南部");
+  assert.equal(translateImoArea("Landslides: Southeast Iceland").text, "東南部");
+  assert.equal(translateImoArea("Landslides: Southward Eastfjords").text, "東峽灣南部");
+  assert.equal(translateImoArea("Landslides: Central highlands", "short").text, "中央高地");
+  assert.equal(translateImoHeadline("Possibility of landslides due to significant rainfall").text, "因顯著降雨可能發生山崩或土石流");
+  assert.equal(translateImoHeadline("Possibility of landslides due to very heavy rainfall").text, "因強烈降雨可能發生山崩或土石流");
+  assert.equal(/一定/.test(translateImoHeadline("Possibility of landslides due to significant rainfall").text), false);
+  const glacier = translateImoDescription(
+    "Significant rainfall is expected from the early hours of Thursday 24 September into Friday 25 September. The heaviest rainfall is expected near glaciers, including Eyjafjallajökull and Mýrdalsjökull. Rising water levels may occur in rivers and streams, and slope movements such as rockfalls, channelized debris flows and shallow landslides may occur with little warning. Avoid steep slopes and exercise caution while travelling.",
+  );
+  assert.equal(glacier.translated, true);
+  assert.match(glacier.text, /顯著降雨/);
+  assert.match(glacier.text, /落石/);
+  assert.match(glacier.text, /土石流/);
+  assert.match(glacier.text, /山崩/);
+  assert.match(glacier.text, /陡坡/);
+  assert.match(glacier.text, /提高警覺/);
+  assert.match(glacier.text, /Eyjafjallajökull/);
+  const southeast = translateImoDescription(
+    "Significant rainfall is expected from Thursday 24 September into Friday 25 September. The highest rainfall accumulations are expected in this area, especially in Öræfi and near Vatnajökull. Rising water levels may occur in rivers and streams, and slope movements such as rockfalls, channelized debris flows and shallow landslides may occur suddenly and without warning. Avoid stopping below steep slopes and exercise caution on roads.",
+  );
+  assert.equal(southeast.translated, true);
+  assert.match(southeast.text, /Vatnajökull/);
+  assert.match(southeast.text, /幾乎無預警/);
+  assert.match(southeast.text, /陡坡下方/);
+});
+
 test("summary, map, dialog, and cards use Chinese without dropping English originals", () => {
   const panel = read("src/components/ImoWarningsPanel.tsx");
   const dialog = read("src/components/ImoWarningDetailDialog.tsx");

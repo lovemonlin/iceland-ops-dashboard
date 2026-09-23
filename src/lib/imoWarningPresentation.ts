@@ -1,8 +1,25 @@
 import type { NormalizedImoWarning } from "@/monitors/imo/normalize";
 import type { SnapshotSource } from "@/snapshot/types";
+import {
+  IMO_RANK_CODE,
+  IMO_RANK_ORDER,
+  higherImoRank,
+  imoLevelLabel,
+  imoWarningRank,
+  isImoActiveHazardRank,
+  type ImoWarningRank,
+} from "./imoWarningLevel";
+
+export type { ImoWarningRank } from "./imoWarningLevel";
+export {
+  IMO_RANK_CODE,
+  higherImoRank,
+  imoLevelLabel,
+  imoWarningRank,
+  isImoActiveHazardRank,
+};
 
 /** Official IMO colour only. Severity is never mapped onto yellow / orange / red. */
-export type ImoWarningRank = "red" | "orange" | "yellow" | "unknown";
 export type ImoWarningPhase = "active" | "upcoming" | "expired" | "unknown";
 
 export interface ImoEventChip {
@@ -42,39 +59,11 @@ export type ImoWarningFeed =
   | { state: "unavailable"; summary: ImoWarningSummary; cards: PresentedImoWarning[] }
   | { state: "undetailed"; summary: ImoWarningSummary; cards: PresentedImoWarning[]; recordedCount: number };
 
-const RANK_ORDER: Record<ImoWarningRank, number> = { red: 0, orange: 1, yellow: 2, unknown: 3 };
 const PHASE_ORDER: Record<ImoWarningPhase, number> = { active: 0, upcoming: 1, expired: 2, unknown: 3 };
-
-const LEVEL_LABEL: Record<ImoWarningRank, string> = {
-  red: "紅色警報",
-  orange: "橙色警報",
-  yellow: "黃色警報",
-  unknown: "警報等級未知",
-};
-
-const LEVEL_MARK: Record<ImoWarningRank, string> = {
-  red: "🔴",
-  orange: "🟠",
-  yellow: "🟡",
-  unknown: "⚠️",
-};
-
-export function imoWarningRank(color: string | undefined): ImoWarningRank {
-  const key = color?.trim().toLowerCase();
-  if (key === "red" || key === "orange" || key === "yellow") return key;
-  return "unknown";
-}
-
-export function imoLevelLabel(rank: ImoWarningRank): string {
-  return `${LEVEL_MARK[rank]} ${LEVEL_LABEL[rank]}`;
-}
-
-export function higherImoRank(left: ImoWarningRank, right: ImoWarningRank): ImoWarningRank {
-  return RANK_ORDER[left] < RANK_ORDER[right] ? left : right;
-}
 
 export function imoEventIcon(eventEn: string | undefined, eventIs?: string): { icon: string; chip: string } {
   const text = `${eventEn ?? ""} ${eventIs ?? ""}`;
+  if (/landslide|debris|skrið/i.test(text)) return { icon: "⚠️", chip: "山崩／土石流" };
   if (/snow|blizzard/i.test(text)) return { icon: "❄️", chip: "降雪" };
   if (/thunder/i.test(text)) return { icon: "⛈️", chip: "雷雨" };
   if (/ice|icing|freezing/i.test(text)) return { icon: "🧊", chip: "結冰" };
@@ -117,12 +106,6 @@ export const IMO_PHASE_LABEL: Record<ImoWarningPhase, string> = {
   unknown: "時間狀態未知",
 };
 
-export const IMO_RANK_CODE: Record<ImoWarningRank, string> = {
-  red: "RED",
-  orange: "ORANGE",
-  yellow: "YELLOW",
-  unknown: "UNKNOWN",
-};
 
 export const IMO_PHASE_CODE: Record<ImoWarningPhase, string> = {
   active: "ACTIVE",
@@ -183,7 +166,7 @@ function present(warning: NormalizedImoWarning, now: Date): PresentedImoWarning 
 
 export function sortImoWarnings(cards: PresentedImoWarning[]): PresentedImoWarning[] {
   return [...cards].sort((left, right) => {
-    const rank = RANK_ORDER[left.rank] - RANK_ORDER[right.rank];
+    const rank = IMO_RANK_ORDER[left.rank] - IMO_RANK_ORDER[right.rank];
     if (rank !== 0) return rank;
     const phase = PHASE_ORDER[left.phase] - PHASE_ORDER[right.phase];
     if (phase !== 0) return phase;
@@ -195,10 +178,15 @@ export function sortImoWarnings(cards: PresentedImoWarning[]): PresentedImoWarni
 }
 
 export function summarizeImoWarnings(cards: PresentedImoWarning[]): ImoWarningSummary {
-  const effective = cards.filter((card) => card.phase === "active" || card.phase === "upcoming");
-  const counted = effective.length > 0 ? effective : cards;
-  const ranked = counted;
-  const highest = ranked.length === 0 ? "none" : ranked.reduce((best, card) => (RANK_ORDER[card.rank] < RANK_ORDER[best] ? card.rank : best), "unknown" as ImoWarningRank);
+  const effective = cards.filter(
+    (card) => (card.phase === "active" || card.phase === "upcoming") && isImoActiveHazardRank(card.rank),
+  );
+  const counted = effective.length > 0 ? effective : cards.filter((card) => isImoActiveHazardRank(card.rank));
+  const ranked = counted.length > 0 ? counted : [];
+  const highest =
+    ranked.length === 0
+      ? "none"
+      : ranked.reduce((best, card) => higherImoRank(best, card.rank), ranked[0]?.rank ?? "unknown");
   const chips = new Map<string, ImoEventChip>();
   for (const card of counted) {
     const event = imoEventIcon(card.warning.eventEn, card.warning.eventIs);

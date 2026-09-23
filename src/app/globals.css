@@ -112,6 +112,19 @@ button:disabled { opacity: .6; cursor: default; }
 .headline { margin-top: 10px; font-size: 15px; }
 .emphasis { margin-top: 10px; font-size: 17px; font-weight: 700; }
 
+.imo-warnings,
+.imo-warning-dialog {
+  --imo-warning-green: #4ADE80;
+  --imo-warning-yellow: #FDE047;
+  --imo-warning-orange: #FB923C;
+  --imo-warning-red: #F87171;
+  --imo-warning-unknown: #94A3B8;
+  --imo-warning-yellow-surface: #CA8A04;
+  --imo-warning-orange-surface: #C2410C;
+  --imo-warning-red-surface: #B91C1C;
+  --imo-warning-green-surface: #15803D;
+  --imo-warning-unknown-surface: #475569;
+}
 .imo-warnings { min-width: 0; }
 .imo-warnings-quiet { opacity: 0.92; }
 .imo-warnings-head {
@@ -132,6 +145,37 @@ button:disabled { opacity: .6; cursor: default; }
 .imo-warning-areas,
 .imo-warning-span { margin: 8px 0 0; }
 .imo-warnings-stale { color: #FDE68A; }
+.imo-warning-family-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.imo-warning-family-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #152033;
+  color: #E2E8F0;
+  font: inherit;
+  cursor: pointer;
+}
+.imo-warning-family-tab span {
+  color: #93C5FD;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.imo-warning-family-tab.is-active {
+  border-color: #7DD3FC;
+  background: #1B2A3C;
+  color: #F8FAFC;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.35);
+}
+.imo-warning-family-tab:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
 .imo-warning-chips {
   display: flex;
   flex-wrap: wrap;
@@ -162,13 +206,15 @@ button:disabled { opacity: .6; cursor: default; }
   background: #101826;
   overflow-wrap: anywhere;
 }
-.imo-warning-card.warning-yellow { border-left-color: #FDE047; }
-.imo-warning-card.warning-orange { border-left-color: #FB923C; }
-.imo-warning-card.warning-red { border-left-color: #F87171; }
-.imo-warning-card.warning-unknown { border-left-color: #94A3B8; }
-.imo-warnings-status.warning-yellow { color: #FDE047; }
-.imo-warnings-status.warning-orange { color: #FB923C; }
-.imo-warnings-status.warning-red { color: #F87171; }
+.imo-warning-card.warning-yellow { border-left-color: var(--imo-warning-yellow); }
+.imo-warning-card.warning-orange { border-left-color: var(--imo-warning-orange); }
+.imo-warning-card.warning-red { border-left-color: var(--imo-warning-red); }
+.imo-warning-card.warning-green { border-left-color: var(--imo-warning-green); }
+.imo-warning-card.warning-unknown { border-left-color: var(--imo-warning-unknown); }
+.imo-warnings-status.warning-yellow { color: var(--imo-warning-yellow); }
+.imo-warnings-status.warning-orange { color: var(--imo-warning-orange); }
+.imo-warnings-status.warning-red { color: var(--imo-warning-red); }
+.imo-warnings-status.warning-green { color: var(--imo-warning-green); }
 .imo-warnings-status.warning-unknown { color: #E2E8F0; }
 .imo-warning-card-head,
 .imo-warning-event,
@@ -225,7 +271,13 @@ button:disabled { opacity: .6; cursor: default; }
 }
 .imo-warning-map-sea { fill: #0B1018; }
 .imo-warning-map-land { fill: #1A2433; stroke: #334155; stroke-width: 1; }
-.imo-warning-map-region { cursor: pointer; outline: none; }
+.imo-warning-map-region { cursor: pointer; outline: none; fill-opacity: 1; }
+.imo-warning-map-region.is-yellow { fill: var(--imo-warning-yellow-surface); stroke: var(--imo-warning-yellow); }
+.imo-warning-map-region.is-orange { fill: var(--imo-warning-orange-surface); stroke: var(--imo-warning-orange); }
+.imo-warning-map-region.is-red { fill: var(--imo-warning-red-surface); stroke: var(--imo-warning-red); }
+.imo-warning-map-region.is-unknown,
+.imo-warning-map-region.is-unknown-time { fill: var(--imo-warning-unknown-surface); stroke: var(--imo-warning-unknown); }
+.imo-warning-map-region.is-green { fill: var(--imo-warning-unknown-surface); stroke: var(--imo-warning-unknown); }
 .imo-warning-map-region:focus-visible { stroke: #F8FAFC; stroke-width: 3; }
 .imo-warning-map-region.is-selected { filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.55)); }
 .imo-warning-map-region.is-dimmed { opacity: 0.22; }
@@ -245,7 +297,9 @@ button:disabled { opacity: .6; cursor: default; }
   list-style: none;
   font-size: 13px;
 }
-.imo-warning-map-hint { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.imo-warning-map-hint,
+.imo-warning-map-note { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.imo-warning-map-note { font-size: 12px; }
 .imo-warning-map.is-detail { max-width: none; margin: 0; }
 .imo-warning-dialog {
   --imo-fg: #F3F7FC;
@@ -255,9 +309,9 @@ button:disabled { opacity: .6; cursor: default; }
   --imo-line: #2A3A4F;
   --imo-panel: #101820;
   --imo-tile: #16202C;
-  --imo-yellow: #F5D36A;
-  --imo-orange: #FB923C;
-  --imo-red: #F87171;
+  --imo-yellow: var(--imo-warning-yellow);
+  --imo-orange: var(--imo-warning-orange);
+  --imo-red: var(--imo-warning-red);
   --imo-phase: #7DD3FC;
   --imo-wind-speed-alert: #FF6B6B;
   width: min(1180px, calc(100% - 28px));
@@ -369,9 +423,10 @@ button:disabled { opacity: .6; cursor: default; }
   border-radius: 50%;
   background: currentColor;
 }
-.imo-warning-dialog-badge.is-severity.is-yellow { color: var(--imo-yellow); border-color: rgba(245, 211, 106, 0.55); }
-.imo-warning-dialog-badge.is-severity.is-orange { color: var(--imo-orange); border-color: rgba(251, 146, 60, 0.55); }
-.imo-warning-dialog-badge.is-severity.is-red { color: var(--imo-red); border-color: rgba(248, 113, 113, 0.55); }
+.imo-warning-dialog-badge.is-severity.is-yellow { color: var(--imo-warning-yellow); border-color: color-mix(in srgb, var(--imo-warning-yellow) 55%, transparent); }
+.imo-warning-dialog-badge.is-severity.is-orange { color: var(--imo-warning-orange); border-color: color-mix(in srgb, var(--imo-warning-orange) 55%, transparent); }
+.imo-warning-dialog-badge.is-severity.is-red { color: var(--imo-warning-red); border-color: color-mix(in srgb, var(--imo-warning-red) 55%, transparent); }
+.imo-warning-dialog-badge.is-severity.is-green { color: var(--imo-warning-green); border-color: color-mix(in srgb, var(--imo-warning-green) 55%, transparent); }
 .imo-warning-dialog-badge.is-severity.is-unknown { color: var(--imo-secondary); }
 .imo-warning-dialog-badge.is-phase { color: var(--imo-phase); border-color: rgba(125, 211, 252, 0.35); }
 .imo-warning-dialog-badge.is-phase.is-expired,
@@ -467,10 +522,11 @@ button:disabled { opacity: .6; cursor: default; }
   background: #1A2634;
   color: var(--imo-fg);
   border-color: #4B6280;
-  box-shadow: inset 3px 0 0 var(--imo-yellow);
+  box-shadow: inset 3px 0 0 var(--imo-warning-yellow);
 }
-.imo-warning-dialog-tab.is-active.is-orange { box-shadow: inset 3px 0 0 var(--imo-orange); }
-.imo-warning-dialog-tab.is-active.is-red { box-shadow: inset 3px 0 0 var(--imo-red); }
+.imo-warning-dialog-tab.is-active.is-orange { box-shadow: inset 3px 0 0 var(--imo-warning-orange); }
+.imo-warning-dialog-tab.is-active.is-red { box-shadow: inset 3px 0 0 var(--imo-warning-red); }
+.imo-warning-dialog-tab.is-active.is-green { box-shadow: inset 3px 0 0 var(--imo-warning-green); }
 .imo-warning-dialog-tab.is-active .imo-warning-dialog-tab-event { color: var(--imo-fg); }
 .imo-warning-dialog-tab.is-active .imo-warning-dialog-tab-rank { color: var(--imo-secondary); }
 .imo-warning-dialog-tabs button:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
@@ -633,11 +689,12 @@ button:disabled { opacity: .6; cursor: default; }
 }
 .imo-warning-dialog-safety {
   padding: 12px 14px;
-  border-left: 3px solid var(--imo-yellow);
+  border-left: 3px solid var(--imo-warning-yellow);
   background: #151E29;
 }
-.imo-warning-dialog-safety.is-orange { border-left-color: var(--imo-orange); }
-.imo-warning-dialog-safety.is-red { border-left-color: var(--imo-red); }
+.imo-warning-dialog-safety.is-orange { border-left-color: var(--imo-warning-orange); }
+.imo-warning-dialog-safety.is-red { border-left-color: var(--imo-warning-red); }
+.imo-warning-dialog-safety.is-green { border-left-color: var(--imo-warning-green); }
 .imo-warning-dialog-safety p { margin: 8px 0 0; color: var(--imo-fg); font-size: 15px; line-height: 1.65; }
 .imo-warning-dialog-original {
   padding-top: 16px;

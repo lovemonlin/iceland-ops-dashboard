@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import {
   createWarningMapProjection,
+  orderedImoMapRegions,
   regionLabelAt,
   ringsFromWarning,
   ringToPath,
@@ -10,22 +11,6 @@ import {
   type ImoWarningMapModel,
 } from "@/lib/imoWarningMap";
 import { translateImoArea, translateImoEvent } from "@/lib/imoWarningZhTw";
-
-const FILL: Record<string, string> = {
-  yellow: "rgba(253, 224, 71, 0.55)",
-  orange: "rgba(251, 146, 60, 0.58)",
-  red: "rgba(248, 113, 113, 0.58)",
-  unknown: "rgba(148, 163, 184, 0.45)",
-  "unknown-time": "rgba(148, 163, 184, 0.28)",
-};
-
-const STROKE: Record<string, string> = {
-  yellow: "#FDE047",
-  orange: "#FB923C",
-  red: "#F87171",
-  unknown: "#94A3B8",
-  "unknown-time": "#CBD5E1",
-};
 
 export function ImoWarningMap({
   model,
@@ -45,6 +30,7 @@ export function ImoWarningMap({
     () => ringToPath(model.coast.length ? [...model.coast, model.coast[0]] : [], projection.project),
     [model.coast, projection],
   );
+  const layers = useMemo(() => orderedImoMapRegions(model.regions), [model.regions]);
   const detail = mode === "detail";
   const activeCard = model.regions.flatMap((region) => region.cards).find((card) => card.warning.identifier === activeWarningId);
   const activeRings = activeCard ? ringsFromWarning(activeCard.warning) : [];
@@ -65,12 +51,11 @@ export function ImoWarningMap({
       >
         <rect width={projection.width.toFixed(1)} height={projection.height.toFixed(1)} className="imo-warning-map-sea" />
         <path d={coastPath} className="imo-warning-map-land" />
-        {model.regions.map((region) => {
+        {layers.map((region) => {
           const summary = summarizeWarningRegion(region);
           const areaZh = translateImoArea(region.name);
           const shortZh = translateImoArea(region.name, "short");
           const eventZh = region.events.map((event) => translateImoEvent(event.eventEn).text).join("、");
-          const paintKey = region.paint === "unknown-time" ? "unknown-time" : region.rank;
           const selected = selectedId === region.id;
           const dimmed = detail && activeWarningId ? !region.cards.some((card) => card.warning.identifier === activeWarningId) : false;
           const aria = `${areaZh.text}，${region.paint === "unknown-time" ? "時間狀態未知" : summary.countLine}，${eventZh}`;
@@ -80,12 +65,11 @@ export function ImoWarningMap({
               <g key={`${region.id}-${index}`}>
                 <path
                   d={ringToPath(ring, projection.project)}
-                  fill={FILL[paintKey]}
-                  stroke={STROKE[paintKey]}
                   strokeWidth={selected && !detail ? 3.2 : 1.4}
                   strokeDasharray={region.paint === "unknown-time" ? "6 4" : undefined}
                   className={[
                     "imo-warning-map-region",
+                    region.paint === "unknown-time" ? "is-unknown-time" : `is-${region.rank}`,
                     selected && !detail ? "is-selected" : "",
                     dimmed ? "is-dimmed" : "",
                     detail ? "is-context" : "",
@@ -93,6 +77,7 @@ export function ImoWarningMap({
                     .filter(Boolean)
                     .join(" ")}
                   data-region-id={region.id}
+                  data-imo-rank={region.rank}
                   tabIndex={detail ? undefined : 0}
                   role={detail ? undefined : "button"}
                   aria-label={aria}
@@ -123,10 +108,8 @@ export function ImoWarningMap({
             <path
               key={`active-${activeWarningId}-${index}`}
               d={ringToPath(ring, projection.project)}
-              fill={FILL[activeCard?.rank ?? "unknown"]}
-              stroke={STROKE[activeCard?.rank ?? "unknown"]}
               strokeWidth={3.8}
-              className="imo-warning-map-region is-active-warning"
+              className={`imo-warning-map-region is-active-warning is-${activeCard?.rank ?? "unknown"}`}
               data-active-warning={activeWarningId}
               pointerEvents="none"
             />
@@ -142,6 +125,7 @@ export function ImoWarningMap({
               <li>⚪ 等級未知</li>
             )}
           </ul>
+          <p className="imo-warning-map-note">地圖顏色表示目前類型中該區域的最高官方警報等級</p>
           <p className="imo-warning-map-hint">點選警報區域查看詳情</p>
         </>
       )}

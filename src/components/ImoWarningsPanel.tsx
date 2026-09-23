@@ -4,6 +4,12 @@ import { useState } from "react";
 import { ImoWarningCard, ImoWarningDetailDialog } from "@/components/ImoWarningDetailDialog";
 import { ImoWarningMap } from "@/components/ImoWarningMap";
 import { TechnicalDetails } from "@/components/StatusCard";
+import {
+  filterImoWarningFeedByFamily,
+  imoFamilyRegionLine,
+  imoWarningFamilyTabs,
+  type ImoWarningFamily,
+} from "@/lib/imoWarningFamily";
 import { buildImoWarningMap, resolveImoWarningDialog } from "@/lib/imoWarningMap";
 import {
   formatIcelandWarningWindow,
@@ -25,9 +31,14 @@ export function ImoWarningsPanel({
   schemaVersion: number;
 }) {
   const feed = presentImoWarnings(imo, now);
-  const map = buildImoWarningMap(feed);
+  const familyTabs = imoWarningFamilyTabs(feed.cards);
+  const [family, setFamily] = useState<ImoWarningFamily>();
   const [open, setOpen] = useState<{ regionId?: string; warningId?: string } | null>(null);
+  const selectedFamily = familyTabs.some((tab) => tab.family === family) ? family : familyTabs[0]?.family;
+  const visible = selectedFamily ? filterImoWarningFeedByFamily(feed, selectedFamily) : feed;
+  const map = buildImoWarningMap(visible);
   const summary = feed.summary;
+  const local = visible.summary;
   const headlineRank: ImoWarningRank | "none" =
     feed.state === "stale-expired" || feed.state === "unavailable" || feed.state === "clear" || feed.state === "undetailed"
       ? "none"
@@ -40,7 +51,9 @@ export function ImoWarningsPanel({
         : feed.state === "clear"
         ? "🟢 目前無有效警報"
         : headlineRank === "none"
-          ? "⚠ 警報等級未知"
+          ? feed.cards.some((card) => card.rank === "green" && card.phase !== "expired")
+            ? imoLevelLabel("green")
+            : "⚠ 警報等級未知"
           : imoLevelLabel(headlineRank);
 
   return (
@@ -51,10 +64,14 @@ export function ImoWarningsPanel({
       </div>
 
       {feed.state === "current" && summary.effectiveCount > 0 && (
-        <p className="imo-warnings-lead">冰島目前有 {summary.effectiveCount} 則有效天氣警報</p>
+        <p className="imo-warnings-lead">冰島目前有 {summary.effectiveCount} 則有效／即將生效警報</p>
       )}
       {feed.state === "current" && summary.effectiveCount === 0 && (
-        <p className="imo-warnings-lead">有警報資料，但開始或結束時間不足，無法判斷是否正在生效。</p>
+        <p className="imo-warnings-lead">
+          {feed.cards.some((card) => card.rank === "green" && card.phase !== "expired")
+            ? "目前沒有有效的黃色、橙色或紅色警報。"
+            : "有警報資料，但開始或結束時間不足，無法判斷是否正在生效。"}
+        </p>
       )}
       {feed.state === "stale-current" && (
         <p className="imo-warnings-stale">
@@ -76,23 +93,46 @@ export function ImoWarningsPanel({
 
       {(feed.state === "current" || feed.state === "stale-current") && (
         <>
+          {familyTabs.length > 0 && (
+            <div className="imo-warning-family-tabs" role="tablist" aria-label="警報類型">
+              {familyTabs.map((tab) => {
+                const selected = tab.family === selectedFamily;
+                return (
+                  <button
+                    key={tab.family}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    className={`imo-warning-family-tab${selected ? " is-active" : ""}`}
+                    onClick={() => {
+                      setFamily(tab.family);
+                      setOpen(null);
+                    }}
+                  >
+                    {tab.label}
+                    <span>{tab.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <ul className="imo-warning-chips">
-            {summary.yellow > 0 && <li>🟡 黃色 {summary.yellow}</li>}
-            {summary.orange > 0 && <li>🟠 橙色 {summary.orange}</li>}
-            {summary.red > 0 && <li>🔴 紅色 {summary.red}</li>}
-            {summary.events.map((event) => (
+            {local.yellow > 0 && <li>🟡 黃色 {local.yellow}</li>}
+            {local.orange > 0 && <li>🟠 橙色 {local.orange}</li>}
+            {local.red > 0 && <li>🔴 紅色 {local.red}</li>}
+            {local.events.map((event) => (
               <li key={`${event.icon}-${event.label}`}>
                 {event.icon} {event.label} {event.count}
               </li>
             ))}
-            <li>📍 {summary.areas.length} 個影響區域</li>
+            {selectedFamily && <li>📍 {imoFamilyRegionLine(selectedFamily, local.areas.length)}</li>}
           </ul>
-          {summary.areas.length > 0 && (
-            <p className="imo-warning-areas">主要影響：{summary.areas.map((area) => translateImoArea(area, "short").text).join(" · ")}</p>
+          {local.areas.length > 0 && (
+            <p className="imo-warning-areas">主要影響：{local.areas.map((area) => translateImoArea(area, "short").text).join(" · ")}</p>
           )}
-          {(summary.earliestOnset || summary.latestExpires) && (
+          {(local.earliestOnset || local.latestExpires) && (
             <p className="imo-warning-span">
-              冰島時間 {formatIcelandWarningWindow(summary.earliestOnset, summary.latestExpires)}
+              冰島時間 {formatIcelandWarningWindow(local.earliestOnset, local.latestExpires)}
             </p>
           )}
           {map.status === "ready" && <ImoWarningMap model={map} mode="overview" onSelect={(id) => setOpen({ regionId: id })} />}
@@ -101,17 +141,17 @@ export function ImoWarningsPanel({
           )}
           {map.status === "blocked" && <p className="imo-warnings-stale">目前警報狀態無法確認</p>}
           <div className="imo-warning-grid">
-            {feed.cards.map((card) => (
+            {visible.cards.map((card) => (
               <ImoWarningCard key={card.warning.identifier} card={card} onOpen={() => setOpen({ warningId: card.warning.identifier })} />
             ))}
           </div>
         </>
       )}
 
-      {open && resolveImoWarningDialog(feed, open) && (
+      {open && resolveImoWarningDialog(visible, open) && (
         <ImoWarningDetailDialog
-          key={`${open.regionId ?? ""}:${open.warningId ?? ""}`}
-          feed={feed}
+          key={`${selectedFamily ?? ""}:${open.regionId ?? ""}:${open.warningId ?? ""}`}
+          feed={visible}
           map={map}
           open={open}
           stale={feed.state === "stale-current"}

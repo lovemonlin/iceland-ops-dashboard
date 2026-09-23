@@ -1,11 +1,11 @@
 import icelandCoastRing from "./icelandCoastRing.json";
+import { isImoActiveHazardRank, type ImoWarningRank } from "./imoWarningLevel";
 import {
   higherImoRank,
   imoEventIcon,
   imoLevelLabel,
   sortImoWarnings,
   type ImoWarningFeed,
-  type ImoWarningRank,
   type PresentedImoWarning,
 } from "./imoWarningPresentation";
 import type { NormalizedImoWarning } from "@/monitors/imo/normalize";
@@ -54,7 +54,8 @@ export interface ImoWarningRegionSummary {
 
 const MAP_WIDTH = 900;
 const PAD = 0.06;
-const RANK_SORT: Record<ImoWarningRank, number> = { red: 0, orange: 1, yellow: 2, unknown: 3 };
+const RANK_SORT: Record<ImoWarningRank, number> = { red: 0, orange: 1, yellow: 2, unknown: 3, green: 4 };
+const PAINT_LAYER: Record<ImoWarningRank, number> = { unknown: 0, yellow: 1, orange: 2, red: 3, green: -1 };
 
 const coastRing: LonLat[] = (icelandCoastRing as number[][]).flatMap((point) =>
   point.length >= 2 && Number.isFinite(point[0]) && Number.isFinite(point[1]) ? [[point[0], point[1]] as LonLat] : [],
@@ -104,7 +105,7 @@ function areaKey(card: PresentedImoWarning): string {
 }
 
 function mapEligible(card: PresentedImoWarning): boolean {
-  return card.phase !== "expired";
+  return card.phase !== "expired" && isImoActiveHazardRank(card.rank);
 }
 
 function colorsFromOfficial(card: PresentedImoWarning): boolean {
@@ -200,6 +201,14 @@ export function buildImoWarningMap(feed: ImoWarningFeed): ImoWarningMapModel {
     return { status: feed.cards.some(mapEligible) ? "no-geometry" : "hidden", stale: feed.state === "stale-current", regions: [], coast };
   }
   return { status: "ready", stale: feed.state === "stale-current", regions: drawable, coast };
+}
+
+export function orderedImoMapRegions(regions: ImoWarningMapRegion[]): ImoWarningMapRegion[] {
+  return [...regions].sort((left, right) => {
+    const layer = PAINT_LAYER[left.rank] - PAINT_LAYER[right.rank];
+    if (layer !== 0) return layer;
+    return left.id.localeCompare(right.id);
+  });
 }
 
 export function summarizeWarningRegion(region: ImoWarningMapRegion): ImoWarningRegionSummary {
