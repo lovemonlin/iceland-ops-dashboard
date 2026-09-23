@@ -125,7 +125,7 @@ export function ImoWarningMap({
               d={ringToPath(ring, projection.project)}
               fill={FILL[activeCard?.rank ?? "unknown"]}
               stroke={STROKE[activeCard?.rank ?? "unknown"]}
-              strokeWidth={3.2}
+              strokeWidth={3.8}
               className="imo-warning-map-region is-active-warning"
               data-active-warning={activeWarningId}
               pointerEvents="none"

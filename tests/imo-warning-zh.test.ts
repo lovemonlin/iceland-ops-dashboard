@@ -124,8 +124,8 @@ test("summary, map, dialog, and cards use Chinese without dropping English origi
   const normalize = read("src/monitors/imo/normalize.ts");
   assert.match(panel, /translateImoArea\(area, "short"\)/);
   assert.match(dialog, /translateImoEvent/);
-  assert.match(dialog, /English \/ IMO/);
-  assert.match(dialog, /Íslenska \/ IMO/);
+  assert.match(dialog, /IMO ENGLISH ORIGINAL/);
+  assert.match(dialog, /IMO ÍSLENSKA ORIGINAL/);
   assert.match(dialog, /查看詳情/);
   assert.match(map, /translateImoArea\(region\.name, "short"\)/);
   assert.equal(/vedur\.is|translate\.googleapis|openai|fetch\s*\(/.test(read("src/lib/imoWarningZhTw.ts") + panel + dialog + map), false);

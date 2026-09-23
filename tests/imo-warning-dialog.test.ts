@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { ringsFromWarning, resolveImoWarningDialog } from "../src/lib/imoWarningMap";
-import { formatIcelandStamp, presentImoWarnings } from "../src/lib/imoWarningPresentation";
+import {
+  clampImoDialogPlace,
+  clampImoDialogSize,
+  IMO_DIALOG_MIN_HEIGHT,
+  IMO_DIALOG_MIN_WIDTH,
+} from "../src/lib/imoWarningDialogLayout";
+import { formatIcelandStamp, imoWarningLifecycleSteps, presentImoWarnings } from "../src/lib/imoWarningPresentation";
 import {
   translateImoDescription,
   translateImoEvent,
@@ -192,6 +198,13 @@ test("a stale unexpired warning can still open; expired-only failure cannot", ()
   assert.equal(expired, undefined);
 });
 
+test("lifecycle steps follow the existing warning phase", () => {
+  assert.deepEqual(imoWarningLifecycleSteps("upcoming"), ["published", "now", "start", "end"]);
+  assert.deepEqual(imoWarningLifecycleSteps("active"), ["published", "start", "now", "end"]);
+  assert.deepEqual(imoWarningLifecycleSteps("expired"), ["published", "start", "end"]);
+  assert.equal(imoWarningLifecycleSteps("unknown"), undefined);
+});
+
 test("the dialog UI follows the native dialog pattern and compact cards", () => {
   const dialog = read("src/components/ImoWarningDetailDialog.tsx");
   const panel = read("src/components/ImoWarningsPanel.tsx");
@@ -214,13 +227,25 @@ test("the dialog UI follows the native dialog pattern and compact cards", () => 
   assert.match(dialog, /開始生效/);
   assert.match(dialog, /警報結束/);
   assert.match(dialog, /Atlantic\/Reykjavik/);
-  assert.match(dialog, /English \/ IMO/);
-  assert.match(dialog, /Íslenska \/ IMO/);
+  assert.match(dialog, /IMO ENGLISH ORIGINAL/);
+  assert.match(dialog, /IMO ÍSLENSKA ORIGINAL/);
   assert.match(dialog, /translateImoHeadline/);
   assert.match(dialog, /此警報沒有可用的區域圖形資料/);
   assert.match(dialog, /mode="detail"/);
   assert.match(dialog, /activeWarningId/);
   assert.match(dialog, /查看詳情/);
+  assert.match(dialog, /INCIDENT SUMMARY/);
+  assert.match(dialog, /is-severity/);
+  assert.match(dialog, /is-phase/);
+  assert.match(dialog, /code="START"/);
+  assert.match(dialog, /code="END"/);
+  assert.match(dialog, /imo-warning-dialog-iceland/);
+  assert.match(dialog, /imo-warning-dialog-utc/);
+  assert.match(dialog, /imo-warning-dialog-zh/);
+  assert.match(dialog, /<details className="imo-warning-dialog-original">/);
+  assert.equal(dialog.includes("<details open"), false);
+  assert.match(dialog, /instruction\.text &&/);
+  assert.match(dialog, /imo-warning-dialog-safety/);
   assert.equal(dialog.includes("查看完整警報內容"), false);
   assert.equal(panel.includes("查看完整警報內容"), false);
   assert.equal(panel.includes("imo-warning-selection"), false);
@@ -232,6 +257,33 @@ test("the dialog UI follows the native dialog pattern and compact cards", () => 
   assert.match(map, /is-active-warning/);
   assert.match(css, /overflow-x:\s*auto/);
   assert.match(css, /imo-warning-dialog-pane/);
-  assert.match(css, /overflow-y:\s*auto/);
+  assert.match(dialog, /onPointerDown=\{beginMove\}/);
+  assert.match(dialog, /onPointerDown=\{beginResize\}/);
+  assert.match(dialog, /className="imo-warning-dialog-resize"/);
+  assert.match(dialog, /skipBackdropClose/);
+  assert.match(dialog, /setPointerCapture/);
+  assert.match(dialog, /restoreRef\.current\?\.focus/);
+  assert.match(dialog, /onCancel=\{/);
+  assert.match(css, /\.imo-warning-dialog-resize \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 719px\)[\s\S]*\.imo-warning-dialog-header \{\s*cursor: default;/);
+  const moveFn = dialog.slice(dialog.indexOf("const beginMove"), dialog.indexOf("const beginResize"));
+  assert.equal(moveFn.includes("setWarningId"), false);
+  assert.equal(dialog.slice(dialog.indexOf("const beginResize"), dialog.indexOf("const moveTab")).includes("setWarningId"), false);
+  const moveTab = dialog.slice(dialog.indexOf("const moveTab"), dialog.indexOf("return (", dialog.indexOf("const moveTab")));
+  assert.equal(moveTab.includes("setDialogPlace"), false);
+  assert.equal(moveTab.includes("setDialogSize"), false);
+  assert.match(dialog, /clampImoDialogSize/);
+  assert.match(dialog, /className="imo-wind-speed"/);
+  assert.match(dialog, /isWindRelatedImoWarning/);
+  assert.match(css, /--imo-wind-speed-alert/);
   assert.equal(/vedur\.is|fetch\s*\(/.test(files), false);
+});
+
+test("desktop dialog size stays inside the viewport and keeps a usable header", () => {
+  assert.equal(IMO_DIALOG_MIN_WIDTH, 760);
+  assert.equal(IMO_DIALOG_MIN_HEIGHT, 520);
+  assert.deepEqual(clampImoDialogSize(400, 200, { width: 1400, height: 900 }), { width: 760, height: 520 });
+  assert.deepEqual(clampImoDialogSize(2000, 2000, { width: 1000, height: 800 }), { width: 960, height: 752 });
+  assert.deepEqual(clampImoDialogPlace(-400, -20, 800, { width: 1200, height: 800 }), { left: -400, top: 0 });
+  assert.deepEqual(clampImoDialogPlace(2000, 2000, 800, { width: 1200, height: 800 }), { left: 1120, top: 752 });
 });

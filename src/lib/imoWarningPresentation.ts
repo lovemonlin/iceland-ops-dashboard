@@ -117,9 +117,37 @@ export const IMO_PHASE_LABEL: Record<ImoWarningPhase, string> = {
   unknown: "時間狀態未知",
 };
 
+export const IMO_RANK_CODE: Record<ImoWarningRank, string> = {
+  red: "RED",
+  orange: "ORANGE",
+  yellow: "YELLOW",
+  unknown: "UNKNOWN",
+};
+
+export const IMO_PHASE_CODE: Record<ImoWarningPhase, string> = {
+  active: "ACTIVE",
+  upcoming: "UPCOMING",
+  expired: "ENDED",
+  unknown: "UNKNOWN",
+};
+
+export type ImoLifecycleStep = "published" | "now" | "start" | "end";
+
+export function imoWarningLifecycleSteps(phase: ImoWarningPhase): ImoLifecycleStep[] | undefined {
+  if (phase === "upcoming") return ["published", "now", "start", "end"];
+  if (phase === "active") return ["published", "start", "now", "end"];
+  if (phase === "expired") return ["published", "start", "end"];
+  return undefined;
+}
+
 export function formatIcelandStamp(iso?: string): string {
   if (!iso) return "—";
   return icelandParts(iso)?.stamp ?? "—";
+}
+
+export function formatIcelandDayClock(iso?: string): { day: string; clock: string; stamp: string } | undefined {
+  if (!iso) return undefined;
+  return icelandParts(iso);
 }
 
 /** Iceland clock only. Same local day drops the end date; a midnight crossing keeps both dates. */
