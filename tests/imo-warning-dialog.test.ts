@@ -10,10 +10,12 @@ import {
   IMO_DIALOG_MIN_WIDTH,
 } from "../src/lib/imoWarningDialogLayout";
 import { formatIcelandStamp, imoWarningLifecycleSteps, presentImoWarnings } from "../src/lib/imoWarningPresentation";
+import { presentImoWarningTextReport } from "../src/lib/imoWarningTextReport";
 import {
   translateImoDescription,
   translateImoEvent,
   translateImoHeadline,
+  translateImoInstruction,
 } from "../src/lib/imoWarningZhTw";
 import type { NormalizedImoWarning } from "../src/monitors/imo/normalize";
 import type { SnapshotSource } from "../src/snapshot/types";
@@ -226,7 +228,15 @@ test("the dialog UI follows the native dialog pattern and compact cards", () => 
   assert.match(dialog, /發布時間/);
   assert.match(dialog, /開始生效/);
   assert.match(dialog, /警報結束/);
+  assert.match(dialog, /code="SEVERITY"/);
+  assert.match(dialog, /code="STATUS"/);
+  assert.match(dialog, /code="REGION"/);
+  assert.match(dialog, /imo-warning-dialog-time-line/);
+  assert.match(dialog, /formatIcelandDayClock/);
   assert.match(dialog, /Atlantic\/Reykjavik/);
+  assert.match(css, /\.imo-warning-dialog-telemetry \{[\s\S]*gap: 8px;/);
+  assert.match(css, /\.imo-warning-dialog-telemetry \.imo-warning-dialog-tile \{[\s\S]*padding: 8px 10px;/);
+  assert.match(css, /@media \(max-width: 419px\)[\s\S]*\.imo-warning-dialog-telemetry \{ grid-template-columns: 1fr; \}/);
   assert.match(dialog, /IMO ENGLISH ORIGINAL/);
   assert.match(dialog, /IMO ÍSLENSKA ORIGINAL/);
   assert.match(dialog, /translateImoHeadline/);
@@ -234,14 +244,36 @@ test("the dialog UI follows the native dialog pattern and compact cards", () => 
   assert.match(dialog, /mode="detail"/);
   assert.match(dialog, /activeWarningId/);
   assert.match(dialog, /查看詳情/);
-  assert.match(dialog, /INCIDENT SUMMARY/);
+  assert.match(dialog, /事件摘要/);
   assert.match(dialog, /is-severity/);
   assert.match(dialog, /is-phase/);
-  assert.match(dialog, /code="START"/);
-  assert.match(dialog, /code="END"/);
-  assert.match(dialog, /imo-warning-dialog-iceland/);
-  assert.match(dialog, /imo-warning-dialog-utc/);
+  assert.match(dialog, /zh="開始生效"/);
+  assert.match(dialog, /zh="警報結束"/);
+  assert.equal(dialog.includes("imo-warning-dialog-iceland"), false);
+  assert.equal(dialog.includes("imo-warning-dialog-utc"), false);
+  assert.equal(dialog.includes(">Iceland<"), false);
+  assert.match(dialog, /文字報告/);
+  assert.match(dialog, /警報時序/);
+  assert.match(dialog, /presentImoWarningTextReport/);
   assert.match(dialog, /imo-warning-dialog-zh/);
+  assert.match(dialog, /imo-warning-dialog-side/);
+  assert.match(dialog, /imo-warning-dialog-languages/);
+  assert.equal(dialog.split('className="imo-warning-dialog-zh"').length - 1, 1);
+  const languagesAt = dialog.indexOf('className="imo-warning-dialog-languages"');
+  const detailAt = dialog.indexOf('className="imo-warning-dialog-detail"');
+  const zhAt = dialog.indexOf('className="imo-warning-dialog-zh"');
+  const right = dialog.slice(detailAt);
+  assert.ok(languagesAt > 0 && languagesAt < detailAt);
+  assert.ok(zhAt > languagesAt && zhAt < detailAt);
+  assert.equal(right.includes("imo-warning-dialog-zh"), false);
+  assert.equal(right.includes("IMO ENGLISH ORIGINAL"), false);
+  assert.equal(right.includes("IMO ÍSLENSKA ORIGINAL"), false);
+  assert.match(right, /文字報告/);
+  assert.match(right, /ImoWindImpactPanel/);
+  assert.match(right, /role="tablist"/);
+  assert.match(css, /\.imo-warning-dialog-languages \{[\s\S]*overflow-y:\s*auto;/);
+  assert.match(css, /@media \(max-width: 719px\)[\s\S]*\.imo-warning-dialog-side \{ display: contents; \}/);
+  assert.match(css, /@media \(max-width: 719px\)[\s\S]*\.imo-warning-dialog-languages \{[\s\S]*order: 3;/);
   assert.match(dialog, /<details className="imo-warning-dialog-original">/);
   assert.equal(dialog.includes("<details open"), false);
   assert.match(dialog, /instruction\.text &&/);
@@ -286,4 +318,54 @@ test("desktop dialog size stays inside the viewport and keeps a usable header", 
   assert.deepEqual(clampImoDialogSize(2000, 2000, { width: 1000, height: 800 }), { width: 960, height: 752 });
   assert.deepEqual(clampImoDialogPlace(-400, -20, 800, { width: 1200, height: 800 }), { left: -400, top: 0 });
   assert.deepEqual(clampImoDialogPlace(2000, 2000, 800, { width: 1200, height: 800 }), { left: 1120, top: 752 });
+});
+
+test("the text report stays under 300 characters and uses only existing warning facts", () => {
+  const rain = warning({ identifier: "se-rain", eventEn: "Weather Warning: Precipitation", headlineEn: "Heavy rain", descriptionEn: "Heavy rain is expected." });
+  const wind = warning({
+    identifier: "se-wind",
+    eventEn: "Weather Warning: Wind",
+    headlineEn: "East severe gale",
+    descriptionEn: "East severe gale, 18-25 m/s with windgusts locally over 35 m/s.",
+    instructionEn: "Secure loose objects.",
+  });
+  const rainCard = feedOf([rain]).cards[0];
+  const windCard = feedOf([wind]).cards[0];
+  const rainReport = presentImoWarningTextReport({
+    rank: rainCard.rank,
+    phase: rainCard.phase,
+    areaZh: "東南部",
+    eventZh: translateImoEvent(rain.eventEn).text,
+    windowLabel: rainCard.windowLabel,
+    headlineZh: translateImoHeadline(rain.headlineEn).text,
+    instructionZh: translateImoInstruction(rain.instructionEn).text,
+    eventEn: rain.eventEn,
+    headlineEn: rain.headlineEn,
+    descriptionEn: rain.descriptionEn,
+  });
+  const windReport = presentImoWarningTextReport({
+    rank: windCard.rank,
+    phase: windCard.phase,
+    areaZh: "東南部",
+    eventZh: translateImoEvent(wind.eventEn).text,
+    windowLabel: windCard.windowLabel,
+    headlineZh: translateImoHeadline(wind.headlineEn).text,
+    instructionZh: translateImoInstruction(wind.instructionEn).text,
+    eventEn: wind.eventEn,
+    headlineEn: wind.headlineEn,
+    descriptionEn: wind.descriptionEn,
+  });
+  assert.ok([...rainReport].length <= 300);
+  assert.ok([...rainReport].length >= 40);
+  assert.match(rainReport, /黃色警報/);
+  assert.match(rainReport, /降雨警報/);
+  assert.match(rainReport, /目前生效/);
+  assert.equal(/m\/s/.test(rainReport), false);
+  assert.ok([...windReport].length <= 300);
+  assert.match(windReport, /18–25 m\/s/);
+  assert.match(windReport, /35 m\/s 以上/);
+  assert.equal(wind.warningColor, "Yellow");
+  const css = read("src/app/globals.css");
+  assert.match(css, /\.imo-warning-dialog-lifecycle-mark \{[\s\S]*width: 14px;/);
+  assert.match(css, /\.imo-warning-dialog-lifecycle-node::after \{[\s\S]*height: 3px;/);
 });

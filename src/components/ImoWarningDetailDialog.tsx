@@ -20,6 +20,7 @@ import {
   type ImoWarningRank,
   type PresentedImoWarning,
 } from "@/lib/imoWarningPresentation";
+import { IMO_RANK_LABEL } from "@/lib/imoWarningLevel";
 import {
   IMO_ZH_UNTRANSLATED,
   translateImoArea,
@@ -34,12 +35,9 @@ import {
   IMO_DIALOG_COMPACT,
 } from "@/lib/imoWarningDialogLayout";
 import { classifyImoWarningFamily, imoFamilyKicker } from "@/lib/imoWarningFamily";
+import { ImoWindImpactPanel } from "@/components/ImoWindImpactPanel";
+import { presentImoWarningTextReport } from "@/lib/imoWarningTextReport";
 import { isWindRelatedImoWarning, splitImoWindSpeeds } from "@/lib/imoWindSpeed";
-import { formatDateTime } from "@/lib/time";
-
-function utcStamp(iso?: string) {
-  return iso && !Number.isNaN(Date.parse(iso)) ? formatDateTime(iso, "UTC") : undefined;
-}
 
 function SeverityBadge({ rank }: { rank: ImoWarningRank }) {
   return (
@@ -76,8 +74,7 @@ function TelemetryTile({
   return (
     <div className={`imo-warning-dialog-tile${emphasis === "high" ? " is-emphasis" : ""}${emphasis === "low" ? " is-quiet" : ""}`}>
       <p className="imo-warning-dialog-kicker">
-        {code}
-        <span>{zh}</span>
+        {code} <span>· {zh}</span>
       </p>
       {children}
     </div>
@@ -85,25 +82,24 @@ function TelemetryTile({
 }
 
 function TimeTile({
-  code,
   zh,
   iso,
   emphasis,
 }: {
-  code: string;
   zh: string;
   iso?: string;
   emphasis?: "high" | "low";
 }) {
   const parts = formatIcelandDayClock(iso);
-  const utc = utcStamp(iso);
   return (
-    <TelemetryTile code={code} zh={zh} emphasis={emphasis}>
-      <p className="imo-warning-dialog-time-day">{parts?.day ?? "—"}</p>
-      <p className="imo-warning-dialog-time-clock">{parts?.clock ?? "—"}</p>
-      <p className="imo-warning-dialog-iceland">Iceland</p>
-      {utc && <p className="imo-warning-dialog-utc">UTC {utc}</p>}
-    </TelemetryTile>
+    <div className={`imo-warning-dialog-tile${emphasis === "high" ? " is-emphasis" : ""}${emphasis === "low" ? " is-quiet" : ""}`}>
+      <p className="imo-warning-dialog-kicker">{zh}</p>
+      <p className="imo-warning-dialog-time-line">
+        <span className="imo-warning-dialog-time-day">{parts?.day ?? "—"}</span>
+        {parts ? <span aria-hidden="true"> · </span> : null}
+        <span className="imo-warning-dialog-time-clock">{parts?.clock ?? "—"}</span>
+      </p>
+    </div>
   );
 }
 
@@ -122,27 +118,26 @@ function LifecycleStrip({
   if (!keys) {
     return (
       <section className="imo-warning-dialog-lifecycle">
-        <p className="imo-warning-dialog-kicker">ALERT LIFECYCLE</p>
+        <p className="imo-warning-dialog-kicker">警報時序</p>
         <p className="imo-warning-dialog-lifecycle-empty">時間資料不足</p>
       </section>
     );
   }
   const stamp = {
     published: formatIcelandStamp(sent),
-    now: "NOW",
     start: formatIcelandStamp(onset),
     end: formatIcelandStamp(expires),
   };
-  const label = { published: "PUBLISHED", now: "NOW", start: "START", end: "END" };
+  const label = { published: "發布", now: "現在", start: "開始生效", end: "結束" };
   return (
-    <section className="imo-warning-dialog-lifecycle" aria-label="警報生命週期">
-      <p className="imo-warning-dialog-kicker">ALERT LIFECYCLE</p>
+    <section className="imo-warning-dialog-lifecycle" aria-label="警報時序">
+      <p className="imo-warning-dialog-kicker">警報時序</p>
       <ol className={`imo-warning-dialog-lifecycle-track is-${phase}`}>
         {keys.map((key) => (
           <li key={key} className={`imo-warning-dialog-lifecycle-node is-${key}`}>
             <span className="imo-warning-dialog-lifecycle-mark" aria-hidden="true" />
             <strong>{label[key]}</strong>
-            <small>{stamp[key]}</small>
+            {key !== "now" && <small>{stamp[key]}</small>}
           </li>
         ))}
       </ol>
@@ -413,6 +408,7 @@ export function ImoWarningDetailDialog({
       </header>
 
       <div className="imo-warning-dialog-body">
+        <div className="imo-warning-dialog-side">
         <div className="imo-warning-dialog-map">
           <p className="imo-warning-dialog-kicker">
             AFFECTED AREA
@@ -437,7 +433,65 @@ export function ImoWarningDetailDialog({
               <dt>WARNINGS</dt>
               <dd>{tabs.length}</dd>
             </div>
-          </dl>
+            </dl>
+        </div>
+
+            <div className="imo-warning-dialog-languages">
+              <section className="imo-warning-dialog-zh">
+                <p className="imo-warning-dialog-kicker">繁體中文</p>
+                {headline.text && (
+                  <div>
+                    <p className="imo-warning-dialog-kicker">SUMMARY</p>
+                    <p className="imo-warning-dialog-headline">
+                      <ImoWindSpeedText text={headline.text} enabled={highlightWind} />
+                    </p>
+                  </div>
+                )}
+                {description.text && (
+                  <div>
+                    <p className="imo-warning-dialog-kicker">DESCRIPTION</p>
+                    <p className="imo-warning-dialog-bodycopy">
+                      <ImoWindSpeedText text={description.text} enabled={highlightWind} />
+                    </p>
+                    {active.warning.descriptionEn && !description.translated && (
+                      <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>
+                    )}
+                  </div>
+                )}
+                {instruction.text && (
+                  <div className={`imo-warning-dialog-safety is-${active.rank}`}>
+                    <p className="imo-warning-dialog-kicker">SAFETY / ACTION</p>
+                    <p>
+                      <ImoWindSpeedText text={instruction.text} enabled={highlightWind} />
+                    </p>
+                    {active.warning.instructionEn && !instruction.translated && (
+                      <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <OriginalBlock
+                title="IMO ENGLISH ORIGINAL"
+                highlightWind={highlightWind}
+                lines={[
+                  { label: "Event", value: active.warning.eventEn },
+                  { label: "Headline", value: active.warning.headlineEn },
+                  { label: "Description", value: active.warning.descriptionEn },
+                  { label: "Instruction", value: active.warning.instructionEn },
+                ]}
+              />
+              <OriginalBlock
+                title="IMO ÍSLENSKA ORIGINAL"
+                highlightWind={highlightWind}
+                lines={[
+                  { label: "Atburður", value: active.warning.eventIs },
+                  { label: "Fyrirsögn", value: active.warning.headlineIs },
+                  { label: "Lýsing", value: active.warning.descriptionIs },
+                  { label: "Leiðbeiningar", value: active.warning.instructionIs },
+                ]}
+              />
+            </div>
         </div>
 
         <div className="imo-warning-dialog-detail">
@@ -488,7 +542,7 @@ export function ImoWarningDetailDialog({
             aria-labelledby={`${tabBase}-${active.warning.identifier}`}
           >
             <section className="imo-warning-dialog-incident">
-              <p className="imo-warning-dialog-kicker">INCIDENT SUMMARY</p>
+              <p className="imo-warning-dialog-kicker">事件摘要</p>
               {headline.text && <p className="imo-warning-dialog-headline"><ImoWindSpeedText text={headline.text} enabled={highlightWind} /></p>}
               {active.warning.headlineEn && !headline.translated && <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>}
               <dl className="imo-warning-dialog-incident-meta">
@@ -512,21 +566,48 @@ export function ImoWarningDetailDialog({
 
             <section className="imo-warning-dialog-telemetry" aria-label="警報資料">
               <TelemetryTile code="SEVERITY" zh="警報等級">
-                <p className="imo-warning-dialog-tile-value">{IMO_RANK_CODE[active.rank]}</p>
-                <p>{imoLevelLabel(active.rank)}</p>
+                <p className="imo-warning-dialog-tile-line">
+                  <span className="imo-warning-dialog-tile-value">{IMO_RANK_CODE[active.rank]}</span>
+                  <span className={`imo-warning-dialog-tile-dot is-${active.rank}`} aria-hidden="true" />
+                  <span className="imo-warning-dialog-tile-secondary">{IMO_RANK_LABEL[active.rank]}</span>
+                </p>
               </TelemetryTile>
               <TelemetryTile code="STATUS" zh="狀態">
-                <p className="imo-warning-dialog-tile-value">{IMO_PHASE_CODE[active.phase]}</p>
-                <p>{IMO_PHASE_LABEL[active.phase]}</p>
+                <p className="imo-warning-dialog-tile-line">
+                  <span className="imo-warning-dialog-tile-value">{IMO_PHASE_CODE[active.phase]}</span>
+                  <span className="imo-warning-dialog-tile-secondary">{IMO_PHASE_LABEL[active.phase]}</span>
+                </p>
               </TelemetryTile>
               <TelemetryTile code="REGION" zh="區域">
-                <p className="imo-warning-dialog-tile-value">{area.text || region.name}</p>
+                <p className="imo-warning-dialog-tile-line">
+                  <span className="imo-warning-dialog-tile-value">{area.text || region.name}</span>
+                </p>
               </TelemetryTile>
-              <TimeTile code="PUBLISHED" zh="發布時間" iso={active.warning.sent} emphasis="low" />
-              <TimeTile code="START" zh="開始生效" iso={active.warning.onset} emphasis="high" />
-              <TimeTile code="END" zh="警報結束" iso={active.warning.expires} emphasis="high" />
+              <TimeTile zh="發布時間" iso={active.warning.sent} emphasis="low" />
+              <TimeTile zh="開始生效" iso={active.warning.onset} emphasis="high" />
+              <TimeTile zh="警報結束" iso={active.warning.expires} emphasis="high" />
             </section>
-            <p className="imo-warning-dialog-tz">ICELAND TIME · Atlantic/Reykjavik</p>
+            <p className="imo-warning-dialog-tz">冰島時間 · Atlantic/Reykjavik</p>
+
+            <section className="imo-warning-dialog-brief" aria-label="文字報告">
+              <p className="imo-warning-dialog-kicker">文字報告</p>
+              <p>
+                {presentImoWarningTextReport({
+                  rank: active.rank,
+                  phase: active.phase,
+                  areaZh: area.text || region.name,
+                  eventZh: event.text,
+                  windowLabel: active.windowLabel,
+                  headlineZh: headline.text,
+                  instructionZh: instruction.text,
+                  eventEn: active.warning.eventEn,
+                  headlineEn: active.warning.headlineEn,
+                  descriptionEn: active.warning.descriptionEn,
+                  descriptionIs: active.warning.descriptionIs,
+                  descriptionZh: description.text,
+                })}
+              </p>
+            </section>
 
             <LifecycleStrip
               phase={active.phase}
@@ -535,60 +616,7 @@ export function ImoWarningDetailDialog({
               expires={active.warning.expires}
             />
 
-            <section className="imo-warning-dialog-zh">
-              <p className="imo-warning-dialog-kicker">繁體中文</p>
-              {headline.text && (
-                <div>
-                  <p className="imo-warning-dialog-kicker">SUMMARY</p>
-                  <p className="imo-warning-dialog-headline">
-                    <ImoWindSpeedText text={headline.text} enabled={highlightWind} />
-                  </p>
-                </div>
-              )}
-              {description.text && (
-                <div>
-                  <p className="imo-warning-dialog-kicker">DESCRIPTION</p>
-                  <p className="imo-warning-dialog-bodycopy">
-                    <ImoWindSpeedText text={description.text} enabled={highlightWind} />
-                  </p>
-                  {active.warning.descriptionEn && !description.translated && (
-                    <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>
-                  )}
-                </div>
-              )}
-              {instruction.text && (
-                <div className={`imo-warning-dialog-safety is-${active.rank}`}>
-                  <p className="imo-warning-dialog-kicker">SAFETY / ACTION</p>
-                  <p>
-                    <ImoWindSpeedText text={instruction.text} enabled={highlightWind} />
-                  </p>
-                  {active.warning.instructionEn && !instruction.translated && (
-                    <p className="imo-warning-zh-note">{IMO_ZH_UNTRANSLATED}</p>
-                  )}
-                </div>
-              )}
-            </section>
-
-            <OriginalBlock
-              title="IMO ENGLISH ORIGINAL"
-              highlightWind={highlightWind}
-              lines={[
-                { label: "Event", value: active.warning.eventEn },
-                { label: "Headline", value: active.warning.headlineEn },
-                { label: "Description", value: active.warning.descriptionEn },
-                { label: "Instruction", value: active.warning.instructionEn },
-              ]}
-            />
-            <OriginalBlock
-              title="IMO ÍSLENSKA ORIGINAL"
-              highlightWind={highlightWind}
-              lines={[
-                { label: "Atburður", value: active.warning.eventIs },
-                { label: "Fyrirsögn", value: active.warning.headlineIs },
-                { label: "Lýsing", value: active.warning.descriptionIs },
-                { label: "Leiðbeiningar", value: active.warning.instructionIs },
-              ]}
-            />
+            <ImoWindImpactPanel warning={active.warning} />
           </div>
         </div>
       </div>
