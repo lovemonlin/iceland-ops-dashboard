@@ -8,11 +8,12 @@ import {
   type ImoWindImpactLevel,
   type ImoWindImpactView,
 } from "@/lib/imoWindImpact";
+import { getPublicAssetPath } from "@/lib/publicPath";
 import { translateImoDescription } from "@/lib/imoWarningZhTw";
 import type { PresentedImoWarning } from "@/lib/imoWarningPresentation";
 
 function WindPersonFigure({ level, alt }: { level: ImoWindImpactLevel; alt: string }) {
-  const src = IMO_WIND_IMPACT_IMAGE[level.id];
+  const src = getPublicAssetPath(IMO_WIND_IMPACT_IMAGE[level.id]);
   return (
     <div
       className={`imo-wind-impact-art is-${level.id}`}

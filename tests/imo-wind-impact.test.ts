@@ -11,6 +11,7 @@ import {
   presentImoWindImpact,
   resolveImoWindImpactRange,
 } from "../src/lib/imoWindImpact";
+import { getPublicAssetPath } from "../src/lib/publicPath";
 import { isWindRelatedImoWarning } from "../src/lib/imoWindSpeed";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -155,7 +156,9 @@ test("the dialog hosts wind impact after lifecycle and keeps chrome intact", () 
   assert.equal(panel.includes("RED WARNING"), false);
   assert.equal(/黃色警報|橙色警報可能性|典型黃色/.test(panel), false);
   assert.equal(IMO_WIND_IMPACT_IMAGES_READY, true);
+  assert.match(panel, /getPublicAssetPath\(IMO_WIND_IMPACT_IMAGE\[level\.id\]\)/);
   assert.match(panel, /<img src=\{src\} alt=\{alt\}/);
+  assert.equal(panel.includes("/iceland-ops-dashboard"), false);
   assert.match(css, /--imo-wind-impact-accent/);
   const impactCss = css.slice(css.indexOf(".imo-wind-impact {"), css.indexOf(".imo-warning-dialog-resize"));
   assert.equal(/imo-warning-yellow|imo-warning-orange|imo-warning-red/.test(impactCss), false);
@@ -179,4 +182,33 @@ test("every wind-impact level has a local webp that matches the public asset con
     assert.equal(existsSync(resolve(process.cwd(), "public/images/wind-impact", file)), true, file);
   }
   assert.equal(existsSync(resolve(process.cwd(), "public/images/wind-impact/wind-07-storm-like.webp")), false);
+});
+
+test("wind-impact img URLs stay unprefixed locally and pick up NEXT_PUBLIC_BASE_PATH in production", () => {
+  const storm = "/images/wind-impact/wind-07-storm.webp";
+  const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  try {
+    process.env.NEXT_PUBLIC_BASE_PATH = "";
+    assert.equal(getPublicAssetPath(storm), storm);
+    process.env.NEXT_PUBLIC_BASE_PATH = "/iceland-ops-dashboard";
+    assert.equal(getPublicAssetPath(storm), "/iceland-ops-dashboard/images/wind-impact/wind-07-storm.webp");
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+  }
+
+  const gusty = presentImoWindImpact({
+    eventEn: "Weather Warning: Wind",
+    headlineEn: "Strong wind",
+    descriptionEn: "East 18-25 m/s with windgusts locally over 35 m/s",
+  });
+  assert.deepEqual(
+    gusty?.active.map((level) => level.id),
+    ["severe_gale", "very_strong", "storm_like"],
+  );
+  assert.equal(gusty?.to.id, "storm_like");
+  assert.equal(gusty?.to.altZh, "接近暴風的環境中難以維持平衡的人物示意圖");
+  assert.equal(IMO_WIND_IMPACT_IMAGE[gusty!.to.id], storm);
+  assert.equal(gusty?.gust?.min, 35);
 });
