@@ -14,18 +14,19 @@ This is an independent repository. It must never modify, commit to, or write int
 - `lovemonlin/iceland-aurora` (Android)
 - `lovemonlin/iceland-aurora-ios` (iOS)
 - `lovemonlin/iceland-aurora-cloud` (cloud data pipeline)
-- Notion, GitHub Pages production data, or GitHub Actions
+- Notion or production data in any other repository
 
-Phase one is **READ ONLY**. There is no repair button, no rerun button, no retry of a production
-action, no credential, and no deployment automation. If a future feature needs production write
-access, stop and record it in `PROJECT_MEMORY.md` first.
+Monitoring and collection are **READ ONLY toward upstream production sources**. There is no repair
+button, rerun button, production-action retry, or credential. The approved workflow writes only
+`public/data/latest-health.json` in this repository and deploys this dashboard to GitHub Pages. Any
+other production write access must first be approved and recorded in `PROJECT_MEMORY.md`.
 
 Anything in `docs/reference/` is reference material only and does not apply to this project.
 In particular, the Android project's Gradle, APK, emulator and Android Studio rules are irrelevant here.
 
 ## Data sources monitored
 
-Phase one covers eight data sources plus the two GitHub Actions workflows that publish them.
+Phase one covers nine data sources plus two GitHub Actions pipeline monitors.
 **Every one of them reads real production data — there is no mock data path in the runtime.**
 
 | Section | Monitor | id | Source |
@@ -172,17 +173,14 @@ nothing running locally.
 To work on it:
 
 ```powershell
-npm install
-git pull --ff-only   # take the snapshot the 推播電腦 already published
-npm run dev          # serve the dashboard from that snapshot
-npm run build        # static export into out/
+git pull --ff-only
+npm.cmd ci
+npm.cmd run dev
 ```
 
-**Never run `npm run snapshot` on the 開發電腦.** That command is the scheduled
-collection: it is the only thing that contacts production, and only the 推播電腦 may
-invoke it (hourly via `scripts\hourly-snapshot.ps1`) and push the resulting
-`public/data/latest-health.json`. There is deliberately no built-in cron. On this machine, a stale
-snapshot is fixed by pulling, not by collecting.
+**一般本機開發不得執行 `npm run snapshot`。** 它是唯一會連線到 production 的收集命令，且會
+改寫 `public/data/latest-health.json`。本 repo 沒有內建 cron；正式 scheduler 是外部 Cloudflare
+Worker，透過 GitHub Actions 執行收集。本機 snapshot 過期時以 `git pull --ff-only` 同步，不要自行收集。
 
 In the browser, `Reload latest snapshot` re-reads the file, and the page does so on its own every
 5 minutes. Neither re-checks production.
@@ -190,267 +188,85 @@ In the browser, `Reload latest snapshot` re-reads the file, and the page does so
 ## Checks
 
 ```powershell
-npm run lint
-npm test
-npm run build
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build
 ```
 
 ## Architecture
 
 ```
-Production public sources (ECMWF, IRCA, GitHub Actions, ...)
-        |
-        v
-Windows Task Scheduler, hourly at :07  --  scripts\hourly-snapshot.ps1
-        |
-        v
-npm run snapshot
-        |
-        v
-public/data/latest-health.json  --  the snapshot
-        |
-        v
-GitHub commit + push to main
-        |
-        v
-GitHub Pages deployment (build on push, never on a schedule)
-        |
-        v
-Iceland Ops Dashboard  --  https://lovemonlin.github.io/iceland-ops-dashboard/
+Cloudflare Worker
+  → workflow_dispatch
+  → GitHub Actions / Update Dashboard Snapshot
+  → npm run snapshot
+  → public/data/latest-health.json
+  → commit/push snapshot
+  → explicit reusable Pages workflow
+  → npm ci
+  → npm test
+  → npm run build
+  → GitHub Pages
 ```
 
 **Browser refresh and production data collection are different things.** Opening or reloading the
 dashboard reads one static JSON file and contacts no production data API. The optional timezone
 helper is the sole browser endpoint: it reads no dashboard data and returns only an IANA timezone.
-Production data is collected
-only when the scheduled task runs. The dashboard does not need to be open for that to happen, and
-having it open does not make it happen more often.
+Production data is collected only by the snapshot workflow, normally triggered by the external
+Cloudflare scheduler. The dashboard does not need to be open for that to happen, and having it open
+does not make it happen more often.
 
 The scheduled collection is only ever allowed to change one file: `public/data/latest-health.json`.
-It must not touch source code, `package.json`, the workflow, configuration or this README. Pushing
-that one file to `main` is what publishes new data: the Pages workflow rebuilds and redeploys.
+It must not touch source code, `package.json`, the workflow, configuration or this README. After
+committing and pushing that file to `main`, Update Dashboard Snapshot explicitly calls the reusable
+Pages workflow to rebuild and redeploy it.
 
-`npm run snapshot` is not a development command. Only the 推播電腦 runs it. Nothing has
-to run on the 開發電腦 for the site to stay up.
+`npm run snapshot` is not a development command. Windows is a development environment, not a
+production clock; nothing needs to run continuously on the local machine for production to stay up.
 
-### Which machine runs what
+### Windows 與 cloud 的責任
 
-Development and collection happen on two different machines, and only one of them is a production
-clock. Canonical names: **開發電腦** (this computer) and **推播電腦** (the computer that publishes
-the hourly snapshot).
+`C:\dev\iceland-ops-dashboard` 是唯一正式本機 working copy，GitHub `main` 是 source of truth。
+本機負責開發、驗證、commit 與 push；Cloudflare Worker 是 production scheduler，GitHub Actions 是
+collector，GitHub Pages 負責顯示與部署。
 
-| Machine | Role | Scheduled tasks |
-| --- | --- | --- |
-| 開發電腦 | debug, feature work, `git push` of **code** to `main` | **none** (unregistered) |
-| 推播電腦 | `git pull --ff-only` hourly at :07, then collect and push the snapshot | enabled |
+這個 production scheduler 位於本 repo 之外，與 `cloudflare/timezone-worker` 的瀏覽器時區服務不同。
 
-A push to `main` therefore has two independent consumers. GitHub Pages rebuilds immediately and
-runs `npm test` before building, so a failing test blocks the deploy and the previous site stays
-up. The 推播電腦 simply pulls the new code at the next :07 and collects with it — there
-is **no test gate on that path**, which is why the checks below are run before pushing, not after.
+| Responsibility | Current production role |
+| --- | --- |
+| Windows 11 local working copy | 開發、測試、commit/push 到 `main`；不執行 production clock |
+| Cloudflare Worker | 外部 scheduler，以 `workflow_dispatch` 觸發 collection |
+| Update Dashboard Snapshot | 收集、驗證，且只 commit/push `latest-health.json` |
+| Deploy dashboard to GitHub Pages | `npm ci`、`npm test`、`npm run build`，再部署 Pages |
 
-Two consequences worth knowing:
+GitHub Actions snapshot workflow 本身沒有 cron。除了 Cloudflare 的 `workflow_dispatch` 外，推送
+`automation/hourly-trigger.txt` 仍是 fallback / external trigger path。snapshot commit 使用
+`GITHUB_TOKEN` 不會再觸發 push workflow，因此 Update Dashboard Snapshot 會明確呼叫 reusable
+Pages workflow；它包含 `npm ci`、`npm test` 和 `npm run build`。
 
-- **Never run `npm run snapshot` on the 開發電腦. No exceptions.** It rewrites
-  `public/data/latest-health.json`, which only the 推播電腦 may collect and push. A stale
-  snapshot on this machine is fixed with `git pull --ff-only`, not by collecting. Do not
-  re-register the Windows scheduled tasks on this machine.
-- **A push that changes dependencies installs itself on the 推播電腦.** When the hourly
-  pull moves `package.json` or `package-lock.json`, the runner runs `npm ci` before collecting;
-  otherwise it does not, so the npm registry is not in the path of every hourly collection. A
-  failed install stops that run, keeps the previous snapshot, and is retried on the next one.
+### Legacy / Historical / Fallback
 
-### The Windows hourly runner
+`scripts\hourly-snapshot.ps1` 與 `scripts\trigger-cloud-workflow.ps1` 均保留為 legacy /
+historical / fallback，並不是目前 production 必要元件。不可將它們當成預設路徑或重新註冊 Windows
+Task Scheduler。
 
-`scripts\hourly-snapshot.ps1` is a single-shot, deliberately conservative collection:
-
-```
-acquire lock -> verify branch and clean tree -> push anything left unpushed
--> pull --ff-only -> install if the pull changed dependencies -> npm run snapshot
--> validate -> guard changed files -> commit only the snapshot -> push -> log -> release lock
-```
-
-It never stashes, resets, checks out, cleans, merges, rebases or force-pushes, and it refuses to
-run at all if the working tree has your own uncommitted work in it. It holds no credential: pushing
-uses whatever Git credential helper the machine already has. Anything unexpected stops the run and
-leaves the previously published snapshot in place.
-
-Log: `logs/hourly-snapshot.log`, rotated to `.1` past 5 MB. Lock: `.runtime/hourly-snapshot.lock`,
-released on exit and treated as abandoned after 30 minutes so a crash cannot wedge every later run.
-Both directories are gitignored.
-
-Run it by hand at any time:
-
-```powershell
-.\scripts\hourly-snapshot.ps1          # skips if the snapshot is under 45 minutes old
-.\scripts\hourly-snapshot.ps1 -Force   # collect regardless
-```
-
-Its safety behaviour is covered by `scripts\test-hourly-snapshot.ps1`, which builds throwaway
-repositories with a fake collector and never touches this one:
-
-```powershell
-.\scripts\test-hourly-snapshot.ps1
-```
-
-### Registering the scheduled task
-
-Runs hourly at seven minutes past, deliberately off the hour so it does not compete with everything
-else that fires on the hour:
-
-```powershell
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\hourly-snapshot.ps1"' `
-  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
-
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date.AddMinutes(7) `
-  -RepetitionInterval (New-TimeSpan -Hours 1)
-
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 30) `
-  -RestartInterval (New-TimeSpan -Minutes 15) -RestartCount 2 -WakeToRun `
-  -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-
-Register-ScheduledTask -TaskName 'Iceland Ops Dashboard Hourly Snapshot' `
-  -Description 'Collects the Iceland Ops Dashboard production snapshot once an hour and publishes it.' `
-  -Action $action -Trigger $trigger -Settings $settings -Force
-```
-
-`-StartWhenAvailable` catches up a run missed while the machine was off; `IgnoreNew` means a run
-still going is never doubled up; `-WakeToRun` wakes a sleeping machine. The two battery flags are
-not optional on a laptop: Task Scheduler's defaults are to skip the run on battery and to kill one
-already going when the mains are pulled, which would silently drop hours.
-
-To inspect or remove it:
-
-```powershell
-Get-ScheduledTask   -TaskName 'Iceland Ops Dashboard Hourly Snapshot'
-Get-ScheduledTaskInfo -TaskName 'Iceland Ops Dashboard Hourly Snapshot'
-Unregister-ScheduledTask -TaskName 'Iceland Ops Dashboard Hourly Snapshot' -Confirm:$false
-```
-
-The task runs as the logged-on user, so no password is stored anywhere. That means it needs you to
-stay signed in - locking the screen and turning the monitor off are fine, and so is sleep if the
-wake setting is honoured, but signing out or shutting down stops it. For genuine 24/7, set sleep to
-Never while on mains power.
-
-### Triggering the upstream publishers from Windows
-
-The `iceland-aurora-cloud` repository publishes the road and cloud data this dashboard reads, and
-it had the same problem: its workflows always succeeded, but GitHub delivered their schedules
-erratically — a five-minute IRCA cron produced runs 97 to 304 minutes apart. So Windows becomes the
-clock there too.
-
-Nothing moves off GitHub. `generate_road_data.py` and `generate_cloud_frames.py` keep running as
-GitHub Actions exactly as before; Windows only asks them to run, on time:
-
-```
-Windows Task Scheduler -> gh workflow run -> workflow_dispatch
--> iceland-aurora-cloud Actions -> the existing Python publishers -> GitHub Pages
-```
-
-`scripts\trigger-cloud-workflow.ps1` does the asking, and — importantly — checks what happened:
-
-```
-acquire lock -> verify gh auth -> gh workflow run (the request is retried 3x, 30s apart)
--> identify the run this dispatch created -> poll until it completes -> record the conclusion
-```
-
-`gh workflow run` exiting 0 only means the request was accepted, so the run is identified by id and
-creation time: an id that already existed before the dispatch, or a run created before it, is never
-accepted as this one. A workflow that ran and *failed* is logged as `WORKFLOW FAILED` and left for
-the next scheduled occurrence — re-triggering it would only stack duplicate runs on one broken
-publish.
-
-It holds no credential; every call uses whatever `gh auth login` established on this machine. If
-`gh` is not authenticated the run aborts and dispatches nothing.
-
-Log: `logs/cloud-workflow-trigger.log`, rotated past 5 MB. Locks: `.runtime/irca-trigger.lock` and
-`.runtime/ecmwf-trigger.lock` — one per workflow, so a slow road trigger never blocks a cloud one.
-
-Run either by hand:
-
-```powershell
-.\scripts\trigger-cloud-workflow.ps1 -Workflow "update-road-info.yml" -TaskName "IRCA"
-.\scripts\trigger-cloud-workflow.ps1 -Workflow "update-cloud-forecast.yml" -TaskName "ECMWF"
-```
-
-Its safety behaviour is covered by `scripts\test-trigger-cloud-workflow.ps1`, which runs every
-scenario against a fake `gh` on a temporary PATH and dispatches nothing real:
-
-```powershell
-.\scripts\test-trigger-cloud-workflow.ps1
-```
-
-#### Registering the two publisher tasks
-
-IRCA every 15 minutes, on the quarter hour:
-
-```powershell
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\trigger-cloud-workflow.ps1" -Workflow "update-road-info.yml" -TaskName "IRCA"' `
-  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
-
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).Date `
-  -RepetitionInterval (New-TimeSpan -Minutes 15)
-
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 20) `
-  -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-
-Register-ScheduledTask -TaskName 'Iceland Cloud - IRCA Publisher' `
-  -Action $action -Trigger $trigger -Settings $settings -Force
-```
-
-ECMWF on the four model cycles rather than a blind three-hourly repeat. Each time is about ten
-minutes after that cycle's publication deadline, in Taipei time:
-
-| Taipei | UTC | ECMWF cycle |
-| --- | --- | --- |
-| 05:55 | 21:55 | 12Z |
-| 11:55 | 03:55 | 18Z |
-| 17:55 | 09:55 | 00Z |
-| 23:55 | 15:55 | 06Z |
-
-```powershell
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' `
-  -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\dev\iceland-ops-dashboard\scripts\trigger-cloud-workflow.ps1" -Workflow "update-cloud-forecast.yml" -TaskName "ECMWF"' `
-  -WorkingDirectory 'C:\dev\iceland-ops-dashboard'
-
-$triggers = @('05:55', '11:55', '17:55', '23:55') |
-  ForEach-Object { New-ScheduledTaskTrigger -Daily -At $_ }
-
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
-  -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 20) `
-  -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-
-Register-ScheduledTask -TaskName 'Iceland Cloud - ECMWF Publisher' `
-  -Action $action -Trigger $triggers -Settings $settings -Force
-```
-
-Both run as the logged-on user, so no password is stored, with the same signed-in requirement as
-the snapshot task above.
-
-**The upstream GitHub crons are still in place.** They stay until these Windows triggers have
-proven themselves in production; only then is GitHub Actions demoted from scheduler to execution
-engine.
+`hourly-snapshot.ps1` 的安全行為由 `scripts\test-hourly-snapshot.ps1` 覆蓋；
+`trigger-cloud-workflow.ps1` 的 harness 使用假 `gh`，不會 dispatch 真實工作。後者會對
+`lovemonlin/iceland-aurora-cloud` 的 `update-road-info.yml` 或 `update-cloud-forecast.yml` 發出
+workflow dispatch，因此仍須遵守 repository boundary，不能視為本 dashboard production 架構的一部分。
 
 ### The remaining GitHub triggers
 
-The hourly beat is the Windows task above and nothing else. GitHub used to hold a backup
-`cron: "17 * * * *"`; it was removed on 2026-09-04, because scheduled events there are best-effort
-and measured badly — after that cron went live at 05:39 UTC, six occurrences were due by 11:17 and
-exactly **one** fired. A second scheduler that fires unpredictably is worse than no second
-scheduler, so `.github/workflows/update-dashboard-snapshot.yml` now runs only when asked:
+`.github/workflows/update-dashboard-snapshot.yml` 沒有內建 cron。正式 scheduler 是外部
+Cloudflare Worker，使用 `workflow_dispatch` 觸發 collection；workflow_dispatch 同時也可供人工操作。
+`automation/hourly-trigger.txt` 的 push 則保留為 fallback / external trigger path。
 
 | Trigger | When |
 | --- | --- |
-| `push` to `automation/hourly-trigger.txt` | manual or external triggering |
-| `workflow_dispatch` | a run started by hand from the Actions tab |
+| `push` to `automation/hourly-trigger.txt` | fallback / external triggering |
+| `workflow_dispatch` | Cloudflare scheduler 或人工 dispatch |
 
-Which one started a round is recorded in the snapshot as `trigger` and shown in the header as plain
-words ("Windows 自動更新", "GitHub 手動更新"), so a scheduled collection is distinguishable from a
-manual one after the fact.
+Which one started a round is recorded in the snapshot as `trigger`.
 
 Using only the built-in `GITHUB_TOKEN` with `contents: write`, the job:
 

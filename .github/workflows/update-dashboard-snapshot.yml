@@ -1,8 +1,8 @@
 # Collects production data and publishes the result.
 #
-# The hourly beat is the Windows runner on the execution machine
-# (`scripts/hourly-snapshot.ps1`). This workflow is only a doorbell: a push to
-# `automation/hourly-trigger.txt`, or a manual `workflow_dispatch`. It has no cron.
+# The formal scheduler is an external Cloudflare Worker, which starts collection through
+# `workflow_dispatch`. A push to `automation/hourly-trigger.txt` remains a fallback or external
+# trigger path. This workflow has no cron.
 # GitHub scheduled events are best-effort and were measured delivering a three-hourly
 # cron every 134-401 minutes; that schedule was removed on 2026-09-04. The dashboard's
 # SCHEDULED UPDATE OVERDUE banner is what makes slippage visible, so the 60/90 minute
@@ -12,11 +12,11 @@ name: Update Dashboard Snapshot
 on:
 
 
-  # Kept for manual and external triggering: writing to this file still starts a collection.
+  # Kept as a fallback or external trigger path: writing to this file still starts a collection.
   push:
     paths:
       - "automation/hourly-trigger.txt"
-  # Lets a collection be run by hand without waiting for the next hour.
+  # Used by the external Cloudflare scheduler and available for manual dispatch.
   workflow_dispatch:
 
 # Never collect twice at once; a newer trigger supersedes one still running.

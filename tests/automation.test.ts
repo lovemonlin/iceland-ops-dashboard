@@ -30,16 +30,15 @@ test("the trigger file exists and holds no production data", () => {
   assert.equal(/\{|\}|\[|"status"|"data"|"generatedAt"/.test(contents), false, "no collected data may live here");
 });
 
-test("GitHub no longer schedules anything; the hourly beat is the Windows runner alone", () => {
+test("GitHub has no internal cron; Cloudflare is the external scheduler", () => {
   const workflow = snapshotWorkflow();
-  // The cron was removed on 2026-09-04 after it delivered one of six due occurrences. Leaving a
-  // second scheduler in place only reintroduces the double-collection question it was solving.
+  // The production scheduler is external; this repository must not add a second internal clock.
   assert.equal(/^\s*schedule:/m.test(workflow), false);
   assert.equal([...workflow.matchAll(/cron:/g)].length, 0);
   assert.equal(/^\s*schedule:/m.test(pagesWorkflow()), false);
 });
 
-test("both remaining triggers survive: trigger-file push and manual dispatch", () => {
+test("both trigger paths survive: fallback trigger-file push and workflow dispatch", () => {
   const workflow = snapshotWorkflow();
   assert.match(workflow, /push:\s*\n\s*paths:\s*\n\s*- "automation\/hourly-trigger\.txt"/);
   assert.match(workflow, /workflow_dispatch:/);
@@ -57,7 +56,7 @@ test("every trigger runs the same job; there is no second snapshot runner", () =
   assert.equal(/npm run snapshot/.test(pagesWorkflow()), false);
 });
 
-test("only the snapshot workflow is scheduled; the Pages deploy never is", () => {
+test("the Pages deploy also has no internal schedule", () => {
   const workflow = pagesWorkflow();
   assert.equal(/^\s*schedule:/m.test(workflow), false);
   assert.equal(/cron:/.test(workflow), false);

@@ -118,18 +118,15 @@ test("two collections cannot land within the same hour", () => {
   assert.match(script, /\[switch\] \$Force/);
 });
 
-test("a Windows collection is labelled so it can be told apart from GitHub's", () => {
+test("the legacy Windows fallback keeps its distinct trigger label", () => {
   assert.match(directives(), /\$env:SNAPSHOT_TRIGGER = 'windows'/);
 });
 
-test("the Task Scheduler registration is documented and reproducible", () => {
+test("the legacy Windows runner is documented without presenting Task Scheduler as production", () => {
   const readme = read("README.md");
-  assert.match(readme, /Iceland Ops Dashboard Hourly Snapshot/);
-  assert.match(readme, /schtasks|Register-ScheduledTask/);
-  assert.match(readme, /-NoProfile -ExecutionPolicy Bypass -File/);
+  assert.match(readme, /Legacy \/ Historical \/ Fallback/);
   assert.match(readme, /hourly-snapshot\.ps1/);
-  // Task Scheduler skips a run on battery and kills one mid-flight when the mains go, by default.
-  assert.match(readme, /-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/);
+  assert.match(readme, /not.*production necessary|不是目前 production 必要元件/);
 });
 
 test("a dependency change arriving with the pull is installed before collecting", () => {

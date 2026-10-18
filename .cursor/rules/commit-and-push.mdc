@@ -8,5 +8,5 @@ alwaysApply: true
 禎禎：功能改完後直接 `git commit` 並 `git push`。不要等使用者再說 commit / push。有錯由使用者從頭修。
 
 - 驗證該做的測過再交。
-- 不要提交 `.next/`、密鑰、或 `public/data/latest-health.json`（快照只由推播電腦寫）。
-- 不要在開發電腦跑 `npm run snapshot`。
+- 不要提交 `.next/`、密鑰、或 `public/data/latest-health.json`（正式快照由 GitHub Actions collector 產生及提交）。
+- 一般本機開發不得執行 `npm run snapshot`。

@@ -1,12 +1,13 @@
 <#
 .SYNOPSIS
     Asks GitHub Actions to run one publishing workflow, then waits to see whether it actually
-    worked. Intended to be run by Windows Task Scheduler on a machine that stays on.
+    worked. LEGACY / HISTORICAL / FALLBACK: retained for historical and fallback use only; it is not
+    required by the current production architecture.
 
 .DESCRIPTION
-    Windows is only the clock here. The publishers themselves — generate_road_data.py and
-    generate_cloud_frames.py — keep running on GitHub Actions exactly as they always have; this
-    script does nothing but trigger them reliably, because GitHub's own scheduler does not.
+    This legacy fallback only dispatches and observes the upstream publishers — generate_road_data.py
+    and generate_cloud_frames.py — which run on GitHub Actions. It is not the current production
+    clock for this dashboard.
 
         acquire lock -> verify gh auth -> gh workflow run (retry the request 3x)
         -> identify the run this dispatch created -> poll until it completes

@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
-    Collects one production snapshot and publishes it. Intended to be run hourly by Windows Task
-    Scheduler on a machine that stays on.
+    LEGACY / HISTORICAL / FALLBACK: collects one production snapshot and publishes it. It is retained
+    for historical and fallback use only; it is not required by the current production architecture.
 
 .DESCRIPTION
     One safe, single-shot run:

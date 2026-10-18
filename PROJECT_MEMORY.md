@@ -16,7 +16,7 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 測試數量、目前 HEAD 都曾經因為被複製進文件而過期。本檔與程式碼衝突時以程式碼為準，
 並順手修正本檔。
 
-## 現況速覽（最後校對 2026-09-11）
+## 現況速覽（最後校對 2026-10-18）
 
 ### 每個事實的唯一真相在哪裡
 
@@ -29,39 +29,28 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 | 測試數量與範圍 | `npm.cmd test` 的實際輸出 |
 | 目前 HEAD | `git log`。本檔不把 commit hash 當成現況記錄 |
 
-### 執行拓撲：兩台機器
-
-正式名稱（2026-09-11 起）：**開發電腦**、**推播電腦**。舊稱「開發機／執行機／execution machine」都是同一對，不要再用舊稱。
+### 執行拓撲
 
 ```text
-開發電腦（這台）              GitHub main                推播電腦（收集）
-debug / 改功能  ──push──▶                  ◀──pull --ff-only──  每小時 :07
-                                                            npm run snapshot
-                            ◀────────push──  只 commit 一個檔案
-                            │
-                            └──▶ Pages 重新部署（npm ci → npm test → build）
+Windows 11 local working copy → git commit / push → GitHub main
+
+Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
+→ public/data/latest-health.json → GitHub Pages
 ```
 
-- **開發電腦（這台）**只負責改程式、測試、把程式 commit／push 到 GitHub。本機曾註冊過三個
-  Windows 排程工作，已於 2026-09-11 **解除註冊**，不要再 `Register-ScheduledTask`。
-  `logs/hourly-snapshot.log` 最後一筆是 2026-09-06 02:07 +08:00，只是歷史殘渣。
-- **永遠不要在開發電腦執行 `npm run snapshot`。** 沒有例外。那條指令會改寫
-  `public/data/latest-health.json`。收集與把 snapshot **push 回 GitHub** 只屬於推播電腦。
-  開發電腦上的 snapshot 過期時，用 `git pull --ff-only` 取回推播電腦已發布的那份，不要自己重收。
-- **推播電腦**是唯一的 production 時鐘，每小時 :07 執行 `scripts/hourly-snapshot.ps1`，
-  並 push 那一個 snapshot 檔。
-- push 到 `main` 有兩個消費者。GitHub Pages 立即重建，而且 `npm test` 不過就不會部署；
-  推播電腦則在下一次 :07 pull 之後直接採用新程式碼，**沒有任何測試把關**。推送前在開發電腦
-  上的驗證是推播電腦唯一的防線。
-- 動到 dependency 的 push 會在推播電腦上自行安裝：每小時的 pull 若移動了 `package.json` 或
-  `package-lock.json`，runner 會先跑 `npm ci` 才收集；否則不跑，所以 npm registry 不會出現在
-  每一次收集的路徑上。安裝失敗會中止該次收集、保留前一份 snapshot，並在下一次重試。
+- `C:\dev\iceland-ops-dashboard` 是唯一正式本機 working copy；GitHub `main` 是 source of truth。
+- Cloudflare Worker 是正式 scheduler；GitHub Actions 是 collector；GitHub Pages 負責 display/deployment。
+- Windows 是 development environment，不是 production clock。本機一般開發不得執行 `npm run snapshot`；
+  snapshot 過期時以 `git pull --ff-only` 同步。
+- Snapshot schema v2，現有 9 個 Data Monitors + 2 個 Pipeline Monitors。
+- 此 repo 未直接核驗 Cloudflare scheduler 的原始碼、cron 或 secrets；它的正式角色來自交接基準。
+  repo 內只能核驗 `workflow_dispatch` 入口與後續 workflow 行為。
 
 ### 目前狀態
 
 - 每一個 monitor 都讀真實 production 資料。**runtime 沒有任何 mock 路徑**：
   `src/monitors/mockMonitors.ts` 與 `src/config/freshness.ts` 已經刪除，不是停用。
-- Snapshot schema v2，`trigger` 記為 `windows`。
+- Snapshot schema v2。
 - 48 小時極光預測與極光快報 v1 都已完成並在線上。
 - IP timezone Worker **已在正式站運作**（不是未部署）。GitHub repository variable
   `IP_TIMEZONE_ENDPOINT` 指向 `https://iceland-ops-dashboard-timezone.iceland-ops.workers.dev`。
@@ -82,13 +71,19 @@ debug / 改功能  ──push──▶                  ◀──pull --ff-only�
 4. HTTP 200 永遠不等於健康。
 5. 本 repo 不得寫入 `iceland-aurora`、`iceland-aurora-ios`、`iceland-aurora-cloud`。
 6. 排程收集只允許改動 `public/data/latest-health.json` 這一個檔案。
-7. **開發電腦永遠不得執行 `npm run snapshot`。** 收集與 snapshot 的 push 只由推播電腦做。
-   開發電腦只 push 程式；snapshot 過期就 `git pull --ff-only`，不要自己重收。
+7. **本機一般開發不得執行 `npm run snapshot`。** snapshot 過期就 `git pull --ff-only`，不要自己重收；
+   正式收集與 snapshot 的提交由 GitHub Actions collector 執行。
 8. 未經使用者明確要求，不得 `git reset`、`git restore`、force push，不得修改 production
    scheduler 或 snapshot schema，不得自行 commit 或 push。
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-10-18：Two-machine production architecture retired
+
+原本由推播電腦與 Windows Task Scheduler 組成的正式 production 架構已退役。正式 production
+改為 Cloudflare Worker → GitHub Actions → snapshot → GitHub Pages；Windows scripts 暫時保留為
+legacy / historical / fallback。GitHub `main` 與實際 workflow 行為為現行 source of truth。
 
 ## 2026-09-11：兩台電腦的正式名稱是開發電腦與推播電腦
 

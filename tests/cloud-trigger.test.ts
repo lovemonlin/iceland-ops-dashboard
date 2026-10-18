@@ -105,28 +105,20 @@ test("it triggers the cloud repository and never publishes anything itself", () 
   const script = directives(RUNNER);
   assert.equal(script.includes(`$Repository = '${CLOUD_REPO}'`), true);
 
-  // Windows is the clock, not the publisher: the Python generators stay on GitHub Actions.
+  // The legacy fallback dispatches only; the Python generators stay on GitHub Actions.
   assert.equal(/generate_road_data|generate_cloud_frames|python|pip install/i.test(script), false);
   // And it must never write to any repository: it dispatches, then reads run status.
   assert.equal(/git (commit|push|add)\b/.test(script), false);
 });
 
-test("both scheduled tasks are documented and reproducible", () => {
+test("the legacy upstream trigger is documented without presenting Task Scheduler as production", () => {
   const readme = read("README.md");
 
-  assert.match(readme, /Iceland Cloud - IRCA Publisher/);
-  assert.match(readme, /Iceland Cloud - ECMWF Publisher/);
+  assert.match(readme, /Legacy \/ Historical \/ Fallback/);
   assert.match(readme, /trigger-cloud-workflow\.ps1/);
-  assert.match(readme, /-NoProfile -ExecutionPolicy Bypass -File/);
   assert.match(readme, /update-road-info\.yml/);
   assert.match(readme, /update-cloud-forecast\.yml/);
-
-  // IRCA every 15 minutes; ECMWF on the four ECMWF cycles rather than a blind 3-hourly repeat.
-  assert.match(readme, /New-TimeSpan -Minutes 15/);
-  for (const cycle of ["05:55", "11:55", "17:55", "23:55"]) {
-    assert.match(readme, new RegExp(cycle));
-  }
-  assert.match(readme, /-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries/);
+  assert.match(readme, /not.*production necessary|不是目前 production 必要元件/);
 });
 
 test("the safety behaviour is covered by a harness that dispatches nothing real", () => {
