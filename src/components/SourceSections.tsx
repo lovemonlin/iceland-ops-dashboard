@@ -203,7 +203,7 @@ export function RoadsSection({
           entry={irca}
           schemaVersion={schemaVersion}
           headline={healthy ? "官方道路資料正常更新。" : describeCollection(irca)}
-          dataTimeLabel="官方最後發布"
+          dataTimeLabel="發布器更新時間"
         >
           {/*
             The distinction this card exists to make: a stale road feed is the Icelandic road
@@ -219,6 +219,9 @@ export function RoadsSection({
             <Stat label="道路" value={formatNumber(data.roads, "條")} />
             <Stat label="事件" value={formatNumber(data.incidents, "件")} />
             <Stat label="觀測站" value={formatNumber(data.stations, "站")} />
+            <Stat label="道路狀況資料時間" value={text(data.roadDataAt)} />
+            <Stat label="道路事件／施工／封閉資料時間" value={text(data.incidentDataAt)} />
+            <Stat label="道路觀測站／量測資料時間" value={text(data.measurementDataAt)} />
           </div>
           <MapDisclosure label="展開全島道路">
             <RoadMap />

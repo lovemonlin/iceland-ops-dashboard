@@ -374,6 +374,15 @@ test("both maps start collapsed and are not mounted until asked for", () => {
   assert.match(sections, /<MapDisclosure label="展開全島道路">/);
 });
 
+test("the roads card labels publisher and all three IRCA dataset timestamps", () => {
+  const sections = read("src/components/SourceSections.tsx");
+
+  assert.match(sections, /dataTimeLabel="發布器更新時間"/);
+  assert.match(sections, /<Stat label="道路狀況資料時間" value=\{text\(data\.roadDataAt\)\} \/>/);
+  assert.match(sections, /<Stat label="道路事件／施工／封閉資料時間" value=\{text\(data\.incidentDataAt\)\} \/>/);
+  assert.match(sections, /<Stat label="道路觀測站／量測資料時間" value=\{text\(data\.measurementDataAt\)\} \/>/);
+});
+
 test("no road GeoJSON is requested, and MapLibre is not loaded, before the road map expands", () => {
   const sections = read("src/components/SourceSections.tsx");
   const dashboard = read("src/components/Dashboard.tsx");

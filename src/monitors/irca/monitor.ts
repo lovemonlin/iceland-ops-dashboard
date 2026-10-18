@@ -271,6 +271,7 @@ export async function checkIrca(options: IrcaCheckOptions = {}): Promise<Monitor
   }
   if (unavailable.length > 0) details.unavailable = unavailable.map((probe) => probe.detail).join("; ");
   if (manifest.roadDataAt) data.roadDataAt = details.roadDataAt = utcMinute(manifest.roadDataAt);
+  if (manifest.incidentDataAt) data.incidentDataAt = details.incidentDataAt = utcMinute(manifest.incidentDataAt);
   if (manifest.measurementDataAt) {
     data.measurementDataAt = details.measurementDataAt = utcMinute(manifest.measurementDataAt);
   }

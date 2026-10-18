@@ -79,6 +79,17 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 
 # 決策紀錄（append-only，新的在上）
 
+## 2026-10-18：IRCA 四個時間戳與 scheduler 樣本診斷
+
+Dashboard 現在明確保存並顯示 IRCA manifest 的四個不同時間：`generated_at` 是發布器更新時間；
+`road_data_at`、`incident_data_at`、`measurement_data_at` 分別是道路狀況、道路事件／施工／封閉、
+道路觀測站／量測資料時間，不能互相代替。2026-10-18 的唯讀樣本涵蓋最近 40 次 IRCA workflow runs：
+全部為 `schedule` 且成功，39 個間隔為 109.50 至 514.87 分鐘，中位數 247.67 分鐘；樣本中最新一次
+成功 publish 的三個來源時間皆距發布器生成不到一分鐘。這只能確認觀察到的空檔缺少 trigger runs，不能斷定 GitHub
+平台根因。本輪 blocker 是 `Cloudflare scheduler source location unavailable`；filesystem、repo 與 GitHub source
+搜尋都未找到來源。因此沒有修改 production clock、upstream cron、既有 `IRCA_WORKFLOW_INTERVAL_MINUTES` 的
+30 分鐘參數或 45/120 分鐘門檻，也沒有宣稱 migration 或 cron retirement 已完成。
+
 ## 2026-10-18：Two-machine production architecture retired
 
 原本由推播電腦與 Windows Task Scheduler 組成的正式 production 架構已退役。正式 production

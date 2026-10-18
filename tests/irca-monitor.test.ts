@@ -136,6 +136,27 @@ test("1. current production-shaped data is OK", async () => {
   assert.equal(health.details?.datasets, "3 / 3 available");
 });
 
+test("1a. manifest publisher and each IRCA dataset timestamp stay distinct in saved health data", async () => {
+  const manifest = {
+    ...buildManifest(),
+    generated_at: "2026-10-18T12:04:00.000Z",
+    road_data_at: "2026-10-18T12:01:11.000Z",
+    incident_data_at: "2026-10-18T12:02:23.000Z",
+    measurement_data_at: "2026-10-18T12:03:57.000Z",
+  };
+  const health = await check({ manifest, now: new Date("2026-10-18T12:10:00.000Z") });
+
+  assert.equal(health.dataTime, manifest.generated_at);
+  assert.equal(health.data?.lastPublished, "2026-10-18 12:04 UTC");
+  assert.equal(health.data?.roadDataAt, "2026-10-18 12:01 UTC");
+  assert.equal(health.data?.incidentDataAt, "2026-10-18 12:02 UTC");
+  assert.equal(health.data?.measurementDataAt, "2026-10-18 12:03 UTC");
+  assert.equal(health.details?.lastPublished, "2026-10-18 12:04 UTC");
+  assert.equal(health.details?.roadDataAt, "2026-10-18 12:01 UTC");
+  assert.equal(health.details?.incidentDataAt, "2026-10-18 12:02 UTC");
+  assert.equal(health.details?.measurementDataAt, "2026-10-18 12:03 UTC");
+});
+
 test("2. zero incidents is OK, not EMPTY_DATA", async () => {
   const health = await check({ manifest: buildManifest({ ...PRODUCTION_COUNTS, incidents: 0 }) });
   assert.equal(health.status, "ok");

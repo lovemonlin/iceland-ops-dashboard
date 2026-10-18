@@ -92,7 +92,7 @@ GitHub Actions.
 The publisher is **all-or-nothing** — when IRCA fails upstream the publish fails and the previous
 good output stays online — so HTTP 200 proves nothing here. The diagnosis comes from four signals:
 
-- **Freshness.** The pipeline republishes about every 30 minutes. Past 45 minutes is `STALE`; past
+- **Freshness.** Dashboard policy expects a 30-minute refresh. Past 45 minutes is `STALE`; past
   120 minutes is `ERROR`, because the data should no longer be read as a live picture of the roads.
   This is dashboard operational policy, not an IRCA or pipeline SLA.
 - **Availability.** Losing `road-conditions.geojson` alone is `ERROR` (it is the core dataset);
@@ -105,6 +105,16 @@ good output stays online — so HTTP 200 proves nothing here. The diagnosis come
 
 Transport, core-dataset and emptiness failures all outrank age, so an outage is never hidden behind
 a STALE badge.
+
+The manifest has four distinct clocks. `generated_at` is the publisher update time; `road_data_at`,
+`incident_data_at`, and `measurement_data_at` are the source times for road conditions, road
+events/construction/closures, and road-station measurements. The dashboard preserves all four so a
+publisher update is not presented as a source observation time. In a read-only sample of the latest
+40 IRCA workflow runs on 2026-10-18, every observed run was scheduled and successful; the 39 gaps
+ranged from 109.50 to 514.87 minutes (median 247.67). The latest successful publish in that sample
+had all three source times within one minute of `generated_at`. This confirms missing trigger runs
+in the observed gaps, not a GitHub-platform root cause. The blocker is: `Cloudflare scheduler source
+location unavailable`. This check therefore does not establish a migration or cron retirement.
 
 To keep a 60-second refresh cheap, only the manifest is fetched every check; the 1.3 MB road file
 and its siblings are downloaded solely when the manifest identity changes. Since the publisher is
