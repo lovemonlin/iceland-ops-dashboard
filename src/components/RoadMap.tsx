@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { getPublicAssetPath } from "@/lib/publicPath";
+import { startRoadFastLane, type RoadBundle } from "@/lib/roadFastLane";
+import { applyRoadBundle, buildLiveRoadStyle, ROAD_BUNDLE_SOURCE } from "@/lib/roadFastLaneMap";
 import {
   ALL_MARKER_IDS,
-  buildRoadStyle,
   drawMarker,
   ICELAND_CAMERA_BOUNDS,
   ICELAND_CAMERA_FALLBACK,
@@ -40,8 +41,8 @@ import {
  * The app's road map, on MapLibre GL JS.
  *
  * Nothing is initialised until the disclosure is opened: the library, the style and the three
- * production GeoJSON files are all loaded on first expand and then kept, so toggling does not
- * re-download them. The dashboard's own hourly snapshot is unaffected either way.
+ * production GeoJSON files are loaded on first expand. A manifest check every five minutes
+ * refreshes complete bundles in place; the dashboard's hourly health snapshot is unaffected.
  */
 /** The app fits the same corners; the bottom is generous because the detail card sits over it. */
 const CAMERA_PADDING = { padding: { top: 60, bottom: 120, left: 34, right: 34 } };
@@ -55,7 +56,7 @@ function frameIceland(map: MapLibreMap) {
   }
 }
 
-export function RoadMap() {
+export function RoadMap({ onBundle }: { onBundle: (bundle: RoadBundle) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   // Also held in state: the labels overlay renders from it, and a ref must not be read during render.
@@ -68,6 +69,7 @@ export function RoadMap() {
   const [mode, setMode] = useState<RoadInfoMode>("EVENTS");
   const modeRef = useRef<RoadInfoMode>(mode);
   const [failure, setFailure] = useState<string | null>(null);
+  const [refreshFailure, setRefreshFailure] = useState(false);
   const [ready, setReady] = useState(false);
 
   const onSelect = useCallback((item: RoadFeatureItem) => {
@@ -106,7 +108,7 @@ export function RoadMap() {
 
         const created = new maplibre.Map({
           container,
-          style: buildRoadStyle(getPublicAssetPath("/data/iceland.geojson")) as never,
+          style: buildLiveRoadStyle(getPublicAssetPath("/data/iceland.geojson")),
           bounds: ICELAND_CAMERA_BOUNDS,
           fitBoundsOptions: CAMERA_PADDING,
           attributionControl: false,
@@ -120,6 +122,10 @@ export function RoadMap() {
         setMap(created);
 
         map.on("error", (event) => {
+          if ("sourceId" in event && event.sourceId === ROAD_BUNDLE_SOURCE) {
+            setRefreshFailure(true);
+            return;
+          }
           const message = (event as { error?: { message?: string } }).error?.message ?? "unknown map error";
           setFailure(message);
         });
@@ -169,6 +175,24 @@ export function RoadMap() {
       setMap(null);
     };
   }, [onSelect]);
+
+  useEffect(() => {
+    if (!ready || !map) return;
+    let disposed = false;
+    const stop = startRoadFastLane({
+      onBundle: async (bundle) => {
+        await applyRoadBundle(map, bundle);
+        if (disposed) return;
+        onBundle(bundle);
+        setRefreshFailure(false);
+      },
+      onError: () => setRefreshFailure(true),
+    });
+    return () => {
+      disposed = true;
+      stop();
+    };
+  }, [map, ready, onBundle]);
 
   /**
    * The mode is applied as layer opacity rather than by rebuilding the style, which is what the
@@ -236,6 +260,9 @@ export function RoadMap() {
         ))}
       </div>
       <div ref={containerRef} className="road-map-canvas" />
+      {refreshFailure && (
+        <p className="muted-line" role="status">道路即時更新暫時失敗；保留現有資料，下一輪再試。</p>
+      )}
       {!ready && !failure && <p className="muted-line">正在載入道路地圖…</p>}
       {failure && (
         <p className="error">
@@ -347,9 +374,11 @@ function StationLabels({ map, ready }: { map: MapLibreMap | null; ready: boolean
     update();
     map.on("move", update);
     map.on("moveend", update);
+    map.on("idle", update);
     return () => {
       map.off("move", update);
       map.off("moveend", update);
+      map.off("idle", update);
     };
   }, [map, ready]);
 

@@ -1,4 +1,6 @@
 import { getSystemStatus } from "@/health/evaluate";
+import { useState } from "react";
+import type { RoadBundle } from "@/lib/roadFastLane";
 import {
   collectionSucceeded,
   describeCollection,
@@ -26,7 +28,7 @@ import { isNoaaKpForecastData, type DashboardSnapshot, type SnapshotSource } fro
  * The four things a traveller came to find out — weather, roads, aurora, warnings — plus the
  * publishing pipelines, which are the dashboard's own plumbing and are kept out of the way.
  *
- * Every card reads the stored snapshot values and nothing else. No card recomputes health.
+ * Health always comes from the stored snapshot. Road live data has an independent version.
  */
 
 /**
@@ -186,9 +188,15 @@ export function RoadsSection({
   now: Date;
   schemaVersion: number;
 }) {
+  const [liveRoad, setLiveRoad] = useState<RoadBundle>();
   if (!irca) return null;
 
-  const data = irca.data ?? {};
+  const data = liveRoad ? {
+    ...liveRoad.manifest.counts,
+    roadDataAt: liveRoad.manifest.roadDataAt?.toISOString(),
+    incidentDataAt: liveRoad.manifest.incidentDataAt?.toISOString(),
+    measurementDataAt: liveRoad.manifest.measurementDataAt?.toISOString(),
+  } : irca.data ?? {};
   const healthy = irca.status === "ok" || irca.status === "info";
   const age = dataAgeMinutes(irca, now);
   const reachable = collectionSucceeded(irca);
@@ -216,6 +224,7 @@ export function RoadsSection({
             </p>
           )}
           <div className="stats">
+            <Stat label="即時道路版本（UTC）" value={liveRoad?.version ?? "展開地圖後載入"} />
             <Stat label="道路" value={formatNumber(data.roads, "條")} />
             <Stat label="事件" value={formatNumber(data.incidents, "件")} />
             <Stat label="觀測站" value={formatNumber(data.stations, "站")} />
@@ -223,8 +232,9 @@ export function RoadsSection({
             <Stat label="道路事件／施工／封閉資料時間" value={text(data.incidentDataAt)} />
             <Stat label="道路觀測站／量測資料時間" value={text(data.measurementDataAt)} />
           </div>
+          <p className="muted-line">健康狀態與發布器更新時間依每小時檢查；展開地圖後，道路即時資料每 5 分鐘檢查一次。</p>
           <MapDisclosure label="展開全島道路">
-            <RoadMap />
+            <RoadMap onBundle={setLiveRoad} />
           </MapDisclosure>
         </SourceCard>
       </div>
