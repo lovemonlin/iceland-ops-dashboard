@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { AuroraBriefingMap } from "../src/components/AuroraBriefingMap";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -58,7 +61,7 @@ test("the briefing remains snapshot-only and never forwards current space weathe
   const dialog = read("src/components/AuroraBriefingDialog.tsx");
   const domain = read("src/lib/auroraBriefing.ts");
   assert.match(domain, /kpAt\(points, time, fallbackKp\)/);
-  assert.match(domain, /assessAuroraVisibility\(\{/);
+  assert.match(domain, /assessAuroraIndexV2\(\{/);
   assert.match(domain, /weather: hourAt\(weather\.get\(site\.id\), time, 0\)/);
   assert.match(domain, /effectiveObstruction\(reading\)/);
   assert.equal(/ovationProbability|bzGsm/.test(domain), false);
@@ -122,4 +125,23 @@ test("the briefing score map is schematic, slider-driven, and never loads a clou
   assert.equal(/ecmwf|cloud-forecast|fetch\s*\(/i.test(map), false);
   assert.equal(/ecmwf|cloud-forecast/i.test(dialog), false);
   assert.match(css, /\.aurora-briefing-slider input\[type="range"\]/);
+});
+
+test("V2 index legend lives with the map and stacks below it on narrow screens", () => {
+  const dialog = read("src/components/AuroraBriefingDialog.tsx");
+  const css = read("src/app/globals.css");
+  const markup = renderToStaticMarkup(createElement(AuroraBriefingMap, {
+    regions: [], hourIndex: 0, hourLabel: "23:00",
+  }));
+  assert.doesNotMatch(dialog, /aurora-briefing-map-legend|SCORE_LEGEND/);
+  assert.match(dialog, /formatBriefingHourLabel\(briefing\.hours\[hourIndex\]\?\.hour \?\? "—"\)/);
+  assert.match(dialog, /各區極光觀測指數；西南部含首都圈。/);
+  assert.doesNotMatch(dialog, /示意分區平均分數/);
+  assert.match(markup, /23:00 各區極光觀測指數示意圖/);
+  assert.match(markup, /極光觀測指數分級/);
+  for (const text of ["極光觀測指數", "0–4", "5–19", "20–39", "40–64", "65–100", "看不到", "不佳", "普通", "良好", "極佳"]) {
+    assert.equal(markup.includes(text), true, `${text} missing from map legend`);
+  }
+  assert.match(css, /\.aurora-briefing-map-legend \{[\s\S]*?position: absolute;[\s\S]*?top: 50%;/);
+  assert.match(css, /@media \(max-width: 1020px\) \{\s*\.aurora-briefing-map-legend \{\s*position: static;/);
 });

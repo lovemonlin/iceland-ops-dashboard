@@ -11,6 +11,13 @@ const LAND_FILL = "rgba(30, 39, 64, 0.72)";
 const SEA_FILL = "#141B2D";
 const COAST = "#C5D4DE";
 const SEAM = "rgba(20, 27, 45, 0.55)";
+const SCORE_LEGEND = [
+  { score: 0, range: "0–4" },
+  { score: 5, range: "5–19" },
+  { score: 20, range: "20–39" },
+  { score: 40, range: "40–64" },
+  { score: 65, range: "65–100" },
+] as const;
 
 function scorePaint(score: number | undefined) {
   if (score === undefined) {
@@ -35,11 +42,12 @@ export function AuroraBriefingMap({
 
   return (
     <div className="aurora-briefing-map">
+      <div className="aurora-briefing-map-visual">
       <svg
         viewBox={`0 0 ${BRIEFING_MAP_WIDTH} ${BRIEFING_MAP_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label={`${hourLabel} 各區平均極光分數示意圖`}
+        aria-label={`${hourLabel} 各區極光觀測指數示意圖`}
       >
         <rect width={BRIEFING_MAP_WIDTH} height={BRIEFING_MAP_HEIGHT} fill={SEA_FILL} />
         <defs>
@@ -103,6 +111,22 @@ export function AuroraBriefingMap({
         冰島旅遊神器 / 賀禎禎 /{" "}
         <a href="mailto:hojenjen2018@gmail.com">hojenjen2018@gmail.com</a>
       </p>
+      </div>
+      <aside className="aurora-briefing-map-legend" aria-label="極光觀測指數分級">
+        <h4>極光觀測指數</h4>
+        <ul>
+          {SCORE_LEGEND.map(({ score, range }) => {
+            const level = levelOf(score);
+            return (
+              <li key={range}>
+                <i aria-hidden="true" style={{ backgroundColor: level.color }} />
+                <span>{range}</span>
+                <span>{level.levelLabel}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </aside>
     </div>
   );
 }

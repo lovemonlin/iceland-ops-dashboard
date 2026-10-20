@@ -23,7 +23,7 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 | 想知道 | 去看 |
 | --- | --- |
 | monitor 清單與 id | `MONITOR_IDS`（`src/config/monitors.ts`） |
-| 極光評分公式 | `src/lib/auroraVisibility.ts`，全專案唯一一份 |
+| 極光評分公式 | 48 小時預測 V1：`src/lib/auroraVisibility.ts`；快報 V2：`src/lib/auroraIndexV2.ts` |
 | 各來源 freshness 政策 | `src/config/sources.ts`、`ecmwf.ts`、`irca.ts` |
 | snapshot 結構與 merge 契約 | `src/snapshot/types.ts` |
 | 測試數量與範圍 | `npm.cmd test` 的實際輸出 |
@@ -56,7 +56,8 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 - 每一個 monitor 都讀真實 production 資料。**runtime 沒有任何 mock 路徑**：
   `src/monitors/mockMonitors.ts` 與 `src/config/freshness.ts` 已經刪除，不是停用。
 - Snapshot schema v2。
-- 48 小時極光預測與極光快報 v1 都已完成並在線上。
+- 48 小時極光預測沿用 Android-compatible V1；極光快報使用 Aurora Index V2。
+  V2 與地圖分級圖例同批於 2026-10-20 發版；正式站是否完成部署應以 Pages workflow 與站點實際內容核對。
 - IP timezone Worker **已在正式站運作**（不是未部署）。GitHub repository variable
   `IP_TIMEZONE_ENDPOINT` 指向 `https://iceland-ops-dashboard-timezone.iceland-ops.workers.dev`。
   2026-09-11 在正式站核對：雲層預報與極光預測都顯示「當地時間」，不是「裝置時間」；
@@ -70,8 +71,8 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 1. Health 只能讀 snapshot，不得由 Browser 直接呼叫 NOAA、MET Norway、OVATION、Solar Wind。
    核准例外為 IP timezone Cloudflare Worker，以及 Road Fast Lane 讀取上游已發布的 manifest / GeoJSON；
    後者只更新 live road data，禁止覆寫 hourly health status。
-2. 極光評分公式只有 `src/lib/auroraVisibility.ts` 一份。任何極光 UI 都從
-   `buildAuroraForecast48()` 或 `assessAuroraVisibility()` 產出的 assessment 顯示，不得自行計算。
+2. 48 小時預測沿用 `src/lib/auroraVisibility.ts` 的 Android-compatible V1；極光快報使用
+   `src/lib/auroraIndexV2.ts` 的獨立 V2。UI 只顯示各自的 assessment，不得自行計算。
 3. 未來時段不得採用 current Bz 或 current OVATION。Bt / Bz / 太陽風在快報中只能標示為
    目前即時太空天氣。
 4. HTTP 200 永遠不等於健康。
@@ -84,6 +85,13 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-10-20：Aurora Index V2 production launch
+
+極光快報從 V1 切換到獨立 Aurora Index V2；48 小時預測與 Android parity 維持 V1。
+V2 已完成 30 晚唯讀歷史回測，本次不依回測結果調整公式、分級門檻或 robust-best 聚合。
+同批把極光觀測指數分級圖例移到地圖區塊，並將不再正確的「平均分數」文案改為
+「各區極光觀測指數」。發版與正式站狀態以 GitHub main／Pages deployment 核驗。
 
 ## 2026-10-20：IRCA Road production cadence calibration
 

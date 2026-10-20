@@ -5,11 +5,10 @@ import {
   type AuroraRegion,
 } from "@/lib/auroraForecastPresentation";
 import {
-  assessAuroraVisibility,
   kpAt,
   levelOf,
-  type AuroraAssessment,
 } from "@/lib/auroraVisibility";
+import { assessAuroraIndexV2, type AuroraIndexV2Assessment } from "@/lib/auroraIndexV2";
 import {
   BRIEFING_MAP_REGION_LABEL,
   BRIEFING_MAP_REGIONS,
@@ -34,7 +33,7 @@ export interface BriefingHour {
   time: string;
   hour: string;
   kp: number;
-  best: AuroraAssessment & { site: AuroraForecastDisplaySite };
+  best: AuroraIndexV2Assessment & { site: AuroraForecastDisplaySite };
 }
 
 /** Cloud-matrix rows follow the travel-map circuit, with the capital kept first. */
@@ -225,6 +224,14 @@ function kpPoints(snapshot: DashboardSnapshot): KpForecastPoint[] {
   return isNoaaKpForecastData(data) ? data.points : [];
 }
 
+/** A region represents the best reachable skies, without depending on one lucky site. */
+export function robustBestRegionScore(scores: readonly number[]): number | undefined {
+  const valid = scores.filter(Number.isFinite).sort((a, b) => b - a);
+  if (!valid.length) return undefined;
+  const count = Math.min(valid.length, Math.max(2, Math.ceil(valid.length * 0.3)));
+  return Math.round(valid.slice(0, count).reduce((sum, score) => sum + score, 0) / count);
+}
+
 function regionRows(
   sites: AuroraForecastDisplaySite[],
   weather: Map<string, WeatherHour[]>,
@@ -297,7 +304,7 @@ export function buildAuroraBriefing(
   const hours = window.hours.map((time, index) => {
     const kp = kpAt(points, time, fallbackKp);
     const candidates = sites.map((site) => ({
-      ...assessAuroraVisibility({
+      ...assessAuroraIndexV2({
         time,
         site,
         weather: hourAt(weather.get(site.id), time, 0),
@@ -320,11 +327,7 @@ export function buildAuroraBriefing(
   const mapRegions = BRIEFING_MAP_REGIONS.map((region) => ({
     region,
     label: BRIEFING_MAP_REGION_LABEL[region],
-    scores: mapBuckets[region].map((values) =>
-      values.length
-        ? values.reduce((sum, value) => sum + value, 0) / values.length
-        : undefined,
-    ),
+    scores: mapBuckets[region].map(robustBestRegionScore),
   }));
   const bestCloudRegions = regions
     .filter((region) => region.average !== undefined)

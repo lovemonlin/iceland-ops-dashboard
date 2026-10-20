@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { encodeSiteForecast } from "../src/lib/forecastCodec";
+import { assessAuroraIndexV2 } from "../src/lib/auroraIndexV2";
 import {
   BRIEFING_CLOUD_REGIONS,
   briefingCloudRegion,
@@ -13,6 +14,7 @@ import {
   formatBriefingHourLabel,
   formatBriefingKp,
   getIcelandTonightWindow,
+  robustBestRegionScore,
 } from "../src/lib/auroraBriefing";
 import {
   BRIEFING_MAP_LAND_PATH,
@@ -122,8 +124,8 @@ test("the fixed Iceland window crosses month and year boundaries", () => {
 test("future briefing points use NOAA forecast Kp without current Bz or OVATION", () => {
   const model = buildAuroraBriefing(fixture(), new Date("2026-09-10T01:00:00Z"))!;
   assert.deepEqual(model.hours.map((hour) => hour.kp), [2, 2, 2, 3, 3, 3, 4, 4, 4]);
-  assert.equal(model.hours[0].best.auroraStrength, (2 / 9) * 100);
-  assert.notEqual(model.hours[0].best.auroraStrength, 100);
+  assert.equal(model.hours[0].best.activityPotential, (2 / 9) ** 0.45);
+  assert.notEqual(model.hours[0].best.activityPotential, 1);
   assert.deepEqual(model.current, {
     kp: 1.33,
     bt: 6,
@@ -131,6 +133,58 @@ test("future briefing points use NOAA forecast Kp without current Bz or OVATION"
     speed: 450,
     ovation: 88,
   });
+});
+
+test("map region score averages the best 30% with at least two valid sites", () => {
+  assert.equal(robustBestRegionScore([]), undefined);
+  assert.equal(robustBestRegionScore([70]), 70);
+  assert.equal(robustBestRegionScore([10, 20, 70, 75, 80, 15]), 78);
+  assert.equal(robustBestRegionScore([10, 20, 70, 75, 80, 15, 90]), 82);
+  assert.equal(robustBestRegionScore([10, Number.NaN, 80]), 45);
+});
+
+test("briefing map uses the best V2 site scores rather than the whole-region mean", () => {
+  const snapshot = fixture();
+  const metno = snapshot.sources.metno!.data!;
+  const times = metno.forecastTimes as string[];
+  const obstructions = [0, 10, 20, 70, 85, 100];
+  const sites = obstructions.map((obstruction, index) => {
+    const forecast: WeatherHour[] = times.map((time) => ({
+      time,
+      cloudLowPercent: obstruction,
+      cloudMediumPercent: 0,
+      cloudHighPercent: 0,
+    }));
+    return {
+      id: `capital-${index}`,
+      name: `Site ${index}`,
+      nameIs: `Site ${index}`,
+      nameZh: `地點 ${index}`,
+      lat: 64.1466,
+      lon: -21.9426,
+      region: "CAPITAL" as const,
+      lightPollution: "DARK" as const,
+      forecast: encodeSiteForecast(forecast, times),
+    };
+  });
+  metno.sites = sites;
+
+  const model = buildAuroraBriefing(snapshot, new Date("2026-09-10T01:00:00Z"))!;
+  const hourIndex = 5;
+  const siteScores = sites.map((site, index) => assessAuroraIndexV2({
+    time: new Date(times[hourIndex]),
+    site,
+    weather: {
+      time: times[hourIndex],
+      cloudLowPercent: obstructions[index],
+      cloudMediumPercent: 0,
+      cloudHighPercent: 0,
+    },
+    kp: model.hours[hourIndex].kp,
+  }).score);
+  const southwest = model.mapRegions.find((region) => region.region === "SOUTHWEST")!;
+  assert.equal(southwest.scores[hourIndex], robustBestRegionScore(siteScores));
+  assert.notEqual(southwest.scores[hourIndex], Math.round(siteScores.reduce((sum, score) => sum + score, 0) / siteScores.length));
 });
 
 test("region heatmap excludes missing site-hours instead of inventing cloud", () => {
@@ -262,7 +316,8 @@ test("briefing labels keep full hours and collapse a flat Kp range", () => {
 
 test("briefing presentation suppresses a low-score or daylight best site", () => {
   const model = buildAuroraBriefing(fixture(), new Date("2026-09-10T01:00:00Z"))!;
-  assert.equal(briefingBestSiteLabel(model.hours[0].best), undefined);
+  assert.equal(briefingBestSiteLabel({ ...model.hours[0].best, score: 4 }), undefined);
+  assert.equal(briefingBestSiteLabel({ ...model.hours[0].best, darknessFactor: 0 }), undefined);
   assert.equal(
     briefingBestSiteLabel({ ...model.hours[0].best, score: 5, darknessFactor: 1 }),
     "雷克雅未克",

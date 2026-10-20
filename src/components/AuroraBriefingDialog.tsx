@@ -18,14 +18,6 @@ import { bzStatus, btStatus, speedStatus } from "@/lib/auroraGauge";
 import { obstructionColorFor } from "@/lib/weatherMap";
 import type { DashboardSnapshot } from "@/snapshot/types";
 
-const SCORE_LEGEND = [
-  ["#64748B", "看不到"],
-  ["#FB923C", "不佳"],
-  ["#FDE047", "普通"],
-  ["#86EFAC", "良好"],
-  ["#4ADE80", "極佳"],
-] as const;
-
 const value = (number: number | undefined, suffix = "") =>
   number === undefined ? "—" : `${number.toFixed(1)}${suffix}`;
 
@@ -313,7 +305,7 @@ export function AuroraBriefingDialog({
           <h3>今晚各區極光分數</h3>
           <p>
             {formatBriefingHourLabel(briefing.hours[hourIndex]?.hour ?? "—")}
-            {" "}示意分區平均分數；西南部含首都圈。拉動時段可對照下方表格。
+            {" "}各區極光觀測指數；西南部含首都圈。拉動時段可對照下方表格。
           </p>
           <AuroraBriefingMap
             regions={briefing.mapRegions}
@@ -344,14 +336,6 @@ export function AuroraBriefingDialog({
               ))}
             </span>
           </label>
-          <p className="aurora-briefing-map-legend">
-            {SCORE_LEGEND.map(([color, label]) => (
-              <span key={label}>
-                <i style={{ background: color }} />
-                {label}
-              </span>
-            ))}
-          </p>
         </section>
 
         <section>
