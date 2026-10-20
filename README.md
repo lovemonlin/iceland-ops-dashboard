@@ -92,7 +92,8 @@ GitHub Actions.
 The publisher is **all-or-nothing** — when IRCA fails upstream the publish fails and the previous
 good output stays online — so HTTP 200 proves nothing here. The diagnosis comes from four signals:
 
-- **Freshness.** Dashboard policy expects a 30-minute refresh. Past 45 minutes is `STALE`; past
+- **Freshness.** The production publisher runs approximately every 10 minutes, dispatched by
+  Cloudflare `irca-road-scheduler`; the former GitHub cron is retired. Past 45 minutes is `STALE`; past
   120 minutes is `ERROR`, because the data should no longer be read as a live picture of the roads.
   This is dashboard operational policy, not an IRCA or pipeline SLA.
 - **Availability.** Losing `road-conditions.geojson` alone is `ERROR` (it is the core dataset);
@@ -109,17 +110,34 @@ a STALE badge.
 The manifest has four distinct clocks. `generated_at` is the publisher update time; `road_data_at`,
 `incident_data_at`, and `measurement_data_at` are the source times for road conditions, road
 events/construction/closures, and road-station measurements. The dashboard preserves all four so a
-publisher update is not presented as a source observation time. In a read-only sample of the latest
+publisher update is not presented as a source observation time. Historical observation (superseded by
+the current Cloudflare publisher described above): in a read-only sample of the latest
 40 IRCA workflow runs on 2026-10-18, every observed run was scheduled and successful; the 39 gaps
 ranged from 109.50 to 514.87 minutes (median 247.67). The latest successful publish in that sample
 had all three source times within one minute of `generated_at`. This confirms missing trigger runs
-in the observed gaps, not a GitHub-platform root cause. The blocker is: `Cloudflare scheduler source
-location unavailable`. This check therefore does not establish a migration or cron retirement.
+in the observed gaps, not a GitHub-platform root cause. At that time the blocker was
+`Cloudflare scheduler source location unavailable`; that historical check did not establish a migration
+or cron retirement.
 
-To keep a 60-second refresh cheap, only the manifest is fetched every check; the 1.3 MB road file
-and its siblings are downloaded solely when the manifest identity changes. Since the publisher is
-all-or-nothing, the files cannot change without the manifest changing. The cache is server-process
-memory only — no database, and losing it on restart costs one extra download.
+The IRCA health monitor runs with the shared **60-minute snapshot**, alongside all other monitors.
+It GETs the manifest and HEADs all three datasets; full GeoJSON validation is cached by manifest
+identity in server-process memory only. Each new snapshot process starts with an empty cache.
+
+### Road Fast Lane (browser)
+
+On first map expansion, the browser immediately loads the manifest and all three GeoJSON datasets.
+It then checks the manifest every **5 minutes**, using `cache: no-store` and cache-busting. Only a
+changed `generated_at` triggers three downloads, all carrying the same version query. All three must
+validate, and a second manifest read must confirm the version before adoption. A single merged
+MapLibre source receives `setData()`; the map, camera and layer mode are retained. Failure preserves
+the last-known-good bundle until the next polling round. Hidden pages skip checks; becoming visible
+checks immediately without creating another timer.
+
+Live `generated_at`, `road_data_at`, `incident_data_at` and `measurement_data_at` describe this bundle.
+**OK / STALE / ERROR still come exclusively from the hourly `latest-health.json`**, never from a
+successful browser fetch. Publisher cadence (10 minutes), browser polling (5 minutes), health snapshot
+(60 minutes), STALE output-age threshold (45 minutes) and ERROR threshold (120 minutes) are separate.
+MET, NOAA, IMO, ECMWF, aurora and weather collection remain unchanged.
 
 
 ### GitHub Actions pipeline monitors
@@ -220,11 +238,11 @@ Cloudflare Worker
 ```
 
 **Browser refresh and production data collection are different things.** Opening or reloading the
-dashboard reads one static JSON file and contacts no production data API. The optional timezone
-helper is the sole browser endpoint: it reads no dashboard data and returns only an IANA timezone.
-Production data is collected only by the snapshot workflow, normally triggered by the external
-Cloudflare scheduler. The dashboard does not need to be open for that to happen, and having it open
-does not make it happen more often.
+dashboard re-reads the static health snapshot. Expanding the road map additionally starts Road Fast
+Lane against the already-published road manifest and GeoJSON; it never calls IRCA directly or updates
+health. The optional timezone helper returns only an IANA timezone. Health collection remains in the
+60-minute snapshot workflow, normally triggered by the external Cloudflare scheduler. Browser road
+polling does not increase that cadence or any other source's API collection frequency.
 
 The scheduled collection is only ever allowed to change one file: `public/data/latest-health.json`.
 It must not touch source code, `package.json`, the workflow, configuration or this README. After
@@ -379,7 +397,8 @@ red against them, that is the finding — the publishing architecture is not mee
 `src/lib/fetchWithDiagnostics.ts` is the server-only wrapper used in production. Monitors take an
 injectable fetcher, so the whole test suite runs offline.
 
-All of these happen during `npm run snapshot` only — never when someone opens the dashboard.
+These health-monitor probes happen during the hourly `npm run snapshot` only. Road Fast Lane
+separately reads the public road artifacts in the browser, as described above.
 Every outbound request is a `GET` or `HEAD`, to the public GitHub Pages host or to
 `api.github.com`, and nowhere else: the two manifests, two ECMWF frame probes, three IRCA dataset
 probes, the three IRCA GeoJSON downloads only when the IRCA manifest has changed, and at most

@@ -1,11 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { IRCA_MANIFEST_URL, IRCA_PUBLIC_BASE_URL } from "../src/config/irca";
+import { IRCA_ERROR_AFTER_SECONDS, IRCA_MANIFEST_URL, IRCA_PUBLIC_BASE_URL, IRCA_STALE_AFTER_SECONDS, IRCA_WORKFLOW_INTERVAL_MINUTES } from "../src/config/irca";
+import { SNAPSHOT_INTERVAL_MINUTES } from "../src/config/snapshot";
+import { ROAD_POLL_MS } from "../src/lib/roadFastLane";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher } from "../src/lib/fetchWithDiagnosticsCore";
 import { createIrcaContentCache } from "../src/monitors/irca/datasets";
 import { checkIrca } from "../src/monitors/irca/monitor";
 
 const MINUTE = 60_000;
+
+test("IRCA publisher, browser polling, shared health snapshot and alert thresholds are independent", () => {
+  assert.equal(IRCA_WORKFLOW_INTERVAL_MINUTES, 10);
+  assert.equal(ROAD_POLL_MS, 5 * MINUTE);
+  // The shared snapshot still collects every other source at its existing hourly cadence.
+  assert.equal(SNAPSHOT_INTERVAL_MINUTES, 60);
+  assert.equal(IRCA_STALE_AFTER_SECONDS, 45 * 60);
+  assert.equal(IRCA_ERROR_AFTER_SECONDS, 120 * 60);
+});
 
 /** Matches the shape observed in production on 2026-09-03. */
 const PUBLISHED_AT = "2026-09-03T00:35:31.832760Z";
@@ -215,8 +226,8 @@ test("10. an age of 45:01 is STALE", async () => {
   const health = await check({ now: new Date(Date.parse(PUBLISHED_AT) + 45 * MINUTE + 1_000) });
   assert.equal(health.status, "stale");
   assert.equal(health.errorType, "STALE_DATA");
-  assert.match(String(health.errorMessage), /republishes about every 30 min/);
-  assert.equal(health.details?.expectedRefresh, "30 min");
+  assert.match(String(health.errorMessage), /republishes about every 10 min/);
+  assert.equal(health.details?.expectedRefresh, "10 min");
 });
 
 test("11. an age of 119:59 is still STALE", async () => {

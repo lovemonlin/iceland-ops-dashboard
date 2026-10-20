@@ -16,7 +16,7 @@ No credential, API key, token, PAT or secret may ever be written in this file.
 測試數量、目前 HEAD 都曾經因為被複製進文件而過期。本檔與程式碼衝突時以程式碼為準，
 並順手修正本檔。
 
-## 現況速覽（最後校對 2026-10-18）
+## 現況速覽（最後校對 2026-10-20）
 
 ### 每個事實的唯一真相在哪裡
 
@@ -43,6 +43,11 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 - Windows 是 development environment，不是 production clock。本機一般開發不得執行 `npm run snapshot`；
   snapshot 過期時以 `git pull --ff-only` 同步。
 - Snapshot schema v2，現有 9 個 Data Monitors + 2 個 Pipeline Monitors。
+- IRCA Road Publisher：Cloudflare `irca-road-scheduler` 約每 10 分鐘 `workflow_dispatch`；舊 GitHub cron 已退役。
+  Cadence 顯示以 `src/config/irca.ts` 為準；STALE / ERROR 是獨立的 45 / 120 分鐘 output-age 政策。
+- Road Fast Lane：首次展開立即載入、每 5 分鐘檢查版本（`src/lib/roadFastLane.ts`）；完整三檔驗證後
+  原子更新單一 MapLibre source，更新四個 live 時間戳；health 仍僅讀 60 分鐘 `latest-health.json`。
+  其他來源與整體 snapshot cadence 均未改；下方歷史段落的 30 分鐘說法不再代表現況。
 - 此 repo 未直接核驗 Cloudflare scheduler 的原始碼、cron 或 secrets；它的正式角色來自交接基準。
   repo 內只能核驗 `workflow_dispatch` 入口與後續 workflow 行為。
 
@@ -62,8 +67,9 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 
 ## 不可違反的約束
 
-1. Browser 只能讀 snapshot，不得直接呼叫 NOAA、MET Norway、OVATION、Solar Wind。唯一核准的
-   例外是 IP timezone Cloudflare Worker。
+1. Health 只能讀 snapshot，不得由 Browser 直接呼叫 NOAA、MET Norway、OVATION、Solar Wind。
+   核准例外為 IP timezone Cloudflare Worker，以及 Road Fast Lane 讀取上游已發布的 manifest / GeoJSON；
+   後者只更新 live road data，禁止覆寫 hourly health status。
 2. 極光評分公式只有 `src/lib/auroraVisibility.ts` 一份。任何極光 UI 都從
    `buildAuroraForecast48()` 或 `assessAuroraVisibility()` 產出的 assessment 顯示，不得自行計算。
 3. 未來時段不得採用 current Bz 或 current OVATION。Bt / Bz / 太陽風在快報中只能標示為
@@ -78,6 +84,17 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 9. 不得修改 repo 的 NTFS ownership 或 ACL。
 
 # 決策紀錄（append-only，新的在上）
+
+## 2026-10-20：IRCA Road production cadence calibration
+
+依已正式上線的架構校正 Dashboard 的 `IRCA_WORKFLOW_INTERVAL_MINUTES`：30 → 10。
+Road Publisher 由 Cloudflare `irca-road-scheduler` 約每 10 分鐘透過 `workflow_dispatch` 執行，
+舊 GitHub cron 已退役。Road Fast Lane 維持 5 分鐘 browser manifest polling，僅以 `generated_at`
+識別版本，三份 GeoJSON 驗證完整後一次 `source.setData()`，不重建地圖，失敗保留舊 bundle。
+四個 live timestamp 與 hourly health 分離；一般 snapshot 仍為 60 分鐘，STALE / ERROR 仍為
+45 / 120 分鐘。MET、NOAA、IMO、ECMWF、極光與天氣 cadence 均未變更。
+本次只校正 Dashboard 設定、顯示契約、測試與文件，未操作上游、scheduler 或 production workflow。
+下列 2026-10-18、2026-09-03 等歷史觀察與當時的 30 分鐘假設保留原文，不能作為現行 production cadence。
 
 ## 2026-10-18：IRCA 四個時間戳與 scheduler 樣本診斷
 

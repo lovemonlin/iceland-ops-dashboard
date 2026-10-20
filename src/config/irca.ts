@@ -13,8 +13,8 @@
 export const IRCA_PUBLIC_BASE_URL = "https://lovemonlin.github.io/iceland-aurora-cloud";
 export const IRCA_MANIFEST_URL = `${IRCA_PUBLIC_BASE_URL}/road-manifest.json`;
 
-/** The cloud workflow republishes roughly every 30 minutes. */
-export const IRCA_WORKFLOW_INTERVAL_MINUTES = 30;
+/** Cloudflare irca-road-scheduler dispatches the publisher roughly every 10 minutes. */
+export const IRCA_WORKFLOW_INTERVAL_MINUTES = 10;
 
 /**
  * Dashboard operational policy, **not** an IRCA or cloud-pipeline SLA.
