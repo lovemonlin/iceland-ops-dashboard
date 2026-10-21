@@ -108,7 +108,9 @@ test("16. a failed collection still exposes the last successful data to the card
 
 test("17. the browser reload path reads the snapshot file, not a monitor endpoint", async () => {
   const dashboard = await readProjectFile("src/components/Dashboard.tsx");
-  assert.match(dashboard, /getSnapshotUrl/);
+  const hook = await readProjectFile("src/lib/usePublishedSnapshot.ts");
+  assert.match(dashboard, /usePublishedSnapshot\(initialSnapshot, onSnapshotChange\)/);
+  assert.match(hook, /getSnapshotUrl\(\{ cacheBust: true \}\)/);
   assert.equal(dashboard.includes("/api/health"), false);
   assert.equal(SNAPSHOT_PUBLIC_PATH, "/data/latest-health.json");
   // The button says what it does, and says it in the reader's language.

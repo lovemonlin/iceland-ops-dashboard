@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { StandaloneOpenButton } from "@/components/StandaloneOpenButton";
 import { getPublicAssetPath } from "@/lib/publicPath";
 import { startRoadFastLane, type RoadBundle } from "@/lib/roadFastLane";
 import { applyRoadBundle, buildLiveRoadStyle, ROAD_BUNDLE_SOURCE } from "@/lib/roadFastLaneMap";
@@ -56,7 +57,15 @@ function frameIceland(map: MapLibreMap) {
   }
 }
 
-export function RoadMap({ onBundle }: { onBundle: (bundle: RoadBundle) => void }) {
+export function RoadMap({
+  onBundle,
+  initialMode = "EVENTS",
+  standalone = false,
+}: {
+  onBundle: (bundle: RoadBundle) => void;
+  initialMode?: RoadInfoMode;
+  standalone?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   // Also held in state: the labels overlay renders from it, and a ref must not be read during render.
@@ -66,7 +75,7 @@ export function RoadMap({ onBundle }: { onBundle: (bundle: RoadBundle) => void }
   const [machineChinese, setMachineChinese] = useState<string | undefined>();
   const [translationPending, setTranslationPending] = useState(false);
   // The app reaches these as two separate screens; here they are one map with a toggle.
-  const [mode, setMode] = useState<RoadInfoMode>("EVENTS");
+  const [mode, setMode] = useState<RoadInfoMode>(initialMode);
   const modeRef = useRef<RoadInfoMode>(mode);
   const [failure, setFailure] = useState<string | null>(null);
   const [refreshFailure, setRefreshFailure] = useState(false);
@@ -246,18 +255,21 @@ export function RoadMap({ onBundle }: { onBundle: (bundle: RoadBundle) => void }
 
   return (
     <div className="road-map">
-      <div className="road-modes" role="group" aria-label="道路地圖顯示模式">
-        {ROAD_MODES.map((entry) => (
-          <button
-            key={entry.mode}
-            type="button"
-            className={entry.mode === mode ? "active" : undefined}
-            aria-pressed={entry.mode === mode}
-            onClick={() => setMode(entry.mode)}
-          >
-            {entry.label}
-          </button>
-        ))}
+      <div className="viewer-control-row">
+        <div className="road-modes" role="group" aria-label="道路地圖顯示模式">
+          {ROAD_MODES.map((entry) => (
+            <button
+              key={entry.mode}
+              type="button"
+              className={entry.mode === mode ? "active" : undefined}
+              aria-pressed={entry.mode === mode}
+              onClick={() => setMode(entry.mode)}
+            >
+              {entry.label}
+            </button>
+          ))}
+        </div>
+        {!standalone && <StandaloneOpenButton kind="roads" query={new URLSearchParams({ mode })} />}
       </div>
       <div ref={containerRef} className="road-map-canvas" />
       {refreshFailure && (
@@ -372,10 +384,12 @@ function StationLabels({ map, ready }: { map: MapLibreMap | null; ready: boolean
       setLabels(next);
     };
     update();
+    map.on("resize", update);
     map.on("move", update);
     map.on("moveend", update);
     map.on("idle", update);
     return () => {
+      map.off("resize", update);
       map.off("move", update);
       map.off("moveend", update);
       map.off("idle", update);

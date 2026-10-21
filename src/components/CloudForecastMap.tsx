@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SiteForecastDialog, type ForecastSite } from "@/components/SiteForecastDialog";
+import { StandaloneOpenButton } from "@/components/StandaloneOpenButton";
 import {
   buildCloudForecastStyle,
   CLOUD_ATTRIBUTION,
@@ -82,6 +83,8 @@ export function CloudForecastMap({
   sites,
   kpForecastPoints,
   currentKp,
+  initialFrameIndex = 0,
+  standalone = false,
 }: {
   frames: CloudFrame[];
   runAt?: string;
@@ -89,12 +92,21 @@ export function CloudForecastMap({
   sites: CloudForecastSite[];
   kpForecastPoints?: KpForecastPoint[];
   currentKp?: number;
+  initialFrameIndex?: number;
+  standalone?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const [offsetHours, setOffsetHours] = useState(0);
+  const [offsetHours, setOffsetHours] = useState(() => {
+    if (!standalone) return 0;
+    const base = forecastBaseTime(sites) ?? new Date(frames[0]?.validAt ?? 0);
+    const selected = frames[initialFrameIndex];
+    return selected
+      ? Math.max(0, Math.min(48, Math.round((Date.parse(selected.validAt) - base.getTime()) / 3_600_000)))
+      : 0;
+  });
   const [detailSiteId, setDetailSiteId] = useState<string | null>(null);
   const [localTimeZone, setLocalTimeZone] = useState<LocalTimeZone>(deviceTimeZone);
 
@@ -124,6 +136,9 @@ export function CloudForecastMap({
   );
 
   const frame = useMemo(() => frameAt(frames, selectedTime), [frames, selectedTime]);
+  const maxHours = standalone
+    ? Math.max(CLOUD_FORECAST_MAX_HOURS, Math.min(48, Math.ceil((Date.parse(frames[frames.length - 1]?.validAt ?? "") - baseTime.getTime()) / 3_600_000) || 24))
+    : CLOUD_FORECAST_MAX_HOURS;
   const kpLabel = cloudForecastKpLabel(kpForecastPoints, selectedTime, currentKp);
   const markers = useMemo(
     // `forecasts[site.id]?.at(time)?.effectiveObstruction` — an hour the site does not have
@@ -257,7 +272,12 @@ export function CloudForecastMap({
       {failure && <p className="muted-line">地圖載入失敗：{failure}</p>}
 
       <div className="cloud-forecast-panel">
-        <strong>{CLOUD_FORECAST_TITLE}</strong>
+        <div className="viewer-control-row">
+          <strong>{CLOUD_FORECAST_TITLE}</strong>
+          {!standalone && <StandaloneOpenButton kind="cloud" query={new URLSearchParams({
+            frame: String(Math.max(0, frame ? frames.indexOf(frame) : 0)),
+          })} />}
+        </div>
 
         <CloudForecastTime
           value={selectedTime.toISOString()}
@@ -269,7 +289,7 @@ export function CloudForecastMap({
         <input
           type="range"
           min={0}
-          max={CLOUD_FORECAST_MAX_HOURS}
+          max={maxHours}
           step={1}
           value={offsetHours}
           onChange={(event) => setOffsetHours(Number(event.target.value))}

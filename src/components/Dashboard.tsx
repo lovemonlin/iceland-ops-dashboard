@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AuroraSection, PipelineSection, RoadsSection, WarningsSection, WeatherSection } from "@/components/SourceSections";
 import { StatusPill } from "@/components/StatusCard";
 import { LIVE_MONITOR_IDS, MONITOR_IDS, PIPELINE_MONITOR_IDS } from "@/config/monitors";
@@ -17,7 +17,7 @@ import {
 } from "@/lib/display";
 import { recordCheck, statusMap, type DashboardEvent } from "@/lib/events";
 import { imoWarningsLead } from "@/lib/imoWarningPresentation";
-import { getSnapshotUrl } from "@/lib/publicPath";
+import { usePublishedSnapshot } from "@/lib/usePublishedSnapshot";
 import { formatShortClock, ICELAND_TIME_ZONE } from "@/lib/time";
 import { buildIncidents, dataAgeMinutes, type IncidentGroup } from "@/monitors/correlate";
 import { snapshotAgeMinutes, snapshotEntry, allSnapshotEntries, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
@@ -25,73 +25,17 @@ import { snapshotAgeMinutes, snapshotEntry, allSnapshotEntries, type DashboardSn
 const dot: Record<HealthStatus, string> = { ok: "🟢", info: "🔵", stale: "🟡", degraded: "🟠", error: "🔴" };
 
 export function Dashboard({ initialSnapshot }: { initialSnapshot: DashboardSnapshot }) {
-  const [snapshot, setSnapshot] = useState(initialSnapshot);
-  const [now, setNow] = useState(() => new Date(initialSnapshot.generatedAt));
-  const [autoReload, setAutoReload] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [reloadError, setReloadError] = useState<string | undefined>();
-
   const [events, setEvents] = useState<DashboardEvent[]>(() =>
     recordCheck([], allSnapshotEntries(initialSnapshot), null, initialSnapshot.generatedAt),
   );
   const lastStatuses = useRef<Record<string, HealthStatus>>(statusMap(allSnapshotEntries(initialSnapshot)));
-  const inFlight = useRef(false);
-  const mounted = useRef(true);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
+  const onSnapshotChange = useCallback((next: DashboardSnapshot) => {
+    const entries = allSnapshotEntries(next);
+    setEvents((existing) => recordCheck(existing, entries, lastStatuses.current, next.generatedAt));
+    lastStatuses.current = statusMap(entries);
   }, []);
-
-  /**
-   * Re-reads the snapshot file. This never contacts a production API — the hourly scheduled
-   * collection is what refreshes the data; this only picks up what it wrote.
-   */
-  const reloadSnapshot = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setLoading(true);
-    try {
-      // Cache-busted so a redeployed snapshot is never hidden behind a cached copy.
-      const response = await fetch(getSnapshotUrl({ cacheBust: true }), { cache: "no-store" });
-      if (!response.ok) throw new Error(`snapshot file returned HTTP ${response.status}`);
-      const next = (await response.json()) as DashboardSnapshot;
-      if (!mounted.current) return;
-      if (next.generatedAt !== snapshot.generatedAt) {
-        const entries = allSnapshotEntries(next);
-        setEvents((existing) => recordCheck(existing, entries, lastStatuses.current, next.generatedAt));
-        lastStatuses.current = statusMap(entries);
-        setSnapshot(next);
-      }
-      setNow(new Date());
-      setReloadError(undefined);
-    } catch (error) {
-      if (mounted.current) setReloadError(error instanceof Error ? error.message : "unknown error");
-    } finally {
-      inFlight.current = false;
-      if (mounted.current) setLoading(false);
-    }
-  }, [snapshot.generatedAt]);
-
-  // Leave the build-time clock behind, and re-read the snapshot in case this HTML was cached.
-  // The page is statically exported, so a visitor can arrive on HTML older than the deployed JSON.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setNow(new Date());
-      void reloadSnapshot();
-    }, 0);
-    return () => clearTimeout(timer);
-    // Deliberately once on mount: later reads come from the interval and the button.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!autoReload) return;
-    const timer = setInterval(reloadSnapshot, SNAPSHOT_RELOAD_MS);
-    return () => clearInterval(timer);
-  }, [autoReload, reloadSnapshot]);
+  const { snapshot, now, autoReload, setAutoReload, loading, reloadError, reloadSnapshot } =
+    usePublishedSnapshot(initialSnapshot, onSnapshotChange);
 
   const entries = allSnapshotEntries(snapshot);
   const incidents = buildIncidents(snapshot, now);

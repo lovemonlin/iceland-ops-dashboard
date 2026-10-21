@@ -2247,3 +2247,70 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   margin-right: 4px;
   flex: none;
 }
+
+/* One map component in either a dashboard card or a full-window viewer. */
+.viewer-control-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.viewer-control-row .road-modes { flex: 1 1 280px; min-width: 0; }
+.standalone-open,
+.standalone-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 1px solid #49617c;
+  border-radius: 7px;
+  padding: 7px 12px;
+  background: #1b2a3b;
+  color: var(--text);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.standalone-open:hover,
+.standalone-back:hover { background: #24374c; }
+.standalone-open:focus-visible,
+.standalone-back:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+
+main.standalone-viewer {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  padding: clamp(12px, 2vw, 28px);
+}
+.standalone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+}
+.standalone-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.standalone-heading > span { font-size: 28px; }
+.standalone-heading h1 { font-size: 20px; }
+.standalone-heading p { color: var(--muted); font-size: 12px; }
+.standalone-content { width: 100%; min-width: 0; margin-top: 14px; }
+.standalone-reload-error { margin: 10px 0 0; }
+.standalone-cloud .cloud-forecast { margin-top: 0; }
+.standalone-cloud .cloud-forecast-canvas {
+  height: clamp(360px, calc(100dvh - 320px), 1100px);
+}
+.standalone-roads .road-map-canvas {
+  height: clamp(420px, calc(100dvh - 230px), 1200px);
+}
+.standalone-weather .weather-list-scroll { max-height: calc(100dvh - 260px) !important; }
+@media (max-width: 720px) {
+  main.standalone-viewer { padding: 10px; }
+  .standalone-header { padding: 12px; }
+  .standalone-open { margin-left: auto; }
+  .standalone-cloud .cloud-forecast-canvas,
+  .standalone-roads .road-map-canvas { height: clamp(300px, 52dvh, 500px); }
+  .standalone-heading p { overflow-wrap: anywhere; }
+}
+@media (max-width: 420px) {
+  .standalone-weather .weather-list-header,
+  .standalone-weather .weather-list-row {
+    grid-template-columns: 20px minmax(80px, 1fr) 36px 42px 38px !important;
+    gap: 4px !important;
+  }
+}

@@ -18,6 +18,12 @@ export function getPublicAssetPath(path: string) {
   return `${basePath()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+/** Directory-style App Router page URL, including the Pages project base path. */
+export function getPublicPagePath(path: string) {
+  const rooted = path.startsWith("/") ? path : `/${path}`;
+  return getPublicAssetPath(rooted.endsWith("/") ? rooted : `${rooted}/`);
+}
+
 /**
  * URL of the snapshot the dashboard reads.
  *

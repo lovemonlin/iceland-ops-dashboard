@@ -58,6 +58,7 @@ Cloudflare Worker → workflow_dispatch → GitHub Actions → npm run snapshot
 - Snapshot schema v2。
 - 48 小時極光預測沿用 Android-compatible V1；極光快報使用 Aurora Index V2。
   V2 與地圖分級圖例同批於 2026-10-20 發版；正式站是否完成部署應以 Pages workflow 與站點實際內容核對。
+- Standalone Viewer V1（Weather／Cloud／Road）正在本機實作與驗證；尚未 commit／push，production 仍以現有 Dashboard 為準。
 - IP timezone Worker **已在正式站運作**（不是未部署）。GitHub repository variable
   `IP_TIMEZONE_ENDPOINT` 指向 `https://iceland-ops-dashboard-timezone.iceland-ops.workers.dev`。
   2026-09-11 在正式站核對：雲層預報與極光預測都顯示「當地時間」，不是「裝置時間」；

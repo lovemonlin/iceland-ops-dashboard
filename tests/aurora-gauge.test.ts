@@ -175,6 +175,7 @@ test("the dials read the snapshot the dashboard already publishes", () => {
 test("the aurora card combines all five snapshot sources in order without fetching NOAA", () => {
   const dashboard = read("src/components/Dashboard.tsx");
   const sections = read("src/components/SourceSections.tsx");
+  const reloadHook = read("src/lib/usePublishedSnapshot.ts");
 
   assert.match(
     dashboard,
@@ -195,8 +196,9 @@ test("the aurora card combines all five snapshot sources in order without fetchi
   // The card only combines entries already present in the snapshot.
   assert.equal(/fetch\s*\(|noaa\.gov|SWPC_/i.test(sections), false);
   assert.equal(/noaa\.gov|SWPC_/i.test(dashboard), false);
-  assert.equal([...dashboard.matchAll(/fetch\s*\(/g)].length, 1, "only the existing snapshot reload may fetch");
-  assert.match(dashboard, /fetch\(getSnapshotUrl\(\{ cacheBust: true \}\)/);
+  assert.equal([...dashboard.matchAll(/fetch\s*\(/g)].length, 0, "Dashboard delegates its only reload to the shared hook");
+  assert.equal([...reloadHook.matchAll(/fetch\s*\(/g)].length, 1, "only the published snapshot reload may fetch");
+  assert.match(reloadHook, /fetch\(getSnapshotUrl\(\{ cacheBust: true \}\)/);
 });
 
 test("the ranges, zones and thresholds match the app's own file", { skip: !hasAndroid }, () => {

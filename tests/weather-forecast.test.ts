@@ -223,7 +223,8 @@ test("list and map share one timeline and one selection", () => {
   const map = read("src/components/WeatherMap.tsx");
 
   // A single offset, above the mode switch, defaulting to now.
-  assert.match(map, /const \[offsetHours, setOffsetHours\] = useState\(0\)/);
+  assert.match(map, /initialOffsetHours = 0/);
+  assert.match(map, /const \[offsetHours, setOffsetHours\] = useState\(initialOffsetHours\)/);
   assert.match(map, /max=\{MAX_OFFSET_HOURS\}/);
   assert.match(map, /min=\{0\}/);
 

@@ -18,9 +18,9 @@ import { ImoWarningsPanel } from "@/components/ImoWarningsPanel";
 import { AuroraModes } from "@/components/AuroraModes";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
-import { WeatherMap, type WeatherMapSite } from "@/components/WeatherMap";
+import { WeatherMap } from "@/components/WeatherMap";
 import type { CloudFrame } from "@/lib/cloudForecast";
-import { decodeSiteForecast } from "@/lib/forecastCodec";
+import { buildWeatherViewerSites } from "@/lib/viewerData";
 import { dataAgeMinutes } from "@/monitors/correlate";
 import { isNoaaKpForecastData, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
 
@@ -85,13 +85,7 @@ function WeatherCard({ entry, schemaVersion }: { entry: SnapshotSource; schemaVe
   const data = entry.data ?? {};
   const site = text(data.primarySite, "Reykjavík");
   const healthy = entry.status === "ok" || entry.status === "info";
-  // Written by the MET Norway monitor from the same 32 responses the summary above came from.
-  // The forecast is stored positionally against a shared time axis to keep the hourly commit
-  // small; decoding here means everything below this line sees ordinary named fields.
-  const sites: WeatherMapSite[] = (Array.isArray(data.sites) ? data.sites : []).map((entry) => {
-    const site = entry as WeatherMapSite & { forecast?: unknown };
-    return { ...site, hours: decodeSiteForecast(data.forecastTimes, site.forecast) };
-  });
+  const sites = buildWeatherViewerSites(entry);
 
   return (
     <SourceCard
@@ -141,11 +135,7 @@ function CloudForecastCard({
 
   // The viewer colours each site from the weather monitor's own hourly series -- the same data
   // the weather card draws -- so there is no second forecast and no second detail dialog.
-  const weather = metno?.data ?? {};
-  const sites = (Array.isArray(weather.sites) ? weather.sites : []).map((entry) => {
-    const site = entry as Record<string, unknown> & { forecast?: unknown };
-    return { ...site, hours: decodeSiteForecast(weather.forecastTimes, site.forecast) };
-  }) as React.ComponentProps<typeof CloudForecastMap>["sites"];
+  const sites = buildWeatherViewerSites(metno);
 
   return (
     <SourceCard

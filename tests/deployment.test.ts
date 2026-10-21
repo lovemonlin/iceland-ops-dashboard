@@ -63,7 +63,9 @@ test("5. only the snapshot request is cache-busted, not the whole site", () => {
   assert.equal(getSnapshotUrl().includes("?"), false, "plain asset URLs stay cacheable");
 
   const dashboard = read("src/components/Dashboard.tsx");
-  assert.match(dashboard, /getSnapshotUrl\(\{ cacheBust: true \}\)/);
+  const hook = read("src/lib/usePublishedSnapshot.ts");
+  assert.match(dashboard, /usePublishedSnapshot\(initialSnapshot, onSnapshotChange\)/);
+  assert.match(hook, /getSnapshotUrl\(\{ cacheBust: true \}\)/);
   // The base path must never be written out by hand in a component.
   assert.equal(dashboard.includes(PAGES_BASE_PATH), false);
 });

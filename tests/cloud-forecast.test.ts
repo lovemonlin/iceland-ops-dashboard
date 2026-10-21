@@ -190,9 +190,11 @@ test("the viewer stops at 24 hours even though the publisher keeps 48", () => {
   assert.equal(frames().length, 17, "the payload still carries the publisher's full run");
 
   const component = read("src/components/CloudForecastMap.tsx");
-  assert.match(component, /max=\{CLOUD_FORECAST_MAX_HOURS\}/);
+  assert.match(component, /max=\{maxHours\}/);
+  assert.match(component, /: CLOUD_FORECAST_MAX_HOURS;/);
   assert.match(component, /min=\{0\}/);
-  assert.match(component, /useState\(0\)/);
+  assert.match(component, /initialFrameIndex = 0/);
+  assert.match(component, /if \(!standalone\) return 0;/);
 });
 
 test("the app's own limit and tolerance are what these numbers came from", { skip: !hasAndroid }, () => {

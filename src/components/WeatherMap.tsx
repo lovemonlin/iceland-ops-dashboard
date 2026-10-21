@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPublicAssetPath } from "@/lib/publicPath";
 import { SiteForecastDialog } from "@/components/SiteForecastDialog";
+import { StandaloneOpenButton } from "@/components/StandaloneOpenButton";
+import type { WeatherViewMode } from "@/lib/standaloneQuery";
 import {
   clampPan,
   COAST_STROKE,
@@ -64,7 +66,6 @@ export interface WeatherMapSite {
 /** IcelandAuroraSites.default. */
 const DEFAULT_SITE_ID = "reykjavik";
 
-type WeatherViewMode = "LIST" | "MAP";
 type ViewState = { scale: number; pan: Point };
 type PlacedMarkers = ReturnType<typeof layoutMarkers>;
 
@@ -264,18 +265,30 @@ function drawCanvasWeatherIcon(
   context.restore();
 }
 
-export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
+export function WeatherMap({
+  sites,
+  initialMode = "LIST",
+  initialOffsetHours = 0,
+  initialFocusedId,
+  standalone = false,
+}: {
+  sites: WeatherMapSite[];
+  initialMode?: WeatherViewMode;
+  initialOffsetHours?: number;
+  initialFocusedId?: string;
+  standalone?: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [mode, setMode] = useState<WeatherViewMode>("LIST");
+  const [mode, setMode] = useState<WeatherViewMode>(initialMode);
   const [width, setWidth] = useState(0);
   const [shape, setShape] = useState<OutlineShape | null>(null);
   const [outlineFailed, setOutlineFailed] = useState(false);
-  const [focusedId, setFocusedId] = useState(DEFAULT_SITE_ID);
+  const [focusedId, setFocusedId] = useState(initialFocusedId ?? DEFAULT_SITE_ID);
   const [uiScale, setUiScale] = useState(1);
   // One offset for both modes: the app keeps it on the view model, above the list/map switch, so
   // moving the timeline in one and changing mode does not throw the choice away.
-  const [offsetHours, setOffsetHours] = useState(0);
+  const [offsetHours, setOffsetHours] = useState(initialOffsetHours);
   /** Which site's hour-by-hour forecast is open. A list row and a map point both set this. */
   const [detailSiteId, setDetailSiteId] = useState<string | null>(null);
 
@@ -712,13 +725,18 @@ export function WeatherMap({ sites }: { sites: WeatherMapSite[] }) {
 
   return (
     <div className="weather-map">
-      <div className="road-modes weather-view-modes" role="group" aria-label="天氣檢視模式">
-        <button type="button" className={mode === "LIST" ? "active" : ""} aria-pressed={mode === "LIST"} onClick={() => setMode("LIST")}>
-          ☷ 清單
-        </button>
-        <button type="button" className={mode === "MAP" ? "active" : ""} aria-pressed={mode === "MAP"} onClick={() => setMode("MAP")}>
-          🗺 地圖
-        </button>
+      <div className="viewer-control-row">
+        <div className="road-modes weather-view-modes" role="group" aria-label="天氣檢視模式">
+          <button type="button" className={mode === "LIST" ? "active" : ""} aria-pressed={mode === "LIST"} onClick={() => setMode("LIST")}>
+            ☷ 清單
+          </button>
+          <button type="button" className={mode === "MAP" ? "active" : ""} aria-pressed={mode === "MAP"} onClick={() => setMode("MAP")}>
+            🗺 地圖
+          </button>
+        </div>
+        {!standalone && <StandaloneOpenButton kind="weather" query={new URLSearchParams({
+          mode: mode.toLowerCase(), hour: String(offsetHours), site: focused?.id ?? DEFAULT_SITE_ID,
+        })} />}
       </div>
 
       {/*
