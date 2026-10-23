@@ -1,16 +1,16 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-23T06:00:31.388Z",
-  "scheduledFor": "2026-10-23T07:00:31.388Z",
+  "generatedAt": "2026-10-23T07:00:33.691Z",
+  "scheduledFor": "2026-10-23T08:00:33.691Z",
   "trigger": "workflow_dispatch",
-  "overallStatus": "error",
+  "overallStatus": "ok",
   "sources": {
     "metno": {
       "id": "metno",
       "name": "MET Norway Weather",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
       "dataTime": "2026-10-23T05:20:59.000Z",
       "data": {
         "locations": "32 / 32 successful",
@@ -19,12 +19,12 @@
         "locationsFailed": 0,
         "forecastIssued": "2026-10-23 05:20 UTC",
         "primarySite": "Reykjavík",
-        "temperatureC": -1.3,
-        "windMps": 4,
-        "cloudLowPercent": 95.3,
-        "cloudMediumPercent": 3.1,
+        "temperatureC": -1.5,
+        "windMps": 3.6,
+        "cloudLowPercent": 96.1,
+        "cloudMediumPercent": 0.8,
         "cloudHighPercent": 0,
-        "forecastTimes": ["2026-10-23T05:00:00.000Z","2026-10-23T06:00:00.000Z","2026-10-23T07:00:00.000Z","2026-10-23T08:00:00.000Z","2026-10-23T09:00:00.000Z","2026-10-23T10:00:00.000Z","2026-10-23T11:00:00.000Z","2026-10-23T12:00:00.000Z","2026-10-23T13:00:00.000Z","2026-10-23T14:00:00.000Z","2026-10-23T15:00:00.000Z","2026-10-23T16:00:00.000Z","2026-10-23T17:00:00.000Z","2026-10-23T18:00:00.000Z","2026-10-23T19:00:00.000Z","2026-10-23T20:00:00.000Z","2026-10-23T21:00:00.000Z","2026-10-23T22:00:00.000Z","2026-10-23T23:00:00.000Z","2026-10-24T00:00:00.000Z","2026-10-24T01:00:00.000Z","2026-10-24T02:00:00.000Z","2026-10-24T03:00:00.000Z","2026-10-24T04:00:00.000Z","2026-10-24T05:00:00.000Z","2026-10-24T06:00:00.000Z","2026-10-24T07:00:00.000Z","2026-10-24T08:00:00.000Z","2026-10-24T09:00:00.000Z","2026-10-24T10:00:00.000Z","2026-10-24T11:00:00.000Z","2026-10-24T12:00:00.000Z","2026-10-24T13:00:00.000Z","2026-10-24T14:00:00.000Z","2026-10-24T15:00:00.000Z","2026-10-24T16:00:00.000Z","2026-10-24T17:00:00.000Z","2026-10-24T18:00:00.000Z","2026-10-24T19:00:00.000Z","2026-10-24T20:00:00.000Z","2026-10-24T21:00:00.000Z","2026-10-24T22:00:00.000Z","2026-10-24T23:00:00.000Z","2026-10-25T00:00:00.000Z","2026-10-25T01:00:00.000Z","2026-10-25T02:00:00.000Z","2026-10-25T03:00:00.000Z","2026-10-25T04:00:00.000Z","2026-10-25T05:00:00.000Z","2026-10-25T06:00:00.000Z"],
+        "forecastTimes": ["2026-10-23T06:00:00.000Z","2026-10-23T07:00:00.000Z","2026-10-23T08:00:00.000Z","2026-10-23T09:00:00.000Z","2026-10-23T10:00:00.000Z","2026-10-23T11:00:00.000Z","2026-10-23T12:00:00.000Z","2026-10-23T13:00:00.000Z","2026-10-23T14:00:00.000Z","2026-10-23T15:00:00.000Z","2026-10-23T16:00:00.000Z","2026-10-23T17:00:00.000Z","2026-10-23T18:00:00.000Z","2026-10-23T19:00:00.000Z","2026-10-23T20:00:00.000Z","2026-10-23T21:00:00.000Z","2026-10-23T22:00:00.000Z","2026-10-23T23:00:00.000Z","2026-10-24T00:00:00.000Z","2026-10-24T01:00:00.000Z","2026-10-24T02:00:00.000Z","2026-10-24T03:00:00.000Z","2026-10-24T04:00:00.000Z","2026-10-24T05:00:00.000Z","2026-10-24T06:00:00.000Z","2026-10-24T07:00:00.000Z","2026-10-24T08:00:00.000Z","2026-10-24T09:00:00.000Z","2026-10-24T10:00:00.000Z","2026-10-24T11:00:00.000Z","2026-10-24T12:00:00.000Z","2026-10-24T13:00:00.000Z","2026-10-24T14:00:00.000Z","2026-10-24T15:00:00.000Z","2026-10-24T16:00:00.000Z","2026-10-24T17:00:00.000Z","2026-10-24T18:00:00.000Z","2026-10-24T19:00:00.000Z","2026-10-24T20:00:00.000Z","2026-10-24T21:00:00.000Z","2026-10-24T22:00:00.000Z","2026-10-24T23:00:00.000Z","2026-10-25T00:00:00.000Z","2026-10-25T01:00:00.000Z","2026-10-25T02:00:00.000Z","2026-10-25T03:00:00.000Z","2026-10-25T04:00:00.000Z","2026-10-25T05:00:00.000Z","2026-10-25T06:00:00.000Z","2026-10-25T07:00:00.000Z"],
         "sites": [
           {
             "id": "grotta",
@@ -35,17 +35,16 @@
             "lon": -22.0186,
             "region": "CAPITAL",
             "lightPollution": "MODERATE",
-            "temperatureC": 2.7,
-            "windMps": 3.6,
-            "windFromDirection": 114.1,
-            "cloudLowPercent": 46.1,
+            "temperatureC": 2.6,
+            "windMps": 3.7,
+            "windFromDirection": 111.8,
+            "cloudLowPercent": 54.7,
             "cloudMediumPercent": 0,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 46.1,
+            "cloudTotalPercent": 54.7,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [2.7,3.6,114.1,46.1,0,0,46.1,"fog"],
               [2.6,3.7,111.8,54.7,0,0,54.7,"fog"],
               [2.5,3.9,108.9,51.6,0,0,51.6,"fog"],
               [2.2,4,111,54.7,0.8,0,54.7,"fog"],
@@ -93,7 +92,8 @@
               [3.6,9.1,352.3,88.3,0,0,88.3,"cloudy"],
               [3.4,8.9,352,54.7,2.3,2.3,56.2,"partlycloudy_night"],
               [3.5,8.6,353.4,12.5,3.1,0,13.3,"fair_night"],
-              [3.5,8.3,353.1,9.4,1.6,10.2,20.3,"fair_night"]
+              [3.5,8.3,353.1,9.4,1.6,10.2,20.3,"fair_night"],
+              [3.4,7.9,354.7,10.2,1.6,62.5,68.7,"partlycloudy_night"]
             ]
           },
           {
@@ -105,16 +105,15 @@
             "lon": -21.9426,
             "region": "CAPITAL",
             "lightPollution": "BRIGHT",
-            "temperatureC": -1.3,
-            "windMps": 4,
-            "windFromDirection": 113.5,
-            "cloudLowPercent": 95.3,
-            "cloudMediumPercent": 3.1,
+            "temperatureC": -1.5,
+            "windMps": 3.6,
+            "windFromDirection": 114.2,
+            "cloudLowPercent": 96.1,
+            "cloudMediumPercent": 0.8,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 96.1,
             "symbolCode": "fog",
             "forecast": [
-              [-1.3,4,113.5,95.3,3.1,0,96.1,"fog"],
               [-1.5,3.6,114.2,96.1,0.8,0,96.1,"fog"],
               [-1.7,3.7,114.3,89.8,0,0,89.8,"fog"],
               [-1.9,3.9,113.1,83.6,0,0,83.6,"fog"],
@@ -163,6 +162,7 @@
               [1.4,7.4,345.2,76.6,0,2.3,76.6,"partlycloudy_night"],
               [1.5,7.4,344.7,77.3,0.8,1.6,78.1,"partlycloudy_night"],
               [1.5,7.1,348.7,35.9,0.8,3.1,38.3,"partlycloudy_night"],
+              [1.3,7,347.7,26.6,4.7,20.3,41.4,"partlycloudy_night"],
               null
             ]
           },
@@ -184,7 +184,6 @@
             "cloudTotalPercent": 60.2,
             "symbolCode": "partlycloudy_night",
             "forecast": [
-              null,
               [0.6,4.2,131,48.4,28.9,0,60.2,"partlycloudy_night"],
               [0.7,4.6,123.9,60.9,7.8,0,64.1,"fog"],
               [0.2,3.7,128.3,66.4,22.7,0,73.4,"fog"],
@@ -233,7 +232,8 @@
               [2.9,8.6,350.7,93.7,13.3,0,94.5,"lightsleet"],
               [2.4,8.6,350.9,32,34.4,0,48.4,"sleetshowers_night"],
               [2,8.1,352.5,41.4,35.9,0,51.6,"lightsleetshowers_night"],
-              [2,7.6,350.1,38.3,41.4,0,58.6,"lightsleetshowers_night"]
+              [2,7.6,350.1,38.3,41.4,0,58.6,"lightsleetshowers_night"],
+              null
             ]
           },
           {
@@ -245,17 +245,16 @@
             "lon": -22.4495,
             "region": "CAPITAL",
             "lightPollution": "MODERATE",
-            "temperatureC": 0.4,
-            "windMps": 5.7,
-            "windFromDirection": 118.7,
-            "cloudLowPercent": 23.4,
-            "cloudMediumPercent": 13.3,
+            "temperatureC": 0.3,
+            "windMps": 6.4,
+            "windFromDirection": 114.8,
+            "cloudLowPercent": 33.6,
+            "cloudMediumPercent": 16.4,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 32.8,
-            "symbolCode": "fair_night",
+            "cloudTotalPercent": 44.5,
+            "symbolCode": "partlycloudy_night",
             "forecast": [
-              [0.4,5.7,118.7,23.4,13.3,0,32.8,"fair_night"],
-              [0.2,6.4,115.3,24.2,12.5,0,33.6,"fair_night"],
+              null,
               [0.3,6.4,114.8,33.6,16.4,0,44.5,"partlycloudy_night"],
               [-0.2,5.6,114.2,41.4,19.5,0,53.1,"partlycloudy_night"],
               [-0.3,5.5,116.8,50.8,21.1,0,60.9,"fog"],
@@ -303,7 +302,8 @@
               [1.6,7.4,352.3,82,6.2,0,83.6,"partlycloudy_night"],
               [1.3,7.9,351.9,46.1,18,0,51.6,"lightsleetshowers_night"],
               [0.8,7.5,349.5,38.3,18,0,40.6,"partlycloudy_night"],
-              null
+              [0.9,7.2,345.8,72.7,13.3,0,73.4,"partlycloudy_night"],
+              [0.9,6.8,345,60.9,21.1,0,64.1,"lightsleetshowers_night"]
             ]
           },
           {
@@ -315,17 +315,16 @@
             "lon": -21.13,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -1.7,
-            "windMps": 2.1,
-            "windFromDirection": 60.3,
-            "cloudLowPercent": 74.2,
-            "cloudMediumPercent": 3.1,
+            "temperatureC": -1.8,
+            "windMps": 1.9,
+            "windFromDirection": 69.5,
+            "cloudLowPercent": 76.6,
+            "cloudMediumPercent": 3.9,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 74.2,
+            "cloudTotalPercent": 78.1,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-1.7,2.1,60.3,74.2,3.1,0,74.2,"fog"],
               [-1.8,1.9,69.5,76.6,3.9,0,78.1,"fog"],
               [-1.6,1.9,69.1,81.2,0,0,81.2,"fog"],
               [-1.6,1.9,64.2,74.2,0,0,74.2,"fog"],
@@ -373,7 +372,8 @@
               [-1.4,5.4,338.9,85.2,0,32,92.2,"cloudy"],
               [-1,5.3,338.2,95.3,0,85.9,99.2,"cloudy"],
               [-0.7,5.6,337.5,80.5,1.6,93,98.4,"cloudy"],
-              [-0.3,6.4,340.8,70.3,8.6,98.4,99.2,"cloudy"]
+              [-0.3,6.4,340.8,70.3,8.6,98.4,99.2,"cloudy"],
+              [0,6.6,340.1,50.8,27.3,100,100,"cloudy"]
             ]
           },
           {
@@ -385,17 +385,16 @@
             "lon": -20.3024,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -0.9,
-            "windMps": 3.3,
-            "windFromDirection": 24.5,
-            "cloudLowPercent": 33.6,
-            "cloudMediumPercent": 0,
+            "temperatureC": -0.6,
+            "windMps": 3.2,
+            "windFromDirection": 33.9,
+            "cloudLowPercent": 41.4,
+            "cloudMediumPercent": 0.8,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 33.6,
-            "symbolCode": "fair_night",
+            "cloudTotalPercent": 42.2,
+            "symbolCode": "partlycloudy_night",
             "forecast": [
-              [-0.9,3.3,24.5,33.6,0,0,33.6,"fair_night"],
-              [-0.5,3.2,28.4,37.5,4.7,0,40.6,"partlycloudy_night"],
+              null,
               [-0.6,3.2,33.9,41.4,0.8,0,42.2,"partlycloudy_night"],
               [-0.6,3.2,35.8,32,0.8,0,32.8,"fair_night"],
               [-0.4,3,41.1,25.8,0.8,0,26.6,"fair_day"],
@@ -443,7 +442,8 @@
               [-6.3,4.4,4.6,50,0,86.7,93,"fog"],
               [-4.6,3.9,358.2,71.9,0,96.1,98.4,"fog"],
               [-3.1,3.3,346.6,72.7,3.9,97.7,99.2,"fog"],
-              null
+              [-1.8,3.4,325,71.1,14.1,99.2,100,"fog"],
+              [-1.3,3.1,328.2,60.2,50,100,100,"fog"]
             ]
           },
           {
@@ -455,16 +455,15 @@
             "lon": -20.1199,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -1.5,
+            "temperatureC": -1.1,
             "windMps": 2.8,
-            "windFromDirection": 70.9,
-            "cloudLowPercent": 37.5,
-            "cloudMediumPercent": 0,
+            "windFromDirection": 69.8,
+            "cloudLowPercent": 30.5,
+            "cloudMediumPercent": 3.9,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 37.5,
+            "cloudTotalPercent": 33.6,
             "symbolCode": "fair_night",
             "forecast": [
-              [-1.5,2.8,70.9,37.5,0,0,37.5,"fair_night"],
               [-1.1,2.8,69.8,30.5,3.9,0,33.6,"fair_night"],
               [-1.3,2.8,68.5,34.4,2.3,0,35.9,"fair_night"],
               [-1.3,2.8,61.3,21.9,1.6,0,23.4,"fair_night"],
@@ -513,6 +512,7 @@
               [-4.8,6.1,35.4,51.6,0,87.5,93.7,"fog"],
               [-4.1,5.7,34.4,71.1,8.6,97.7,99.2,"fog"],
               [-3.4,5.1,32.8,75.8,22.7,97.7,99.2,"fog"],
+              [-2.4,4.4,14,72.7,41.4,100,100,"cloudy"],
               null
             ]
           },
@@ -525,17 +525,16 @@
             "lon": -20.885,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -3.2,
-            "windMps": 3,
-            "windFromDirection": 17.1,
-            "cloudLowPercent": 99.2,
-            "cloudMediumPercent": 29.7,
+            "temperatureC": -2.9,
+            "windMps": 3.2,
+            "windFromDirection": 2.6,
+            "cloudLowPercent": 98.4,
+            "cloudMediumPercent": 41.4,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 99.2,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-3.2,3,17.1,99.2,29.7,0,99.2,"fog"],
               [-2.9,3.2,2.6,98.4,41.4,0,99.2,"fog"],
               [-2.3,3.1,6.6,98.4,32.8,0,99.2,"fog"],
               [-1.8,3.2,7.6,99.2,26.6,0,99.2,"fog"],
@@ -583,7 +582,8 @@
               [-0.9,6,332.3,18.7,0,18.7,35.2,"fair_night"],
               [-0.6,6.1,330.7,15.6,0,72.7,77.3,"partlycloudy_night"],
               [-0.1,6.3,333.4,30.5,0,87.5,91.4,"cloudy"],
-              [0.2,6.3,331.6,37.5,0,97.7,98.4,"cloudy"]
+              [0.2,6.3,331.6,37.5,0,97.7,98.4,"cloudy"],
+              [0.5,6.4,328.7,44.5,14.1,100,100,"cloudy"]
             ]
           },
           {
@@ -595,17 +595,16 @@
             "lon": -21,
             "region": "SOUTH",
             "lightPollution": "MODERATE",
-            "temperatureC": -2.3,
-            "windMps": 4.8,
-            "windFromDirection": 28.9,
+            "temperatureC": -2.2,
+            "windMps": 4.5,
+            "windFromDirection": 20.2,
             "cloudLowPercent": 99.2,
-            "cloudMediumPercent": 49.2,
+            "cloudMediumPercent": 59.4,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 100,
-            "symbolCode": "lightsnow",
+            "symbolCode": "fog",
             "forecast": [
               null,
-              [-2.3,4.8,28.9,99.2,49.2,0,100,"lightsnow"],
               [-2.2,4.5,20.2,99.2,59.4,0,100,"fog"],
               [-1.9,4.4,25.1,96.9,49.2,0,98.4,"fog"],
               [-1.5,4.2,28.3,97.7,75.8,0,100,"fog"],
@@ -653,7 +652,8 @@
               [-0.3,7.9,338.1,24.2,0,10.9,32.8,"fair_night"],
               [-0.1,7.8,338.9,22.7,0,39.1,53.9,"partlycloudy_night"],
               [0.2,7.9,339.5,18.7,0,64.1,70.3,"partlycloudy_night"],
-              [0.5,8,339.1,27.3,0,93.7,95.3,"cloudy"]
+              [0.5,8,339.1,27.3,0,93.7,95.3,"cloudy"],
+              [0.8,8.2,337.5,28.1,4.7,98.4,99.2,"cloudy"]
             ]
           },
           {
@@ -665,17 +665,16 @@
             "lon": -19.9885,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -0.8,
-            "windMps": 5.8,
-            "windFromDirection": 98.4,
-            "cloudLowPercent": 29.7,
+            "temperatureC": -1.3,
+            "windMps": 4.8,
+            "windFromDirection": 96.7,
+            "cloudLowPercent": 38.3,
             "cloudMediumPercent": 15.6,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 39.8,
+            "cloudTotalPercent": 48.4,
             "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [-0.8,5.8,98.4,29.7,15.6,0,39.8,"partlycloudy_night"],
               [-1.3,4.8,96.7,38.3,15.6,0,48.4,"partlycloudy_night"],
               [-1.1,4.5,89,46.9,23.4,0,58.6,"fog"],
               [-1.4,3.8,76.9,43.7,26.6,0,58.6,"fog"],
@@ -723,7 +722,8 @@
               [-3.5,9.3,344.1,0.8,0,75.8,75.8,"partlycloudy_night"],
               [-3.4,9.1,345.7,4.7,0,82,82.8,"partlycloudy_night"],
               [-3.1,9.5,343.5,14.1,0.8,89.8,91.4,"cloudy"],
-              [-2.7,9.4,346.2,20.3,1.6,99.2,99.2,"cloudy"]
+              [-2.7,9.4,346.2,20.3,1.6,99.2,99.2,"cloudy"],
+              [-1.9,9.3,348.9,21.1,11.7,100,100,"cloudy"]
             ]
           },
           {
@@ -735,17 +735,16 @@
             "lon": -19.5114,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": -0.5,
-            "windMps": 5.3,
-            "windFromDirection": 88.5,
-            "cloudLowPercent": 43.7,
-            "cloudMediumPercent": 36.7,
+            "temperatureC": -0.8,
+            "windMps": 3.8,
+            "windFromDirection": 54.7,
+            "cloudLowPercent": 58.6,
+            "cloudMediumPercent": 5.5,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 62.5,
-            "symbolCode": "partlycloudy_night",
+            "cloudTotalPercent": 61.7,
+            "symbolCode": "fog",
             "forecast": [
-              [-0.5,5.3,88.5,43.7,36.7,0,62.5,"partlycloudy_night"],
-              [-0.1,4.7,59,35.9,7,0,39.8,"fog"],
+              null,
               [-0.8,3.8,54.7,58.6,5.5,0,61.7,"fog"],
               [-0.7,4.3,54.4,47.7,20.3,0,57.8,"fog"],
               [-0.8,4.7,51.4,20.3,3.9,0,23.4,"fair_day"],
@@ -793,7 +792,8 @@
               [-2,7.7,355.7,18.7,0,83.6,85.9,"partlycloudy_night"],
               [-1.4,8.1,349.4,21.9,7,88.3,90.6,"cloudy"],
               [-1.7,8.3,347.8,29.7,22.7,96.9,97.7,"fog"],
-              null
+              [-1.7,8.9,343.6,35.2,35.9,99.2,100,"fog"],
+              [-1.4,9,343,39.1,58.6,100,100,"fog"]
             ]
           },
           {
@@ -805,17 +805,16 @@
             "lon": -19.006,
             "region": "SOUTH",
             "lightPollution": "MODERATE",
-            "temperatureC": 1.7,
-            "windMps": 6.4,
-            "windFromDirection": 26.4,
-            "cloudLowPercent": 21.1,
-            "cloudMediumPercent": 3.9,
+            "temperatureC": 1.5,
+            "windMps": 6.2,
+            "windFromDirection": 35.5,
+            "cloudLowPercent": 11.7,
+            "cloudMediumPercent": 5.5,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 24.2,
+            "cloudTotalPercent": 15.6,
             "symbolCode": "fair_night",
             "forecast": [
               null,
-              [1.7,6.4,26.4,21.1,3.9,0,24.2,"fair_night"],
               [1.5,6.2,35.5,11.7,5.5,0,15.6,"fair_night"],
               [1.1,6.1,30,13.3,7.8,0,19.5,"fair_day"],
               [1.4,6.4,29.8,13.3,38.3,0,47.7,"partlycloudy_day"],
@@ -863,7 +862,8 @@
               [2.3,4.5,302.2,3.9,0,91.4,91.4,"partlycloudy_night"],
               [2.1,5.8,308.2,7.8,2.3,96.9,97.7,"partlycloudy_night"],
               [2,5.9,284.2,9.4,6.2,100,100,"partlycloudy_night"],
-              [2,7.1,283,10.2,32,100,100,"cloudy"]
+              [2,7.1,283,10.2,32,100,100,"cloudy"],
+              [2.3,7.7,285.4,10.9,86.7,100,100,"cloudy"]
             ]
           },
           {
@@ -875,17 +875,16 @@
             "lon": -19.0447,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": 0.7,
-            "windMps": 6.4,
-            "windFromDirection": 26.4,
-            "cloudLowPercent": 21.1,
-            "cloudMediumPercent": 3.9,
+            "temperatureC": 0.5,
+            "windMps": 6.2,
+            "windFromDirection": 35.5,
+            "cloudLowPercent": 11.7,
+            "cloudMediumPercent": 5.5,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 24.2,
+            "cloudTotalPercent": 15.6,
             "symbolCode": "fair_night",
             "forecast": [
               null,
-              [0.7,6.4,26.4,21.1,3.9,0,24.2,"fair_night"],
               [0.5,6.2,35.5,11.7,5.5,0,15.6,"fair_night"],
               [0.1,6.1,30,13.3,7.8,0,19.5,"fair_day"],
               [0.4,6.4,29.8,13.3,38.3,0,47.7,"partlycloudy_day"],
@@ -933,7 +932,8 @@
               [1.3,4.5,302.2,3.9,0,91.4,91.4,"partlycloudy_night"],
               [1.1,5.8,308.2,7.8,2.3,96.9,97.7,"partlycloudy_night"],
               [1,5.9,284.2,9.4,6.2,100,100,"partlycloudy_night"],
-              [1,7.1,283,10.2,32,100,100,"cloudy"]
+              [1,7.1,283,10.2,32,100,100,"cloudy"],
+              [1.3,7.7,285.4,10.9,86.7,100,100,"cloudy"]
             ]
           },
           {
@@ -945,16 +945,15 @@
             "lon": -16.2306,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": 1.8,
-            "windMps": 3.6,
-            "windFromDirection": 354.5,
-            "cloudLowPercent": 54.7,
-            "cloudMediumPercent": 24.2,
+            "temperatureC": 2.1,
+            "windMps": 3.7,
+            "windFromDirection": 359,
+            "cloudLowPercent": 40.6,
+            "cloudMediumPercent": 7.8,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 64.8,
-            "symbolCode": "lightrainshowers_night",
+            "cloudTotalPercent": 42.2,
+            "symbolCode": "partlycloudy_night",
             "forecast": [
-              [1.8,3.6,354.5,54.7,24.2,0,64.8,"lightrainshowers_night"],
               [2.1,3.7,359,40.6,7.8,0,42.2,"partlycloudy_night"],
               [2.2,3.8,356.7,42.2,7.8,0,46.9,"partlycloudy_night"],
               [2,3.1,348.7,40.6,22.7,0,49.2,"partlycloudy_day"],
@@ -1003,6 +1002,7 @@
               [3.5,8.9,334.2,63.3,100,100,100,"cloudy"],
               [3.7,9.4,332.2,64.8,100,100,100,"lightrain"],
               [3.7,10.2,334.2,64.1,100,100,100,"rain"],
+              [3.7,10.2,335.4,78.1,100,100,100,"rain"],
               null
             ]
           },
@@ -1015,17 +1015,16 @@
             "lon": -16.179,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": 3.6,
-            "windMps": 3.7,
-            "windFromDirection": 359,
-            "cloudLowPercent": 40.6,
+            "temperatureC": 3.7,
+            "windMps": 3.8,
+            "windFromDirection": 356.7,
+            "cloudLowPercent": 42.2,
             "cloudMediumPercent": 7.8,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 42.2,
+            "cloudTotalPercent": 46.9,
             "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [3.6,3.7,359,40.6,7.8,0,42.2,"partlycloudy_night"],
               [3.7,3.8,356.7,42.2,7.8,0,46.9,"partlycloudy_night"],
               [3.5,3.1,348.7,40.6,22.7,0,49.2,"partlycloudy_day"],
               [3.3,2.9,337.2,38.3,14.8,0,43.7,"partlycloudy_day"],
@@ -1073,7 +1072,8 @@
               [5,8.9,334.2,63.3,100,100,100,"cloudy"],
               [5.2,9.4,332.2,64.8,100,100,100,"lightrain"],
               [5.2,10.2,334.2,64.1,100,100,100,"rain"],
-              [5.2,10.2,335.4,78.1,100,100,100,"rain"]
+              [5.2,10.2,335.4,78.1,100,100,100,"rain"],
+              [5.4,10.2,332.1,78.9,100,100,100,"heavyrain"]
             ]
           },
           {
@@ -1085,17 +1085,16 @@
             "lon": -15.2082,
             "region": "SOUTH",
             "lightPollution": "MODERATE",
-            "temperatureC": 1,
+            "temperatureC": 2,
             "windMps": 3.1,
-            "windFromDirection": 19.9,
-            "cloudLowPercent": 71.1,
-            "cloudMediumPercent": 31.2,
-            "cloudHighPercent": 0.8,
-            "cloudTotalPercent": 81.2,
-            "symbolCode": "lightsleetshowers_night",
+            "windFromDirection": 8.6,
+            "cloudLowPercent": 21.9,
+            "cloudMediumPercent": 11.7,
+            "cloudHighPercent": 0,
+            "cloudTotalPercent": 29.7,
+            "symbolCode": "fair_night",
             "forecast": [
-              [1,3.1,19.9,71.1,31.2,0.8,81.2,"lightsleetshowers_night"],
-              [1.5,3.7,26.8,70.3,8.6,1.6,71.9,"fog"],
+              null,
               [2,3.1,8.6,21.9,11.7,0,29.7,"fair_night"],
               [1.9,2.6,14.3,12.5,18.7,0,27.3,"fair_day"],
               [1.5,3,11.6,39.8,24.2,0,52.3,"lightsleetshowers_day"],
@@ -1143,7 +1142,8 @@
               [3.4,7.6,348.5,88.3,100,100,100,"sleet"],
               [3.4,8.1,341.4,88.3,100,100,100,"sleet"],
               [3.4,8.7,330.4,84.4,100,100,100,"rain"],
-              null
+              [3.5,9,326.9,93.7,100,100,100,"rain"],
+              [3.5,9.2,340.7,98.4,100,100,100,"heavyrain"]
             ]
           },
           {
@@ -1155,17 +1155,16 @@
             "lon": -14.993,
             "region": "SOUTH",
             "lightPollution": "DARK",
-            "temperatureC": 1.6,
+            "temperatureC": 2,
             "windMps": 2.9,
-            "windFromDirection": 10.5,
-            "cloudLowPercent": 67.2,
-            "cloudMediumPercent": 14.8,
-            "cloudHighPercent": 8.6,
-            "cloudTotalPercent": 70.3,
-            "symbolCode": "fog",
+            "windFromDirection": 13.7,
+            "cloudLowPercent": 35.9,
+            "cloudMediumPercent": 12.5,
+            "cloudHighPercent": 3.9,
+            "cloudTotalPercent": 41.4,
+            "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [1.6,2.9,10.5,67.2,14.8,8.6,70.3,"fog"],
               [2,2.9,13.7,35.9,12.5,3.9,41.4,"partlycloudy_night"],
               [1.9,2.8,15.1,22.7,15.6,1.6,33.6,"fair_day"],
               [1.8,3,16.6,50,18,0,56.2,"partlycloudy_day"],
@@ -1213,7 +1212,8 @@
               [3.4,9.1,337.5,78.9,100,100,100,"rain"],
               [3.4,8.8,330.2,81.2,100,100,100,"rain"],
               [3.7,9.3,326.8,78.9,100,100,100,"rain"],
-              [3.7,9.4,324.6,93,100,100,100,"rain"]
+              [3.7,9.4,324.6,93,100,100,100,"rain"],
+              [3.6,9.8,332.8,98.4,100,100,100,"heavyrain"]
             ]
           },
           {
@@ -1225,17 +1225,16 @@
             "lon": -21.922,
             "region": "WEST",
             "lightPollution": "MODERATE",
-            "temperatureC": -1.9,
-            "windMps": 3.7,
-            "windFromDirection": 60.4,
-            "cloudLowPercent": 76.6,
+            "temperatureC": -1.8,
+            "windMps": 3.6,
+            "windFromDirection": 71.7,
+            "cloudLowPercent": 59.4,
             "cloudMediumPercent": 0,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 76.6,
-            "symbolCode": "fog",
+            "cloudTotalPercent": 59.4,
+            "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [-1.9,3.7,60.4,76.6,0,0,76.6,"fog"],
               [-1.8,3.6,71.7,59.4,0,0,59.4,"partlycloudy_night"],
               [-1.8,3.3,73.1,62.5,0,0,62.5,"fog"],
               [-1.9,3.4,62.8,59.4,0,0,59.4,"fog"],
@@ -1283,7 +1282,8 @@
               [-0.5,4.4,330.2,99.2,0,18,99.2,"cloudy"],
               [-0.4,4.4,333.8,64.8,3.9,12.5,68.7,"partlycloudy_night"],
               [-1.1,4.1,322,50.8,2.3,49.2,72.7,"partlycloudy_night"],
-              [-1.6,3.8,337.8,47.7,4.7,87.5,93,"cloudy"]
+              [-1.6,3.8,337.8,47.7,4.7,87.5,93,"cloudy"],
+              [-2,3.3,352.1,48.4,35.2,99.2,100,"cloudy"]
             ]
           },
           {
@@ -1295,17 +1295,16 @@
             "lon": -23.307,
             "region": "WEST",
             "lightPollution": "DARK",
-            "temperatureC": 0.7,
-            "windMps": 2.4,
-            "windFromDirection": 155.8,
-            "cloudLowPercent": 68.7,
-            "cloudMediumPercent": 4.7,
+            "temperatureC": 1.1,
+            "windMps": 3,
+            "windFromDirection": 156.7,
+            "cloudLowPercent": 69.5,
+            "cloudMediumPercent": 0.8,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 69.5,
             "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [0.7,2.4,155.8,68.7,4.7,0,69.5,"partlycloudy_night"],
               [1.1,3,156.7,69.5,0.8,0,69.5,"partlycloudy_night"],
               [1,3.1,150.3,76.6,3.9,0,76.6,"partlycloudy_night"],
               [1.3,3.3,153.9,51.6,0,0,51.6,"partlycloudy_day"],
@@ -1353,7 +1352,8 @@
               [0.1,3.7,348.4,54.7,35.2,0,57.8,"partlycloudy_night"],
               [-0.1,3.3,7.2,60.2,52.3,0,75,"partlycloudy_night"],
               [0.4,3.1,11,65.6,58.6,0,80.5,"partlycloudy_night"],
-              [0.5,3.1,2.5,38.3,40.6,0,54.7,"partlycloudy_night"]
+              [0.5,3.1,2.5,38.3,40.6,0,54.7,"partlycloudy_night"],
+              [-0.1,2.7,353.5,7,13.3,3.9,21.9,"fair_night"]
             ]
           },
           {
@@ -1365,17 +1365,16 @@
             "lon": -23.3843,
             "region": "WEST",
             "lightPollution": "DARK",
-            "temperatureC": 2.5,
-            "windMps": 3.6,
-            "windFromDirection": 116.9,
-            "cloudLowPercent": 94.5,
-            "cloudMediumPercent": 4.7,
+            "temperatureC": 2.8,
+            "windMps": 4.7,
+            "windFromDirection": 117,
+            "cloudLowPercent": 97.7,
+            "cloudMediumPercent": 14.1,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 94.5,
+            "cloudTotalPercent": 97.7,
             "symbolCode": "cloudy",
             "forecast": [
               null,
-              [2.5,3.6,116.9,94.5,4.7,0,94.5,"cloudy"],
               [2.8,4.7,117,97.7,14.1,0,97.7,"cloudy"],
               [2.6,4.8,117.4,96.9,15.6,0,96.9,"cloudy"],
               [2.6,5.5,105.3,90.6,9.4,0,90.6,"cloudy"],
@@ -1423,7 +1422,8 @@
               [1.7,5.5,350.3,71.1,68,0,75,"partlycloudy_night"],
               [1.7,4.9,349.2,78.9,84.4,0,88.3,"cloudy"],
               [1.8,4.6,351.7,88.3,96.9,0,97.7,"cloudy"],
-              [1.9,4.6,346.5,68,91.4,0,93,"cloudy"]
+              [1.9,4.6,346.5,68,91.4,0,93,"cloudy"],
+              [1.7,4.2,341,54.7,69.5,0.8,76.6,"partlycloudy_night"]
             ]
           },
           {
@@ -1435,17 +1435,16 @@
             "lon": -23.777,
             "region": "WEST",
             "lightPollution": "DARK",
-            "temperatureC": -5.4,
-            "windMps": 3.3,
-            "windFromDirection": 124.2,
-            "cloudLowPercent": 32,
-            "cloudMediumPercent": 11.7,
+            "temperatureC": -5.2,
+            "windMps": 3.6,
+            "windFromDirection": 122.2,
+            "cloudLowPercent": 47.7,
+            "cloudMediumPercent": 1.6,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 39.1,
+            "cloudTotalPercent": 48.4,
             "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [-5.4,3.3,124.2,32,11.7,0,39.1,"partlycloudy_night"],
               [-5.2,3.6,122.2,47.7,1.6,0,48.4,"partlycloudy_night"],
               [-5.5,4.3,122,52.3,1.6,0,52.3,"partlycloudy_night"],
               [-4.9,4.2,123.9,68.7,4.7,0,69.5,"partlycloudy_day"],
@@ -1493,7 +1492,8 @@
               [-6.5,5.2,345.9,78.9,6.2,0,78.9,"partlycloudy_night"],
               [-7.1,4.7,352.7,97.7,53.1,0,98.4,"cloudy"],
               [-6.8,4.2,353.9,100,100,0,100,"cloudy"],
-              [-6.3,3.8,356.1,100,97.7,0,100,"cloudy"]
+              [-6.3,3.8,356.1,100,97.7,0,100,"cloudy"],
+              [-6.4,3.2,356.2,96.1,93.7,0,96.9,"cloudy"]
             ]
           },
           {
@@ -1505,17 +1505,16 @@
             "lon": -23.906,
             "region": "WEST",
             "lightPollution": "DARK",
-            "temperatureC": 2.6,
-            "windMps": 3,
-            "windFromDirection": 164.2,
-            "cloudLowPercent": 11.7,
-            "cloudMediumPercent": 10.2,
+            "temperatureC": 2.5,
+            "windMps": 3.3,
+            "windFromDirection": 140.6,
+            "cloudLowPercent": 13.3,
+            "cloudMediumPercent": 1.6,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 20.3,
+            "cloudTotalPercent": 14.8,
             "symbolCode": "fair_night",
             "forecast": [
               null,
-              [2.6,3,164.2,11.7,10.2,0,20.3,"fair_night"],
               [2.5,3.3,140.6,13.3,1.6,0,14.8,"fair_night"],
               [2.3,3.9,137,28.1,4.7,0,31.2,"fair_night"],
               [2.4,3.9,140,26.6,2.3,0,27.3,"fair_day"],
@@ -1563,7 +1562,8 @@
               [1.5,4,1.6,35.9,0.8,0,36.7,"fair_night"],
               [1.3,3.6,10.3,63.3,27.3,0,64.8,"partlycloudy_night"],
               [1.5,2.9,18.3,78.1,79.7,0,82.8,"partlycloudy_night"],
-              [1.8,2.7,20.1,77.3,98.4,0,98.4,"cloudy"]
+              [1.8,2.7,20.1,77.3,98.4,0,98.4,"cloudy"],
+              [1.7,2.2,14,60.2,89.8,0,91.4,"cloudy"]
             ]
           },
           {
@@ -1575,17 +1575,16 @@
             "lon": -20.639,
             "region": "WEST",
             "lightPollution": "DARK",
-            "temperatureC": 1,
+            "temperatureC": 0.9,
             "windMps": 1.6,
-            "windFromDirection": 215.9,
-            "cloudLowPercent": 4.7,
+            "windFromDirection": 218.3,
+            "cloudLowPercent": 5.5,
             "cloudMediumPercent": 0,
             "cloudHighPercent": 0,
-            "cloudTotalPercent": 4.7,
+            "cloudTotalPercent": 5.5,
             "symbolCode": "clearsky_night",
             "forecast": [
               null,
-              [1,1.6,215.9,4.7,0,0,4.7,"clearsky_night"],
               [0.9,1.6,218.3,5.5,0,0,5.5,"clearsky_night"],
               [0.9,1.4,220,7,0,0,7,"clearsky_night"],
               [0.7,1,216.1,8.6,0,0,8.6,"clearsky_day"],
@@ -1633,7 +1632,8 @@
               [2.7,9,356.7,99.2,64.8,99.2,100,"cloudy"],
               [2.5,8.8,349.1,100,6.2,96.9,100,"cloudy"],
               [2.5,8.2,347.3,99.2,8.6,99.2,100,"cloudy"],
-              [2.6,7.7,340.7,100,30.5,100,100,"cloudy"]
+              [2.6,7.7,340.7,100,30.5,100,100,"cloudy"],
+              [2.5,7.3,335.5,100,77.3,100,100,"cloudy"]
             ]
           },
           {
@@ -1645,17 +1645,16 @@
             "lon": -23.1355,
             "region": "WESTFJORDS",
             "lightPollution": "MODERATE",
-            "temperatureC": -0.1,
+            "temperatureC": 0,
             "windMps": 2.6,
-            "windFromDirection": 170.1,
-            "cloudLowPercent": 64.8,
-            "cloudMediumPercent": 4.7,
+            "windFromDirection": 169.9,
+            "cloudLowPercent": 66.4,
+            "cloudMediumPercent": 0.8,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 66.4,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-0.1,2.6,170.1,64.8,4.7,0,66.4,"fog"],
               [0,2.6,169.9,66.4,0.8,0,66.4,"fog"],
               [0.2,2.2,147.2,62.5,0.8,0,62.5,"fog"],
               [0.2,1.4,159.9,64.1,1.6,0,64.8,"fog"],
@@ -1703,7 +1702,8 @@
               [0.2,5.2,348.7,67.2,0,0,67.2,"partlycloudy_night"],
               [0.4,5.7,339.2,83.6,0,16.4,86.7,"cloudy"],
               [0.6,6.5,329.6,85.2,0,74.2,96.9,"lightsleet"],
-              [1.3,6.4,324.9,81.2,0,90.6,99.2,"cloudy"]
+              [1.3,6.4,324.9,81.2,0,90.6,99.2,"cloudy"],
+              [1.7,5.6,315.7,94.5,0,98.4,100,"cloudy"]
             ]
           },
           {
@@ -1715,16 +1715,15 @@
             "lon": -18.0878,
             "region": "NORTH",
             "lightPollution": "BRIGHT",
-            "temperatureC": -6.6,
-            "windMps": 2.1,
-            "windFromDirection": 198.5,
-            "cloudLowPercent": 89.8,
-            "cloudMediumPercent": 0,
-            "cloudHighPercent": 0.8,
-            "cloudTotalPercent": 89.8,
+            "temperatureC": -6.9,
+            "windMps": 2.2,
+            "windFromDirection": 194,
+            "cloudLowPercent": 94.5,
+            "cloudMediumPercent": 0.8,
+            "cloudHighPercent": 2.3,
+            "cloudTotalPercent": 94.5,
             "symbolCode": "fog",
             "forecast": [
-              [-6.6,2.1,198.5,89.8,0,0.8,89.8,"fog"],
               [-6.9,2.2,194,94.5,0.8,2.3,94.5,"fog"],
               [-7,2,195.3,89.1,0,1.6,89.1,"fog"],
               [-7.1,1.8,194.3,93.7,0,1.6,93.7,"fog"],
@@ -1773,6 +1772,7 @@
               [0.4,2.4,244.2,100,99.2,100,100,"cloudy"],
               [0.8,2.7,253.2,100,100,100,100,"cloudy"],
               [1.2,2.9,268.8,100,100,100,100,"lightsleet"],
+              [1.3,2.7,267.3,95.3,100,100,100,"sleet"],
               null
             ]
           },
@@ -1785,17 +1785,16 @@
             "lon": -17.55,
             "region": "NORTH",
             "lightPollution": "DARK",
-            "temperatureC": -8.2,
-            "windMps": 1.1,
-            "windFromDirection": 258.2,
-            "cloudLowPercent": 98.4,
-            "cloudMediumPercent": 3.1,
-            "cloudHighPercent": 17.2,
-            "cloudTotalPercent": 98.4,
+            "temperatureC": -8.8,
+            "windMps": 1.3,
+            "windFromDirection": 254.1,
+            "cloudLowPercent": 94.5,
+            "cloudMediumPercent": 0.8,
+            "cloudHighPercent": 10.9,
+            "cloudTotalPercent": 95.3,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-8.2,1.1,258.2,98.4,3.1,17.2,98.4,"fog"],
               [-8.8,1.3,254.1,94.5,0.8,10.9,95.3,"fog"],
               [-9,1.2,256.8,71.9,1.6,14.1,75.8,"fog"],
               [-8.7,1.2,260.7,70.3,21.9,32,80.5,"fog"],
@@ -1843,7 +1842,8 @@
               [-1.1,2.4,266.8,100,100,100,100,"cloudy"],
               [-0.8,2.4,263.6,100,100,100,100,"lightsnow"],
               [-0.2,3.3,258.2,100,100,100,100,"lightsnow"],
-              [0.4,3.6,272.9,80.5,100,100,100,"sleet"]
+              [0.4,3.6,272.9,80.5,100,100,100,"sleet"],
+              [0.6,3.6,272.3,86.7,100,100,100,"sleet"]
             ]
           },
           {
@@ -1855,17 +1855,16 @@
             "lon": -16.9964,
             "region": "NORTH",
             "lightPollution": "DARK",
-            "temperatureC": -4.1,
-            "windMps": 3.2,
-            "windFromDirection": 144.3,
-            "cloudLowPercent": 13.3,
-            "cloudMediumPercent": 1.6,
-            "cloudHighPercent": 39.1,
-            "cloudTotalPercent": 46.1,
-            "symbolCode": "partlycloudy_night",
+            "temperatureC": -3.9,
+            "windMps": 3.4,
+            "windFromDirection": 153.1,
+            "cloudLowPercent": 6.2,
+            "cloudMediumPercent": 3.9,
+            "cloudHighPercent": 18.7,
+            "cloudTotalPercent": 24.2,
+            "symbolCode": "fair_night",
             "forecast": [
               null,
-              [-4.1,3.2,144.3,13.3,1.6,39.1,46.1,"partlycloudy_night"],
               [-3.9,3.4,153.1,6.2,3.9,18.7,24.2,"fair_night"],
               [-4,3,152.4,4.7,2.3,31.2,34.4,"fair_day"],
               [-4.3,2.9,144.1,4.7,31.2,34.4,43,"partlycloudy_day"],
@@ -1913,7 +1912,8 @@
               [-2,2.9,288.8,100,100,100,100,"lightsnow"],
               [-1.7,3.7,314.1,100,100,100,100,"snow"],
               [-1.5,4.6,314,100,100,100,100,"snow"],
-              [-1.3,4.9,318.5,100,100,100,100,"snow"]
+              [-1.3,4.9,318.5,100,100,100,100,"snow"],
+              [-0.7,5.3,322.6,100,100,100,100,"heavysnow"]
             ]
           },
           {
@@ -1925,16 +1925,15 @@
             "lon": -17.3389,
             "region": "NORTH",
             "lightPollution": "MODERATE",
-            "temperatureC": -2.7,
-            "windMps": 2.9,
+            "temperatureC": -2.8,
+            "windMps": 3.3,
             "windFromDirection": 151.1,
-            "cloudLowPercent": 7.8,
+            "cloudLowPercent": 10.2,
             "cloudMediumPercent": 0,
-            "cloudHighPercent": 35.2,
-            "cloudTotalPercent": 40.6,
+            "cloudHighPercent": 78.9,
+            "cloudTotalPercent": 82,
             "symbolCode": "partlycloudy_night",
             "forecast": [
-              [-2.7,2.9,151.1,7.8,0,35.2,40.6,"partlycloudy_night"],
               [-2.8,3.3,151.1,10.2,0,78.9,82,"partlycloudy_night"],
               [-2.8,3.2,153.6,7.8,0,84.4,85.9,"partlycloudy_night"],
               [-2.9,3,154.5,7,0,71.1,72.7,"partlycloudy_night"],
@@ -1983,6 +1982,7 @@
               [0.9,3.5,119.5,99.2,100,100,100,"lightsleet"],
               [1.7,4.8,323.8,99.2,100,100,100,"rain"],
               [2.6,4,320.9,100,100,100,100,"rain"],
+              [2.6,3.4,327.3,100,100,100,100,"rain"],
               null
             ]
           },
@@ -1995,17 +1995,16 @@
             "lon": -16.3849,
             "region": "NORTH",
             "lightPollution": "DARK",
-            "temperatureC": -6.6,
+            "temperatureC": -6.5,
             "windMps": 5,
-            "windFromDirection": 171.5,
-            "cloudLowPercent": 19.5,
+            "windFromDirection": 170.7,
+            "cloudLowPercent": 26.6,
             "cloudMediumPercent": 0,
-            "cloudHighPercent": 80.5,
-            "cloudTotalPercent": 84.4,
-            "symbolCode": "partlycloudy_night",
+            "cloudHighPercent": 86.7,
+            "cloudTotalPercent": 89.8,
+            "symbolCode": "cloudy",
             "forecast": [
               null,
-              [-6.6,5,171.5,19.5,0,80.5,84.4,"partlycloudy_night"],
               [-6.5,5,170.7,26.6,0,86.7,89.8,"cloudy"],
               [-6.7,4.9,168.1,29.7,0,85.2,89.1,"cloudy"],
               [-6.8,4.7,166.7,30.5,0,74.2,82,"partlycloudy_day"],
@@ -2053,7 +2052,8 @@
               [-0.7,4.5,329.5,100,100,100,100,"snow"],
               [-0.6,5,335.2,100,100,100,100,"snow"],
               [-0.5,5.7,334.9,100,100,100,100,"snow"],
-              [-0.3,6.4,333,100,100,100,100,"heavysnow"]
+              [-0.3,6.4,333,100,100,100,100,"heavysnow"],
+              [-0.1,7.1,338.2,100,100,99.2,100,"snow"]
             ]
           },
           {
@@ -2065,17 +2065,16 @@
             "lon": -16.51,
             "region": "NORTH",
             "lightPollution": "DARK",
-            "temperatureC": -2.6,
-            "windMps": 4.6,
-            "windFromDirection": 161,
-            "cloudLowPercent": 10.9,
+            "temperatureC": -2.5,
+            "windMps": 4.7,
+            "windFromDirection": 160.7,
+            "cloudLowPercent": 14.1,
             "cloudMediumPercent": 0,
-            "cloudHighPercent": 68.7,
-            "cloudTotalPercent": 72.7,
+            "cloudHighPercent": 75,
+            "cloudTotalPercent": 79.7,
             "symbolCode": "partlycloudy_night",
             "forecast": [
               null,
-              [-2.6,4.6,161,10.9,0,68.7,72.7,"partlycloudy_night"],
               [-2.5,4.7,160.7,14.1,0,75,79.7,"partlycloudy_night"],
               [-2.5,4.6,158.9,15.6,0,78.9,82.8,"partlycloudy_day"],
               [-2.7,4.3,157.9,14.8,0,60.9,66.4,"partlycloudy_day"],
@@ -2123,7 +2122,8 @@
               [0.7,3,322.1,98.4,100,100,100,"lightsleet"],
               [0.8,3.2,351.9,99.2,100,100,100,"sleet"],
               [0.9,3.9,298.4,96.9,100,100,100,"sleet"],
-              [1.5,4.5,316,100,100,100,100,"rain"]
+              [1.5,4.5,316,100,100,100,100,"rain"],
+              [2.1,5.2,335.5,86.7,100,100,100,"rain"]
             ]
           },
           {
@@ -2135,17 +2135,16 @@
             "lon": -14.3948,
             "region": "EAST",
             "lightPollution": "MODERATE",
-            "temperatureC": -1.3,
-            "windMps": 2.8,
-            "windFromDirection": 164.5,
-            "cloudLowPercent": 49.2,
-            "cloudMediumPercent": 0,
-            "cloudHighPercent": 77.3,
-            "cloudTotalPercent": 89.1,
+            "temperatureC": -0.9,
+            "windMps": 2.6,
+            "windFromDirection": 163.9,
+            "cloudLowPercent": 40.6,
+            "cloudMediumPercent": 0.8,
+            "cloudHighPercent": 93.7,
+            "cloudTotalPercent": 96.1,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-1.3,2.8,164.5,49.2,0,77.3,89.1,"fog"],
               [-0.9,2.6,163.9,40.6,0.8,93.7,96.1,"fog"],
               [-1.1,2.2,165.9,37.5,0,83.6,89.8,"fog"],
               [-1,1.9,168.9,37.5,0.8,91.4,94.5,"fog"],
@@ -2193,7 +2192,8 @@
               [1.6,2.6,356.5,100,100,100,100,"heavysleet"],
               [1.9,4.1,0.6,100,100,100,100,"heavysleet"],
               [2,4.2,348.4,99.2,100,100,100,"heavysleet"],
-              [1.9,4.1,353.9,100,100,100,100,"heavysleet"]
+              [1.9,4.1,353.9,100,100,100,100,"heavysleet"],
+              [2,4,2.9,100,100,99.2,100,"heavysleet"]
             ]
           },
           {
@@ -2206,16 +2206,15 @@
             "region": "HIGHLANDS",
             "lightPollution": "DARK",
             "temperatureC": -1.5,
-            "windMps": 4.6,
-            "windFromDirection": 126.7,
+            "windMps": 4.4,
+            "windFromDirection": 132.8,
             "cloudLowPercent": 100,
-            "cloudMediumPercent": 12.5,
+            "cloudMediumPercent": 14.8,
             "cloudHighPercent": 0,
             "cloudTotalPercent": 100,
             "symbolCode": "fog",
             "forecast": [
               null,
-              [-1.5,4.6,126.7,100,12.5,0,100,"fog"],
               [-1.5,4.4,132.8,100,14.8,0,100,"fog"],
               [-1.8,4.1,136.3,100,10.2,0,100,"fog"],
               [-2.1,3.8,142.8,100,1.6,0,100,"fog"],
@@ -2263,7 +2262,8 @@
               [-5.6,6.2,321.9,45.3,68,99.2,100,"cloudy"],
               [-4.8,6.4,317.4,38.3,92.2,99.2,100,"cloudy"],
               [-4.5,6.5,315.2,51.6,96.9,99.2,100,"cloudy"],
-              [-4.1,6.8,321.5,59.4,100,100,100,"cloudy"]
+              [-4.1,6.8,321.5,59.4,100,100,100,"cloudy"],
+              [-3.2,7.3,331.1,68.7,100,100,100,"fog"]
             ]
           }
         ]
@@ -2274,7 +2274,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 2151,
+        "latencyMs": 2796,
         "recordCount": 32
       }
     },
@@ -2282,19 +2282,19 @@
       "id": "irca",
       "name": "IRCA Roads",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
-      "dataTime": "2026-10-23T05:50:56.836Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T06:50:44.750Z",
       "data": {
-        "lastPublished": "2026-10-23 05:50 UTC",
+        "lastPublished": "2026-10-23 06:50 UTC",
         "roads": 708,
         "incidents": 42,
         "stations": 204,
         "trafficStations": 109,
         "schemaVersion": 2,
-        "roadDataAt": "2026-10-23 05:50 UTC",
-        "incidentDataAt": "2026-10-23 05:50 UTC",
-        "measurementDataAt": "2026-10-23 05:50 UTC"
+        "roadDataAt": "2026-10-23 06:50 UTC",
+        "incidentDataAt": "2026-10-23 06:50 UTC",
+        "measurementDataAt": "2026-10-23 06:50 UTC"
       },
       "provenance": {
         "mode": "production",
@@ -2302,7 +2302,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 287,
+        "latencyMs": 2550,
         "recordCount": 708
       }
     },
@@ -2310,15 +2310,15 @@
       "id": "noaaKp",
       "name": "NOAA Kp",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
-      "dataTime": "2026-10-23T05:57:00.000Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T06:57:00.000Z",
       "data": {
-        "kp": 1.67,
-        "observedAt": "2026-10-23 05:57 UTC",
+        "kp": 0.67,
+        "observedAt": "2026-10-23 06:57 UTC",
         "samples": 359,
-        "kpIndex": 2,
-        "kpLabel": "2M"
+        "kpIndex": 1,
+        "kpLabel": "1M"
       },
       "provenance": {
         "mode": "production",
@@ -2326,7 +2326,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 363,
+        "latencyMs": 2117,
         "recordCount": 359
       }
     },
@@ -2334,14 +2334,14 @@
       "id": "solarWind",
       "name": "NOAA Solar Wind",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
-      "dataTime": "2026-10-23T05:52:00.000Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T06:53:00.000Z",
       "data": {
-        "observedAt": "2026-10-23 05:52 UTC",
-        "speedKms": 431,
+        "observedAt": "2026-10-23 06:53 UTC",
+        "speedKms": 419,
         "btNt": 6,
-        "bzNt": 2
+        "bzNt": 0
       },
       "provenance": {
         "mode": "production",
@@ -2349,7 +2349,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 351,
+        "latencyMs": 2121,
         "recordCount": 1
       }
     },
@@ -2357,15 +2357,15 @@
       "id": "ovation",
       "name": "NOAA OVATION",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
-      "dataTime": "2026-10-23T05:49:00.000Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T06:46:00.000Z",
       "data": {
         "gridCells": 65160,
-        "observationTime": "2026-10-23 05:49 UTC",
-        "forecastTime": "2026-10-23 06:54 UTC",
+        "observationTime": "2026-10-23 06:46 UTC",
+        "forecastTime": "2026-10-23 07:54 UTC",
         "icelandLatitudeCells": 1800,
-        "icelandPeakProbabilityPercent": 18,
+        "icelandPeakProbabilityPercent": 20,
         "grid": {
           "schemaVersion": 1,
           "latFrom": 45,
@@ -2374,7 +2374,7 @@
           "lonTo": 179,
           "latStep": 1,
           "lonStep": 1,
-          "values": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,5,5,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,7,7,7,7,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,7,7,7,6,6,6,6,5,5,5,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,5,6,6,7,7,7,8,8,8,9,9,9,9,10,10,10,10,10,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,10,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,11,11,12,12,12,12,12,13,13,13,13,13,13,13,13,13,12,12,12,12,12,12,11,11,11,10,10,10,10,9,9,9,8,8,8,7,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,5,6,6,7,8,8,9,9,10,10,11,11,12,12,12,13,13,14,14,14,14,14,15,15,15,15,15,15,15,15,15,15,14,14,14,14,14,13,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,8,8,7,7,7,6,6,6,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,5,6,6,7,8,8,9,9,10,11,11,12,12,13,13,14,14,15,15,15,16,16,16,16,17,17,17,17,17,17,17,17,16,16,16,16,16,16,15,15,15,15,14,14,14,13,13,13,12,12,12,11,11,10,10,10,9,9,9,8,8,8,7,7,6,6,6,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,8,8,9,9,10,11,11,12,13,13,14,14,15,15,16,16,17,17,17,18,18,18,18,18,18,18,18,18,18,18,18,18,18,17,17,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,12,12,12,11,11,10,10,10,9,9,9,8,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,7,8,9,9,10,11,11,12,13,13,14,15,15,16,16,17,17,18,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,18,18,18,18,17,17,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,8,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,7,8,8,9,10,10,11,12,12,13,14,14,15,16,16,17,17,18,18,19,19,19,19,20,20,20,20,20,20,20,20,20,19,19,19,19,19,18,18,18,18,17,17,17,17,16,16,16,16,15,15,15,14,14,14,14,13,13,13,13,12,12,12,11,11,11,10,10,10,10,9,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,4,4,4,5,5,6,6,6,7,8,8,9,9,10,11,11,12,12,13,14,14,15,16,16,17,17,18,18,19,19,19,19,20,20,20,20,20,20,20,20,20,19,19,19,19,18,18,18,18,17,17,17,16,16,16,16,15,15,15,15,15,14,14,14,14,13,13,13,13,13,12,12,12,12,11,11,11,11,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,5,6,6,7,7,8,8,9,10,10,11,11,12,13,13,14,14,15,15,16,17,17,17,18,18,19,19,19,19,19,20,20,20,20,19,19,19,19,19,19,18,18,18,17,17,17,16,16,16,15,15,15,15,14,14,14,14,13,13,13,13,13,12,12,12,12,12,12,11,11,11,11,11,11,11,10,10,10,10,10,10,9,9,9,9,9,8,8,8,8,8,7,7,7,7,6,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,13,13,14,14,15,15,16,16,17,17,17,18,18,18,18,19,19,19,19,19,19,19,19,18,18,18,18,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,13,12,12,12,12,12,11,11,11,11,11,11,11,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,7,7,7,7,7,6,6,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,6,6,7,7,8,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,16,16,16,17,17,17,17,18,18,18,18,18,18,18,18,17,17,17,17,17,16,16,16,15,15,15,14,14,13,13,13,12,12,12,11,11,11,11,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,5,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,9,9,10,10,11,11,11,12,12,13,13,14,14,14,15,15,15,16,16,16,16,16,16,17,17,17,17,17,16,16,16,16,16,16,15,15,15,14,14,14,13,13,13,12,12,11,11,11,10,10,10,9,9,9,9,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,5,5,5,6,6,6,7,7,7,8,8,9,9,9,10,10,11,11,11,12,12,12,13,13,13,14,14,14,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,14,14,14,14,13,13,13,12,12,11,11,11,10,10,10,9,9,9,8,8,8,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,3,3,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,7,7,7,8,8,8,9,9,10,10,10,11,11,11,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,8,8,8,7,7,7,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10,11,11,11,11,12,12,12,12,12,12,13,13,13,13,13,13,13,13,13,13,13,13,12,12,12,12,12,12,11,11,11,11,10,10,10,9,9,9,8,8,8,7,7,7,6,6,6,6,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,8,8,8,9,9,9,9,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,12,12,12,12,12,11,11,11,11,11,11,11,10,10,10,10,9,9,9,9,8,8,8,7,7,7,7,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,5,5,6,6,6,6,6,7,7,7,7,8,8,8,8,9,9,9,9,10,10,10,10,10,10,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,10,9,9,9,9,9,8,8,8,8,7,7,7,7,6,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,6,6,7,7,7,7,7,8,8,8,8,8,9,9,9,9,9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,8,8,8,8,8,7,7,7,7,6,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,7,7,7,7,7,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,7,7,7,7,7,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,3,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0]
+          "values": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,3,4,4,4,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6,7,7,8,8,8,9,9,9,10,10,10,10,11,11,11,11,11,11,11,11,11,10,10,10,10,10,9,9,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,3,3,3,2,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,5,6,6,7,7,8,8,8,9,9,10,10,10,11,11,11,12,12,12,12,12,12,13,13,13,12,12,12,12,12,12,12,11,11,11,11,10,10,10,9,9,9,8,8,8,7,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,10,10,10,11,11,12,12,12,13,13,13,14,14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,12,12,12,12,11,11,11,10,10,10,9,9,9,8,8,7,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,5,5,6,6,7,7,8,8,9,10,10,11,11,12,12,13,13,14,14,14,15,15,15,15,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,14,14,14,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,8,8,7,7,7,6,6,6,5,5,5,4,4,3,3,3,3,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,3,3,3,4,4,5,5,5,6,6,7,8,8,9,9,10,11,11,12,12,13,13,14,14,15,15,16,16,16,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,15,15,15,14,14,14,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,8,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,3,3,3,4,4,5,5,5,6,6,7,8,8,9,9,10,11,11,12,13,13,14,14,15,16,16,17,17,17,18,18,18,18,18,18,19,19,18,18,18,18,18,18,18,18,17,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,13,12,12,12,11,11,11,10,10,10,9,9,9,9,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,4,4,5,5,5,6,6,7,8,8,9,9,10,11,11,12,13,13,14,15,15,16,16,17,17,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,18,18,18,18,17,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,13,12,12,12,11,11,11,11,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,6,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,4,4,4,5,5,6,6,6,7,8,8,9,9,10,11,11,12,13,13,14,15,15,16,17,17,18,18,19,19,19,20,20,20,20,20,20,20,20,20,20,19,19,19,19,18,18,18,17,17,17,17,16,16,16,15,15,15,14,14,14,13,13,13,13,12,12,12,11,11,11,11,11,10,10,10,10,10,9,9,9,9,9,8,8,8,8,8,8,7,7,7,7,6,6,6,6,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,12,12,13,14,14,15,16,16,17,17,18,18,19,19,20,20,20,20,20,20,20,20,20,20,20,20,19,19,19,18,18,18,17,17,17,16,16,15,15,15,14,14,14,13,13,13,13,12,12,12,11,11,11,11,11,10,10,10,10,10,10,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,7,7,7,7,7,6,6,6,6,6,5,5,5,5,4,4,4,3,3,3,3,3,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,4,4,4,5,5,5,6,6,7,7,8,8,9,9,10,10,11,12,12,13,13,14,15,15,16,16,17,18,18,18,19,19,20,20,20,20,20,20,20,20,20,20,20,20,19,19,19,18,18,17,17,16,16,16,15,15,14,14,14,13,13,13,12,12,12,11,11,11,11,10,10,10,10,10,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,5,5,5,5,4,4,4,4,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,4,4,4,5,5,5,6,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,14,14,15,15,16,16,17,17,18,18,19,19,19,19,20,20,20,20,20,20,20,19,19,19,19,18,18,18,17,17,16,16,15,15,14,14,13,13,13,12,12,11,11,11,10,10,10,10,9,9,9,9,9,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,5,5,5,6,6,6,7,7,7,8,8,9,9,10,10,11,11,12,12,13,13,14,14,15,15,16,16,17,17,17,18,18,18,19,19,19,19,19,19,19,19,19,19,18,18,18,18,17,17,16,16,16,15,15,14,14,13,13,12,12,11,11,10,10,10,9,9,9,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,3,3,3,3,3,4,4,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,9,9,10,10,11,11,12,12,12,13,13,14,14,15,15,16,16,16,17,17,17,17,18,18,18,18,18,18,18,18,18,18,18,17,17,17,17,16,16,15,15,15,14,14,13,13,12,12,11,11,10,10,9,9,9,8,8,8,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,4,4,4,4,5,5,5,5,6,6,6,7,7,7,8,8,8,9,9,9,10,10,11,11,11,12,12,13,13,13,14,14,14,15,15,15,16,16,16,16,17,17,17,17,17,17,17,17,17,17,17,16,16,16,16,15,15,15,14,14,13,13,12,12,11,11,11,10,10,9,9,8,8,8,7,7,7,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,5,5,6,6,6,6,7,7,7,8,8,8,9,9,9,10,10,10,11,11,11,12,12,12,13,13,13,14,14,14,14,15,15,15,15,15,16,16,16,16,16,16,16,16,16,16,15,15,15,15,15,14,14,14,13,13,13,12,12,11,11,10,10,9,9,9,8,8,7,7,7,6,6,6,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,7,7,7,8,8,8,8,9,9,9,10,10,10,11,11,11,11,12,12,12,13,13,13,13,13,14,14,14,14,14,14,14,15,15,15,15,15,15,15,14,14,14,14,14,14,13,13,13,13,12,12,12,11,11,10,10,10,9,9,8,8,8,7,7,6,6,6,5,5,5,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,8,8,8,9,9,9,9,10,10,10,10,11,11,11,11,12,12,12,12,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,12,12,12,12,11,11,11,10,10,10,9,9,9,8,8,8,7,7,7,6,6,5,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,7,7,7,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,9,9,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,11,11,11,11,11,10,10,10,10,9,9,9,8,8,8,8,7,7,7,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,8,8,8,8,8,9,9,10,10,10,10,10,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,10,10,10,10,10,10,9,9,9,9,8,8,8,8,7,7,7,7,6,6,6,6,5,5,5,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,8,8,8,8,8,7,7,7,7,7,6,6,6,6,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,7,7,7,7,7,6,6,6,6,6,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,10,10,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,4,4,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,1,1,1,1,1,1,1,1,1,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0]
         }
       },
       "provenance": {
@@ -2383,7 +2383,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 371,
+        "latencyMs": 2124,
         "recordCount": 65160
       }
     },
@@ -2391,8 +2391,8 @@
       "id": "ecmwf",
       "name": "ECMWF Cloud Forecast",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
       "dataTime": "2026-10-22T18:00:00.000Z",
       "data": {
         "modelRun": "2026-10-22 18Z",
@@ -2499,7 +2499,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 418,
+        "latencyMs": 2673,
         "recordCount": 17
       }
     },
@@ -2507,8 +2507,8 @@
       "id": "imo",
       "name": "IMO Warnings",
       "status": "info",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
       "data": {
         "activeWarnings": 0,
         "warnings": []
@@ -2520,7 +2520,7 @@
       "note": "The warnings API is healthy and Iceland currently has no active weather warnings.",
       "diagnostics": {
         "httpStatus": 204,
-        "latencyMs": 981,
+        "latencyMs": 3531,
         "recordCount": 0
       }
     },
@@ -2528,8 +2528,8 @@
       "id": "noaaKpForecast",
       "name": "NOAA Kp Forecast",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
       "dataTime": "2026-10-23T06:00:00.000Z",
       "data": {
         "points": [
@@ -2877,8 +2877,8 @@
           },
           {
             "time": "2026-10-23T03:00:00.000Z",
-            "kp": 3.33,
-            "status": "estimated",
+            "kp": 1.67,
+            "status": "observed",
             "noaaScale": null
           },
           {
@@ -3027,7 +3027,7 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 356,
+        "latencyMs": 2109,
         "recordCount": 81
       }
     },
@@ -3035,14 +3035,14 @@
       "id": "noaaHemiPower",
       "name": "NOAA Hemispheric Power",
       "status": "ok",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T06:00:31.388Z",
-      "dataTime": "2026-10-23T05:55:00.000Z",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T06:55:00.000Z",
       "data": {
-        "northGw": 20,
+        "northGw": 21,
         "southGw": 20,
-        "observedAt": "2026-10-23 05:55 UTC",
-        "forecastAt": "2026-10-23 06:54 UTC"
+        "observedAt": "2026-10-23 06:55 UTC",
+        "forecastAt": "2026-10-23 07:54 UTC"
       },
       "provenance": {
         "mode": "production",
@@ -3050,8 +3050,8 @@
       },
       "diagnostics": {
         "httpStatus": 200,
-        "latencyMs": 359,
-        "recordCount": 72
+        "latencyMs": 2112,
+        "recordCount": 84
       }
     }
   },
@@ -3059,65 +3059,64 @@
     "ircaPipeline": {
       "id": "ircaPipeline",
       "name": "IRCA Road Publisher",
-      "status": "error",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T05:00:38.321Z",
-      "dataTime": "2026-10-23T05:00:13Z",
+      "status": "info",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T07:00:13Z",
       "data": {
         "consecutiveFailures": 0,
-        "latestRun": "#2488",
+        "latestRun": "#2500",
         "conclusion": "IN_PROGRESS",
         "event": "workflow_dispatch",
-        "lastRun": "2026-10-23 05:00 UTC",
-        "runUrl": "https://github.com/lovemonlin/iceland-aurora-cloud/actions/runs/39903340324",
-        "lastSuccessfulRun": "#2487",
-        "lastSuccessAt": "2026-10-23 04:51 UTC"
+        "lastRun": "2026-10-23 07:00 UTC",
+        "runUrl": "https://github.com/lovemonlin/iceland-aurora-cloud/actions/runs/39914979650",
+        "lastSuccessfulRun": "#2499",
+        "lastSuccessAt": "2026-10-23 06:50 UTC"
       },
       "provenance": {
         "mode": "production",
         "provider": "GitHub Actions REST API"
       },
-      "errorType": "HTTP_ERROR",
-      "errorMessage": "GitHub Actions status unavailable — HTTP 403. The workflow itself may be perfectly fine; this check could not verify it.",
+      "note": "Run #2500 is in progress. A run in flight is not a failure.",
       "diagnostics": {
-        "httpStatus": 403,
-        "latencyMs": 8
+        "httpStatus": 200,
+        "latencyMs": 349,
+        "recordCount": 10
       }
     },
     "ecmwfPipeline": {
       "id": "ecmwfPipeline",
       "name": "ECMWF Cloud Publisher",
-      "status": "error",
-      "lastAttemptAt": "2026-10-23T06:00:31.388Z",
-      "lastSuccessAt": "2026-10-23T05:00:38.321Z",
-      "dataTime": "2026-10-22T21:43:09Z",
+      "status": "ok",
+      "lastAttemptAt": "2026-10-23T07:00:33.691Z",
+      "lastSuccessAt": "2026-10-23T07:00:33.691Z",
+      "dataTime": "2026-10-23T05:00:54Z",
       "data": {
         "consecutiveFailures": 0,
-        "latestRun": "#479",
+        "latestRun": "#480",
         "conclusion": "SUCCESS",
         "event": "schedule",
-        "lastRun": "2026-10-22 21:43 UTC",
-        "runUrl": "https://github.com/lovemonlin/iceland-aurora-cloud/actions/runs/39859498425",
-        "lastSuccessfulRun": "#479",
-        "lastSuccessAt": "2026-10-22 21:44 UTC"
+        "lastRun": "2026-10-23 05:00 UTC",
+        "runUrl": "https://github.com/lovemonlin/iceland-aurora-cloud/actions/runs/39903411042",
+        "lastSuccessfulRun": "#480",
+        "lastSuccessAt": "2026-10-23 05:02 UTC"
       },
       "provenance": {
         "mode": "production",
         "provider": "GitHub Actions REST API"
       },
-      "errorType": "HTTP_ERROR",
-      "errorMessage": "GitHub Actions status unavailable — HTTP 403. The workflow itself may be perfectly fine; this check could not verify it.",
       "diagnostics": {
-        "httpStatus": 403,
-        "latencyMs": 8
+        "httpStatus": 200,
+        "latencyMs": 505,
+        "recordCount": 10
       }
     }
   },
   "summary": {
-    "ok": 8,
-    "info": 1,
+    "ok": 9,
+    "info": 2,
     "stale": 0,
     "degraded": 0,
-    "error": 2
+    "error": 0
   }
 }
