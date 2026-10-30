@@ -1527,6 +1527,44 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
 }
 .aurora-oval-site button:hover { color: var(--text); background: #1b2a3b; }
 
+/* Shared OVATION query controls and the standalone aurora viewer. */
+.aurora-map-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-bottom: 10px; }
+.aurora-map-controls label { display: grid; gap: 4px; color: var(--muted); font-size: 12px; min-width: 0; }
+.aurora-map-controls select { max-width: 100%; border: 1px solid var(--line); border-radius: 7px; padding: 7px; background: var(--panel); color: var(--text); }
+.aurora-map-buttons { display: flex; flex-wrap: wrap; gap: 5px; }
+.aurora-map-buttons button { border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; background: var(--panel); color: var(--text); }
+.aurora-map-controls :focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+.aurora-oval-mapframe { position: relative; }
+.aurora-oval-site { z-index: 1; }
+.standalone-aurora .aurora-oval-card, .standalone-aurora .aurora-oval-site { position: static; margin-top: 10px; }
+.standalone-aurora .aurora-oval-site { margin-bottom: 10px; }
+.aurora-oval-card p { margin: 0; }
+.aurora-oval-probability span { display: block; margin-top: 4px; font-weight: normal; }
+.aurora-viewer-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 360px); gap: 20px; }
+.aurora-viewer section, .aurora-viewer aside { min-width: 0; }
+.aurora-conditions section, .aurora-model-explanation, .aurora-advanced, .aurora-viewer-forecast { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.aurora-conditions { display: grid; gap: 16px; align-content: start; }
+.aurora-data-status { margin-top: 12px; }
+.aurora-data-status p, .aurora-model-explanation p { line-height: 1.65; }
+.aurora-data-times { display: grid; gap: 8px; margin: 12px 0; }
+.aurora-data-times div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; }
+.aurora-data-times dt { color: var(--muted); font-size: 12px; }
+.aurora-data-times dd { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.aurora-feed-status { padding-left: 18px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.aurora-model-explanation, .aurora-advanced, .aurora-viewer-forecast { margin-top: 18px; }
+.aurora-viewer-forecast summary { cursor: pointer; }
+.standalone-aurora .aurora-oval-canvas { height: clamp(400px, 62dvh, 850px); }
+@media (max-width: 1000px) {
+  .aurora-viewer-grid { grid-template-columns: minmax(0, 1fr); }
+  .aurora-conditions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .aurora-conditions { grid-template-columns: minmax(0, 1fr); }
+  .aurora-map-controls label { width: 100%; }
+  .aurora-map-controls select { width: 100%; }
+  .standalone-aurora .aurora-oval-canvas { height: 420px; }
+}
+
 /* ── Aurora 48-hour forecast ─────────────────────────────────────────────── */
 .aurora-forecast { margin-top: 14px; min-width: 0; }
 .aurora-forecast-head { display: flex; flex-direction: column; gap: 5px; }

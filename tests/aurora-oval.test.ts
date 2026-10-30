@@ -6,6 +6,7 @@ import { androidPath, hasAndroidFile } from "./androidRepo";
 import { WEATHER_SITES } from "../src/config/sources";
 import {
   AURORA_LAYER_ANCHOR,
+  applyAuroraContourLayers,
   buildAuroraOvalStyle,
   buildContourBands,
   CONTOUR_BANDS,
@@ -48,12 +49,21 @@ const readAndroid = (path: string) => readFileSync(androidFile(path), "utf8");
 
 const NOW = new Date("2026-09-04T09:00:00Z");
 
-/** NOAA publishes `[longitude 0..359, latitude -90..90, probability]`. */
+/** NOAA publishes one cell for every 1° longitude/latitude pair. */
+function completeOvationGrid(cells: [number, number, number][] = []) {
+  const grid: [number, number, number][] = [];
+  for (let latitude = -90; latitude <= 90; latitude += 1) {
+    for (let longitude = 0; longitude < 360; longitude += 1) grid.push([longitude, latitude, 0]);
+  }
+  for (const [longitude, latitude, probability] of cells) grid[(latitude + 90) * 360 + longitude] = [longitude, latitude, probability];
+  return grid;
+}
+
 function ovationResponse(cells: [number, number, number][] = [[341, 65, 42]]) {
   return {
     "Observation Time": "2026-09-04T08:55:00Z",
     "Forecast Time": "2026-09-04T09:25:00Z",
-    coordinates: cells,
+    coordinates: completeOvationGrid(cells),
   };
 }
 
@@ -95,16 +105,16 @@ test("the existing OVATION summary fields are untouched", async () => {
   const health = await checkOvation({ now: NOW, request: stub([], ovationResponse(cells)) });
   const data = health.data!;
 
-  assert.equal(data.gridCells, 3);
-  assert.equal(data.observationTime, "2026-09-04 08:55 UTC");
-  assert.equal(data.forecastTime, "2026-09-04 09:25 UTC");
-  // 63 and 65 are Iceland latitudes; 30 is not.
-  assert.equal(data.icelandLatitudeCells, 2);
+  assert.equal(data.gridCells, 65160);
+  assert.equal(data.observationTime, "2026-09-04T08:55:00.000Z");
+  assert.equal(data.forecastTime, "2026-09-04T09:25:00.000Z");
+  // The summary covers 5 × 13 cells around Iceland, including nearby sea.
+  assert.equal(data.icelandLatitudeCells, 65);
   assert.equal(data.icelandPeakProbabilityPercent, 42);
   assert.equal(health.status, "ok");
   assert.equal(health.dataTime, "2026-09-04T08:55:00.000Z");
   assert.equal(health.provenance?.mode, "production");
-  assert.equal(health.recordCount, 3);
+  assert.equal(health.recordCount, 65160);
 });
 
 // ── 3, 4, 5: the compact grid ────────────────────────────────────────────────
@@ -391,15 +401,15 @@ test("the marker circles are MapStyleFactory.siteCircleLayer, unchanged", () => 
   const component = read("src/components/AuroraOvalMap.tsx");
   assert.match(component, /queryRenderedFeatures\(box, \{ layers: \["site-circles"\] \}\)/);
   assert.match(component, /event\.point\.x - SITE_TAP_TOLERANCE/);
-  assert.match(component, /ovalSiteFeatureCollection\(snapshot\)/);
-  assert.match(component, /綜合可見度 \{selected\.score\} 分（\{selected\.levelLabel\}）/);
+  assert.match(component, /ovalSiteFeatureCollection\(snapshot, now\)/);
+  assert.match(component, /最近原始格點：\{Math\.round\(selected\.lat\)\}°N、\{Math\.abs\(Math\.round\(selected\.lon\)\)\}°W；不做內插/);
   assert.equal(component.includes("尚未收集"), false);
   assert.equal(/sunElevation\(|moonInterference\(|latitudeAdvantage\(/.test(component), false);
 });
 
 test("oval site colours are the current-hour AuroraVisibility assessment", () => {
   const snapshot = JSON.parse(read("public/data/latest-health.json"));
-  const collection = ovalSiteFeatureCollection(snapshot);
+  const collection = ovalSiteFeatureCollection(snapshot, new Date(snapshot.generatedAt));
   assert.equal(collection.features.length, 32);
   for (const feature of collection.features) {
     const color = feature.properties.color;
@@ -409,7 +419,7 @@ test("oval site colours are the current-hour AuroraVisibility assessment", () =>
   }
   const library = read("src/lib/auroraOval.ts");
   assert.match(library, /buildAuroraForecast48\(/);
-  assert.match(library, /snapshot\.generatedAt,\s*1/);
+  assert.match(library, /now,\s*1/);
 });
 
 test("the app's neutral fallback is the colour used, not one made up here", { skip: !hasAndroid }, () => {
@@ -454,8 +464,8 @@ test("the base style is AuroraOvalStyleFactory, colour for colour", () => {
   assert.equal(paint("iceland-marker")["circle-stroke-width"], 1.2);
   assert.equal(paint("iceland-marker")["circle-stroke-color"], "#082F49");
 
-  // The contour bands are anchored above the detailed Iceland fill, as the app anchors them.
-  assert.equal(AURORA_LAYER_ANCHOR, "iceland-land-detail");
+  // MapLibre inserts before this coastline layer, so bands stay above opaque Iceland fill.
+  assert.equal(AURORA_LAYER_ANCHOR, "iceland-coastline-detail");
   assert.equal(style.layers.some((entry) => entry.id === AURORA_LAYER_ANCHOR), true);
 });
 
@@ -511,18 +521,31 @@ test("nothing in the aurora map reaches NOAA, on any interaction", () => {
   assert.match(map, /decodeOvationGrid\(ovation\.grid\)/);
 });
 
-test("the contour layers are added after the map exists, not before", () => {
+test("the contour layers are applied after the map exists and stack high bands above low bands", () => {
   const map = read("src/components/AuroraOvalMap.tsx");
   // The map is created inside an async effect, so an effect keyed only on the bands would run
   // once at mount -- with no map yet -- and never again, leaving the aurora undrawn.
   assert.match(map, /const \[ready, setReady\] = useState\(false\)/);
   assert.match(map, /setReady\(true\)/);
-  assert.match(map, /if \(!map \|\| !ready \|\| bands\.length === 0\) return;/);
+  assert.match(map, /if \(!map \|\| !ready\) return;/);
   assert.match(map, /\}, \[bands, ready\]\);/);
-  // The bands are anchored above the detailed Iceland fill, and the markers stay on top.
-  assert.match(map, /map\.getLayer\(anchor\) \? anchor : undefined/);
-  assert.match(map, /map\.moveLayer\("site-circles"\)/);
-  assert.match(map, /"fill-antialias": false/);
+  assert.match(map, /applyAuroraContourLayers\(map, bands\)/);
+
+  const layers = ["iceland-land-detail", "iceland-coastline-mask", AURORA_LAYER_ANCHOR, "site-circles"];
+  const fakeMap = {
+    getLayer: (id: string) => layers.includes(id) ? { id } : undefined,
+    removeLayer: (id: string) => { layers.splice(layers.indexOf(id), 1); },
+    getSource: () => undefined,
+    removeSource: () => {},
+    addSource: () => {},
+    addLayer: (layer: { id: string }, before?: string) => layers.splice(before ? layers.indexOf(before) : layers.length, 0, layer.id),
+    moveLayer: (id: string) => { layers.splice(layers.indexOf(id), 1); layers.push(id); },
+  };
+  applyAuroraContourLayers(fakeMap as never, buildContourBands(gridOf([[341, 65, 50]])));
+  const indexes = CONTOUR_BANDS.map(({ id }) => layers.indexOf(`aurora-${id}-layer`));
+  assert.deepEqual(indexes, [...indexes].sort((left, right) => left - right));
+  assert.equal(layers.indexOf("aurora-high-layer") < layers.indexOf(AURORA_LAYER_ANCHOR), true);
+  assert.equal(layers.at(-1), "site-circles");
 });
 
 test("the map cannot be rotated or tilted", () => {

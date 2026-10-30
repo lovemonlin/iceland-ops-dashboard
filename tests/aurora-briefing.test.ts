@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 import { encodeSiteForecast } from "../src/lib/forecastCodec";
+import { encodeOvationGrid } from "../src/lib/ovationGrid";
 import { assessAuroraIndexV2 } from "../src/lib/auroraIndexV2";
 import {
   BRIEFING_CLOUD_REGIONS,
@@ -38,6 +39,7 @@ function source(id: string, data: Record<string, unknown>): SnapshotSource {
     status: "ok",
     lastAttemptAt: "2026-09-10T01:00:00Z",
     lastSuccessAt: "2026-09-10T01:00:00Z",
+    dataTime: "2026-09-10T01:00:00Z",
     data,
   };
 }
@@ -86,14 +88,20 @@ function fixture(): DashboardSnapshot {
     sources: {
       noaaKp: source("noaaKp", { kp: 1.33 }),
       noaaKpForecast: source("noaaKpForecast", {
-        points: [
-          { time: times[0], kp: 2, status: "predicted", noaaScale: null },
-          { time: times[3], kp: 3, status: "predicted", noaaScale: null },
-          { time: times[6], kp: 4, status: "predicted", noaaScale: null },
-        ],
+        points: Array.from({ length: 11 }, (_, index) => ({
+          time: new Date(Date.parse(times[0]) + index * 3 * 3_600_000).toISOString(),
+          kp: index === 0 ? 2 : index === 1 ? 3 : index === 2 ? 4 : 5,
+          status: "predicted" as const,
+          noaaScale: null,
+        })),
       }),
       solarWind: source("solarWind", { btNt: 6, bzNt: -15, speedKms: 450 }),
-      ovation: source("ovation", { icelandPeakProbabilityPercent: 88 }),
+      ovation: source("ovation", {
+        observationTime: "2026-09-10T00:30:00Z",
+        forecastTime: "2026-09-10T01:30:00Z",
+        icelandPeakProbabilityPercent: 88,
+        grid: encodeOvationGrid([[-22, 64, 88]]),
+      }),
       metno: source("metno", { forecastTimes: times, sites }),
     },
   };

@@ -16,6 +16,9 @@ import dynamic from "next/dynamic";
 import { AuroraGauges } from "@/components/AuroraGauges";
 import { ImoWarningsPanel } from "@/components/ImoWarningsPanel";
 import { AuroraModes } from "@/components/AuroraModes";
+import { AuroraDataStatus } from "@/components/AuroraDataStatus";
+import { auroraSourceAt, ovationState } from "@/lib/auroraData";
+import { icelandGridPeak } from "@/lib/ovationGrid";
 import { MapDisclosure } from "@/components/MapDisclosure";
 import { SourceCard, Stat, StatusPill, TechnicalDetails } from "@/components/StatusCard";
 import { WeatherMap } from "@/components/WeatherMap";
@@ -251,7 +254,7 @@ export function AuroraSection({
   now: Date;
   schemaVersion: number;
 }) {
-  const entries = [kp, kpForecast, solarWind, ovation, hemiPower].filter(
+  const entries = [kp, kpForecast, solarWind, ovation, hemiPower].map((entry) => auroraSourceAt(entry, now)).filter(
     (entry): entry is SnapshotSource => entry !== undefined,
   );
   if (entries.length === 0) return null;
@@ -271,10 +274,15 @@ export function AuroraSection({
   );
   const oldest = oldestEntry === undefined ? undefined : dataAgeMinutes(oldestEntry, now);
 
-  const kpData = kp?.data ?? {};
-  const windData = solarWind?.data ?? {};
+  const currentData = (entry?: SnapshotSource) => {
+    const current = auroraSourceAt(entry, now);
+    return current && ["ok", "info"].includes(current.status) ? current.data ?? {} : {};
+  };
+  const kpData = currentData(kp);
+  const windData = currentData(solarWind);
   const ovationData = ovation?.data ?? {};
-  const hemiData = hemiPower?.data ?? {};
+  const hemiData = currentData(hemiPower);
+  const ovalState = ovationState(ovation, now);
 
   return (
     <section>
@@ -301,9 +309,11 @@ export function AuroraSection({
             <Stat label="Bt" value={formatNumber(windData.btNt, "nT")} />
             <Stat label="Bz" value={formatSigned(windData.bzNt, "nT")} />
             <Stat label="北半球功率" value={formatNumber(hemiData.northGw, "GW")} />
-            <Stat label="冰島區域 OVATION 峰值" value={formatPercent(ovationData.icelandPeakProbabilityPercent)} />
+            <Stat label={`冰島包圍框 OVATION 峰值${ovalState.current ? "" : "（歷史）"}`} value={formatPercent(icelandGridPeak(ovalState.grid))} />
           </div>
           <p className="muted-line">資料更新：約 {formatRelativeAge(oldest)}</p>
+          <p className="muted-line">包圍框為 63–67°N、25–13°W（含近海），不是全島平均機率。</p>
+          <AuroraDataStatus source={ovation} now={now} generatedAt={snapshot.generatedAt} />
           <details className="technical">
             <summary>查看極光資料來源</summary>
             <ul className="source-list">

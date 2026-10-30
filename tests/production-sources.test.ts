@@ -343,22 +343,30 @@ test("Solar wind: a broken magnetic field product is an error with no data", asy
 
 // ── OVATION ───────────────────────────────────────────────────────────────────
 
+function completeOvationGrid(cells: [number, number, number][]) {
+  const grid: [number, number, number][] = [];
+  for (let latitude = -90; latitude <= 90; latitude += 1) {
+    for (let longitude = 0; longitude < 360; longitude += 1) grid.push([longitude, latitude, 0]);
+  }
+  for (const [longitude, latitude, probability] of cells) grid[(latitude + 90) * 360 + longitude] = [longitude, latitude, probability];
+  return grid;
+}
+
 const ovation = {
   "Observation Time": "2026-09-04T08:50:00Z",
   "Forecast Time": "2026-09-04T09:20:00Z",
-  coordinates: [
-    [0, 60, 1],
-    [0, 64, 37],
+  coordinates: completeOvationGrid([
+    [341, 64, 37],
     [1, 65, 12],
     [2, 70, 88],
-  ],
+  ]),
 };
 
 test("OVATION: the grid is summarised, including the Iceland peak probability", async () => {
   const health = await checkOvation({ now: NOW, request: stub({ [SWPC_OVATION_URL]: { body: ovation } }) });
   assert.equal(health.status, "ok");
-  assert.equal(health.data?.gridCells, 4);
-  assert.equal(health.data?.icelandLatitudeCells, 2);
+  assert.equal(health.data?.gridCells, 65160);
+  assert.equal(health.data?.icelandLatitudeCells, 65);
   assert.equal(health.data?.icelandPeakProbabilityPercent, 37);
   assert.equal(health.dataTime, "2026-09-04T08:50:00.000Z");
 });

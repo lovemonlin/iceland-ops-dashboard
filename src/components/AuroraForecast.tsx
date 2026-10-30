@@ -11,6 +11,7 @@ import {
   skyLightLabel,
 } from "@/lib/auroraForecastPresentation";
 import { buildAuroraForecast48 } from "@/lib/auroraVisibility";
+import { auroraSourceAt, isCurrentAuroraSource } from "@/lib/auroraData";
 import { formatCloudForecastTimes, formatIcelandDateTime } from "@/lib/cloudForecast";
 import { deviceTimeZone, getIpTimeZone, type LocalTimeZone } from "@/lib/ipTimezone";
 import type { DashboardSnapshot } from "@/snapshot/types";
@@ -27,6 +28,7 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [localTimeZone, setLocalTimeZone] = useState<LocalTimeZone>(deviceTimeZone);
   const site = sites.find((candidate) => candidate.id === siteId) ?? defaultSite;
+  const forecastAvailable = isCurrentAuroraSource(auroraSourceAt(snapshot.sources.noaaKpForecast, baseTime));
 
   useEffect(() => {
     let disposed = false;
@@ -47,6 +49,9 @@ export function AuroraForecast({ snapshot, baseTime }: { snapshot: DashboardSnap
     }
   }, [baseTime, site, snapshot]);
 
+  if (!forecastAvailable) {
+    return <p className="aurora-forecast-unavailable warn">NOAA Kp 預報目前無效、過舊或未涵蓋完整 48 小時，暫時無法提供 48 小時極光預測。請等待下一份有效 Snapshot。</p>;
+  }
   if (!site || forecast.length !== 48) {
     return <p className="aurora-forecast-unavailable">目前無法建立 48 小時極光預測，請等待下一份完整 snapshot。</p>;
   }

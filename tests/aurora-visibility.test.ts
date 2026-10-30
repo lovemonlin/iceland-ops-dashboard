@@ -214,6 +214,7 @@ function source(id: string, data: Record<string, unknown>): SnapshotSource {
     status: "ok",
     lastAttemptAt: "2026-12-21T23:00:00.000Z",
     lastSuccessAt: "2026-12-21T23:00:00.000Z",
+    dataTime: "2026-12-21T23:00:00.000Z",
     data,
   };
 }
@@ -232,13 +233,19 @@ function forecastSnapshot(): DashboardSnapshot {
     sources: {
       noaaKp: source("noaaKp", { kp: 1.5 }),
       noaaKpForecast: source("noaaKpForecast", {
-        points: [
-          { time: "2026-12-21T21:00:00.000Z", kp: 2, status: "estimated", noaaScale: null },
-          { time: "2026-12-22T00:00:00.000Z", kp: 4, status: "predicted", noaaScale: null },
-        ],
+        points: Array.from({ length: 17 }, (_, index) => ({
+          time: new Date(Date.parse("2026-12-21T21:00:00Z") + index * 3 * 3_600_000).toISOString(),
+          kp: index === 0 ? 2 : index === 1 ? 4 : 1.5,
+          status: index === 0 ? "estimated" : "predicted",
+          noaaScale: null,
+        })),
       }),
       solarWind: source("solarWind", { bzNt: -15, btNt: 12, speedKms: 500 }),
-      ovation: source("ovation", { grid: encodeOvationGrid([[-22, 64, 20]]) }),
+      ovation: source("ovation", {
+        observationTime: "2026-12-21T22:50:00Z",
+        forecastTime: "2026-12-22T00:30:00Z",
+        grid: encodeOvationGrid([[-22, 64, 20]]),
+      }),
       metno: source("metno", {
         forecastTimes: times,
         sites: [{
@@ -280,4 +287,13 @@ test("missing optional raw inputs still produces 48 honest fallback assessments"
   assert.equal(result.length, 48);
   assert.equal(result.every((point) => point.kp === 1.5), true);
   assert.equal(result.every((point) => point.effectiveObstruction === 50), true);
+});
+
+test("expired OVATION and solar-wind values never affect the current assessment", () => {
+  const snapshot = forecastSnapshot();
+  snapshot.sources.ovation!.data!.forecastTime = "2026-12-21T22:59:00Z";
+  snapshot.sources.solarWind!.dataTime = "2026-12-21T20:00:00Z";
+  const result = buildAuroraForecast48(snapshot, reykjavik);
+  assert.equal(result[0].auroraStrength, 2 / 9 * 100, "expired current inputs fall back to current Kp only");
+  assert.equal(result[1].auroraStrength, 4 / 9 * 100, "future hours never inherit current inputs");
 });

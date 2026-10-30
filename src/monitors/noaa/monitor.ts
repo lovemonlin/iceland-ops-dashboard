@@ -11,7 +11,13 @@ import {
 import { evaluateHealth, type HealthInput } from "@/health/evaluate";
 import type { MonitorErrorType, MonitorHealth } from "@/health/model";
 import { fetchWithDiagnosticsCore, type DiagnosticFetcher, type DiagnosticResult } from "@/lib/fetchWithDiagnosticsCore";
-import { encodeOvationGrid } from "@/lib/ovationGrid";
+import {
+  encodeOvationGrid,
+  ICELAND_GRID_LAT_FROM,
+  ICELAND_GRID_LAT_TO,
+  ICELAND_GRID_LON_FROM,
+  ICELAND_GRID_LON_TO,
+} from "@/lib/ovationGrid";
 import type { KpForecastPoint, KpForecastStatus, NoaaKpForecastData } from "@/snapshot/types";
 
 const defaultRequest: DiagnosticFetcher = (url, options) => fetchWithDiagnosticsCore(url, options);
@@ -303,7 +309,9 @@ export async function checkNoaaKpForecast(options: NoaaCheckOptions = {}): Promi
 
   const pointTimes = points.map((point) => Date.parse(point.time));
   const forecastStart = Math.min(...pointTimes);
-  const forecastEnd = Math.max(...pointTimes);
+  // NOAA's timestamp starts a three-hour interval; treating it as the interval's end rejects a
+  // complete 48-hour forecast in its final three hours.
+  const forecastEnd = Math.max(...pointTimes) + 3 * 3_600_000;
   const coverageHours = (forecastEnd - now.getTime()) / 3_600_000;
   if (coverageHours < MIN_KP_FORECAST_HOURS) {
     return evaluateHealth({
@@ -457,7 +465,13 @@ export async function checkSolarWind(options: NoaaCheckOptions = {}): Promise<Mo
 
 // ── OVATION aurora oval ───────────────────────────────────────────────────────
 
-const ICELAND_LATITUDES = [63, 64, 65, 66, 67];
+const OVATION_LONGITUDES = 360;
+const OVATION_LATITUDES = 181;
+const OVATION_EXPECTED_CELLS = OVATION_LONGITUDES * OVATION_LATITUDES;
+
+function signedOvationLongitude(longitude: number) {
+  return longitude >= 180 ? longitude - 360 : longitude;
+}
 
 /**
  * `ovation_aurora_latest.json` is a 1°x1° global grid of `[longitude, latitude, probability]`.
@@ -494,6 +508,16 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
       ),
     );
   }
+  if (observationTime.getTime() > now.getTime()) {
+    return evaluateHealth(
+      schemaFailure(base, checkedAt, response, "INVALID_TIMESTAMP", "OVATION Observation Time is in the future.", SWPC_OVATION_URL),
+    );
+  }
+  if (forecastTime.getTime() < observationTime.getTime()) {
+    return evaluateHealth(
+      schemaFailure(base, checkedAt, response, "INVALID_TIMESTAMP", "OVATION Forecast Time precedes Observation Time.", SWPC_OVATION_URL),
+    );
+  }
 
   const coordinates = payload.coordinates;
   if (!Array.isArray(coordinates)) {
@@ -509,31 +533,42 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
 
   let icelandPeak = 0;
   let icelandCells = 0;
-  let malformed = 0;
+  const cells = new Set<string>();
   for (const entry of coordinates) {
-    if (!Array.isArray(entry) || entry.length < 3) {
-      malformed += 1;
-      continue;
+    if (!Array.isArray(entry) || entry.length !== 3) {
+      return evaluateHealth(schemaFailure(base, checkedAt, response, "SCHEMA_ERROR", "OVATION grid cells must be [longitude, latitude, probability] triples.", SWPC_OVATION_URL));
     }
-    const [, latitude, probability] = entry as number[];
-    if (typeof latitude !== "number" || typeof probability !== "number") {
-      malformed += 1;
-      continue;
+    const [longitude, latitude, probability] = entry as unknown[];
+    if (
+      typeof longitude !== "number" || !Number.isInteger(longitude) || longitude < 0 || longitude >= OVATION_LONGITUDES ||
+      typeof latitude !== "number" || !Number.isInteger(latitude) || latitude < -90 || latitude > 90 ||
+      typeof probability !== "number" || !Number.isInteger(probability) || probability < 0 || probability > 100
+    ) {
+      return evaluateHealth(schemaFailure(base, checkedAt, response, "SCHEMA_ERROR", "OVATION grid has an invalid coordinate or probability.", SWPC_OVATION_URL));
     }
-    if (ICELAND_LATITUDES.includes(latitude)) {
+    const key = `${longitude}:${latitude}`;
+    if (cells.has(key)) {
+      return evaluateHealth(schemaFailure(base, checkedAt, response, "SCHEMA_ERROR", "OVATION grid contains duplicate cells.", SWPC_OVATION_URL));
+    }
+    cells.add(key);
+    const signedLongitude = signedOvationLongitude(longitude);
+    if (
+      latitude >= ICELAND_GRID_LAT_FROM && latitude <= ICELAND_GRID_LAT_TO &&
+      signedLongitude >= ICELAND_GRID_LON_FROM && signedLongitude <= ICELAND_GRID_LON_TO
+    ) {
       icelandCells += 1;
       if (probability > icelandPeak) icelandPeak = probability;
     }
   }
 
-  if (malformed > 0) {
+  if (cells.size !== OVATION_EXPECTED_CELLS) {
     return evaluateHealth(
       schemaFailure(
         base,
         checkedAt,
         response,
         "SCHEMA_ERROR",
-        `${malformed} OVATION grid cells are not [longitude, latitude, probability] triples.`,
+        `OVATION grid has ${cells.size} cells; expected ${OVATION_EXPECTED_CELLS}.`,
         SWPC_OVATION_URL,
       ),
     );
@@ -541,8 +576,9 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
 
   const data = {
     gridCells: coordinates.length,
-    observationTime: utcMinute(observationTime),
-    forecastTime: utcMinute(forecastTime),
+    observationTime: observationTime.toISOString(),
+    forecastTime: forecastTime.toISOString(),
+    fetchedAt: new Date(response.diagnostics.finishedAt).toISOString(),
     icelandLatitudeCells: icelandCells,
     icelandPeakProbabilityPercent: icelandPeak,
     /**
@@ -568,6 +604,10 @@ export async function checkOvation(options: NoaaCheckOptions = {}): Promise<Moni
     lastSuccess: checkedAt,
     ageSeconds: (now.getTime() - observationTime.getTime()) / 1000,
     staleAfter: SOURCE_STALE_AFTER_SECONDS.ovation,
+    stale: forecastTime.getTime() < now.getTime(),
+    errorMessage: forecastTime.getTime() < now.getTime()
+      ? "OVATION forecast validity time has passed; retained grid is historical data."
+      : undefined,
     data,
     details: { ...data, endpoint: SWPC_OVATION_URL },
   });

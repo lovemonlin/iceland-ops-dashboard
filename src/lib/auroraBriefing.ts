@@ -8,6 +8,8 @@ import {
   kpAt,
   levelOf,
 } from "@/lib/auroraVisibility";
+import { auroraSourceAt, isCurrentAuroraSource, ovationState } from "@/lib/auroraData";
+import { icelandGridPeak } from "@/lib/ovationGrid";
 import { assessAuroraIndexV2, type AuroraIndexV2Assessment } from "@/lib/auroraIndexV2";
 import {
   BRIEFING_MAP_REGION_LABEL,
@@ -219,8 +221,9 @@ function weatherBySite(snapshot: DashboardSnapshot) {
   );
 }
 
-function kpPoints(snapshot: DashboardSnapshot): KpForecastPoint[] {
-  const data = snapshot.sources.noaaKpForecast?.data;
+function kpPoints(snapshot: DashboardSnapshot, now: Date): KpForecastPoint[] {
+  const source = auroraSourceAt(snapshot.sources.noaaKpForecast, now);
+  const data = isCurrentAuroraSource(source) ? source?.data : undefined;
   return isNoaaKpForecastData(data) ? data.points : [];
 }
 
@@ -296,8 +299,10 @@ export function buildAuroraBriefing(
 
   const window = getIcelandTonightWindow(now);
   const weather = weatherBySite(snapshot);
-  const points = kpPoints(snapshot);
-  const fallbackKp = finite(snapshot.sources.noaaKp?.data?.kp) ?? 0;
+  const points = kpPoints(snapshot, now);
+  const currentKp = auroraSourceAt(snapshot.sources.noaaKp, now);
+  const currentSolarWind = auroraSourceAt(snapshot.sources.solarWind, now);
+  const fallbackKp = finite(isCurrentAuroraSource(currentKp) ? currentKp?.data?.kp : undefined) ?? 0;
   const mapBuckets: Record<BriefingMapRegionId, number[][]> = Object.fromEntries(
     BRIEFING_MAP_REGIONS.map((region) => [region, window.hours.map(() => [] as number[])]),
   ) as Record<BriefingMapRegionId, number[][]>;
@@ -336,6 +341,7 @@ export function buildAuroraBriefing(
   const bestHour = hours.find((hour) => hour.best === best)?.hour ?? "—";
   const lowestKp = Math.min(...hours.map((hour) => hour.kp));
   const highestKp = Math.max(...hours.map((hour) => hour.kp));
+  const currentOvation = ovationState(snapshot.sources.ovation, now);
 
   return {
     window,
@@ -348,11 +354,11 @@ export function buildAuroraBriefing(
     bestCloudRegions,
     judgement: judgementText(best, bestHour, lowestKp, highestKp, regions),
     current: {
-      kp: finite(snapshot.sources.noaaKp?.data?.kp),
-      bt: finite(snapshot.sources.solarWind?.data?.btNt),
-      bz: finite(snapshot.sources.solarWind?.data?.bzNt),
-      speed: finite(snapshot.sources.solarWind?.data?.speedKms),
-      ovation: finite(snapshot.sources.ovation?.data?.icelandPeakProbabilityPercent),
+      kp: finite(isCurrentAuroraSource(currentKp) ? currentKp?.data?.kp : undefined),
+      bt: finite(isCurrentAuroraSource(currentSolarWind) ? currentSolarWind?.data?.btNt : undefined),
+      bz: finite(isCurrentAuroraSource(currentSolarWind) ? currentSolarWind?.data?.bzNt : undefined),
+      speed: finite(isCurrentAuroraSource(currentSolarWind) ? currentSolarWind?.data?.speedKms : undefined),
+      ovation: currentOvation.current ? icelandGridPeak(currentOvation.grid) : undefined,
     },
   };
 }

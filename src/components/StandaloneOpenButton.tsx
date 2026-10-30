@@ -3,7 +3,7 @@
 import type { MouseEvent } from "react";
 import { getPublicPagePath } from "@/lib/publicPath";
 
-type ViewerKind = "weather" | "cloud" | "roads";
+type ViewerKind = "weather" | "cloud" | "roads" | "aurora";
 
 export function StandaloneOpenButton({
   kind,
@@ -25,7 +25,7 @@ export function StandaloneOpenButton({
 
   return (
     <a className="standalone-open" href={href} target="_blank" rel="noopener noreferrer" onClick={open}>
-      ⛶ 獨立檢視
+      {kind === "aurora" ? "🌌 極光預報 · 獨立檢視" : "⛶ 獨立檢視"}
     </a>
   );
 }

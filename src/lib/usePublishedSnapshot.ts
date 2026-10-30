@@ -20,7 +20,9 @@ export function usePublishedSnapshot(
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    // Expiry keeps advancing even when reloading fails or automatic reads are paused.
+    const clock = setInterval(() => setNow(new Date()), 60_000);
+    return () => { mounted.current = false; clearInterval(clock); };
   }, []);
 
   const reloadSnapshot = useCallback(async () => {

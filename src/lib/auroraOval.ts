@@ -19,6 +19,7 @@ import type { OvationGrid } from "@/lib/ovationGrid";
 import { WEATHER_SITES } from "@/config/sources";
 import { buildAuroraForecast48 } from "@/lib/auroraVisibility";
 import type { DashboardSnapshot } from "@/snapshot/types";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
 // ── Contour bands (AuroraProbabilityContours.kt:38-43) ────────────────────────
 
@@ -239,8 +240,28 @@ export const OVAL_ICELAND_HALO_COLOR = "#E2E8F0";
 export const OVAL_ICELAND_MARKER_COLOR = "#38BDF8";
 export const OVAL_ICELAND_MARKER_STROKE = "#082F49";
 
-/** The contour layers are inserted above this one, keeping them under the Iceland marker. */
-export const AURORA_LAYER_ANCHOR = "iceland-land-detail";
+/** MapLibre inserts BEFORE this layer: after opaque land/mask, before coastline and markers. */
+export const AURORA_LAYER_ANCHOR = "iceland-coastline-detail";
+
+/** One fixed anchor keeps high bands above low bands, and every band above opaque Iceland. */
+export function applyAuroraContourLayers(
+  map: Pick<MapLibreMap, "getLayer" | "removeLayer" | "getSource" | "removeSource" | "addSource" | "addLayer" | "moveLayer">,
+  bands: ContourBand[],
+) {
+  for (const { id } of CONTOUR_BANDS) {
+    if (map.getLayer(`aurora-${id}-layer`)) map.removeLayer(`aurora-${id}-layer`);
+    if (map.getSource(`aurora-${id}-source`)) map.removeSource(`aurora-${id}-source`);
+  }
+  for (const band of bands) {
+    const sourceId = `aurora-${band.id}-source`;
+    map.addSource(sourceId, { type: "geojson", data: band.geoJson as never });
+    map.addLayer({
+      id: `aurora-${band.id}-layer`, type: "fill", source: sourceId,
+      paint: { "fill-color": band.color, "fill-opacity": band.opacity, "fill-antialias": false },
+    }, map.getLayer(AURORA_LAYER_ANCHOR) ? AURORA_LAYER_ANCHOR : undefined);
+  }
+  if (map.getLayer("site-circles")) map.moveLayer("site-circles");
+}
 
 export const GRATICULE_LATITUDES = [50, 60, 70, 80];
 /**
@@ -285,14 +306,14 @@ export function icelandFeature() {
  * Site markers coloured by the current-hour AuroraVisibility assessment — the same hour-0
  * result the 48-hour forecast already publishes. Neutral grey is only the app's loading fallback.
  */
-export function ovalSiteFeatureCollection(snapshot: DashboardSnapshot) {
+export function ovalSiteFeatureCollection(snapshot: DashboardSnapshot, now = new Date(snapshot.generatedAt)) {
   return {
     type: "FeatureCollection" as const,
     features: WEATHER_SITES.map((site) => {
       const assessment = buildAuroraForecast48(
         snapshot,
         { id: site.id, lat: site.lat, lon: site.lon, lightPollution: site.lightPollution },
-        snapshot.generatedAt,
+        now,
         1,
       )[0];
       return {
@@ -431,10 +452,10 @@ export const SITE_TAP_TOLERANCE = 24;
 // ── The info card (AuroraOvalScreen.kt:200-300, values-zh-rTW/strings.xml) ─────
 
 export const OVAL_TITLE = "目前北半球極光帶";
-export const OVAL_LOADING = "正在讀取最新極光位置…";
+export const OVAL_LOADING = "目前沒有有效的極光格網資料。";
 export const OVAL_LOAD_FAILED = "無法取得 NOAA 最新極光位置，請檢查網路後重試。";
 export const OVAL_RESOLUTION_NOTE =
-  "顏色直接對應 NOAA 機率 · 原始模型格點約 1° · 僅平滑顯示 · 每 10 分鐘更新";
+  "NOAA 原始格點約 1° · 色帶為格點間插值 · 點選查詢讀取最近格點，不改變原始值";
 export const OVAL_ATTRIBUTION = "極光：NOAA SWPC OVATION · 陸地：Natural Earth（公有領域）";
 
 export const OVAL_LEGEND: { color: string; label: string }[] = [
@@ -473,5 +494,5 @@ export function formatOvalTime(value: string | undefined): string {
     hour12: false,
   }).formatToParts(new Date(parsed));
   const value_ = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
-  return `${value_("month")}/${value_("day")} ${value_("hour")}:${value_("minute")}`;
+  return `${new Date(parsed).getUTCFullYear()}/${value_("month")}/${value_("day")} ${value_("hour")}:${value_("minute")} UTC`;
 }

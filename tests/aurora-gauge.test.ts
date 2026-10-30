@@ -276,6 +276,6 @@ test("the gauges and the aurora stats quote the same snapshot fields", () => {
   assert.match(sections, /formatNumber\(windData\.btNt, "nT"\)/);
   assert.match(sections, /formatSigned\(windData\.bzNt, "nT"\)/);
   assert.match(sections, /formatNumber\(hemiData\.northGw, "GW"\)/);
-  assert.match(sections, /冰島區域 OVATION 峰值/);
+  assert.match(sections, /冰島包圍框 OVATION 峰值/);
   assert.equal(/冰島上空機率|看到極光機率|頭頂看到機率/.test(sections), false);
 });

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import type { DashboardSnapshot } from "@/snapshot/types";
+import { StandaloneOpenButton } from "@/components/StandaloneOpenButton";
 
 /**
  * The aurora card's three views: instruments, aurora position map, and the 48-hour forecast.
@@ -42,6 +43,7 @@ export function AuroraModes({
 
   return (
     <>
+      <StandaloneOpenButton kind="aurora" query={new URLSearchParams()} />
       <div className="road-modes aurora-view-modes" role="group" aria-label="極光顯示模式">
         <button
           type="button"
@@ -79,7 +81,7 @@ export function AuroraModes({
 
       {mapRequested && (
         <div hidden={mode !== "MAP"}>
-          <AuroraOvalMap ovation={ovationData} snapshot={snapshot} />
+          <AuroraOvalMap ovation={ovationData} snapshot={snapshot} now={now} />
         </div>
       )}
 

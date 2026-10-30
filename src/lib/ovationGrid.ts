@@ -32,6 +32,11 @@ const COLUMNS = OVATION_GRID_LON_TO - OVATION_GRID_LON_FROM + 1;
 /** Iceland, as `AuroraOvalUiState.icelandProbability` asks for it. */
 export const ICELAND_LAT = 64.96;
 export const ICELAND_LON = -18.97;
+/** The 1° cells in the dashboard's Iceland-and-nearby-sea summary box. */
+export const ICELAND_GRID_LAT_FROM = 63;
+export const ICELAND_GRID_LAT_TO = 67;
+export const ICELAND_GRID_LON_FROM = -25;
+export const ICELAND_GRID_LON_TO = -13;
 
 /**
  * The stored grid.
@@ -72,13 +77,23 @@ function signedLongitude(normalised: number): number {
  */
 export function encodeOvationGrid(coordinates: unknown[]): OvationGridPayload {
   const values = new Array<number>(ROWS * COLUMNS).fill(0);
+  const seen = new Set<string>();
   for (const entry of coordinates) {
-    if (!Array.isArray(entry) || entry.length < 3) continue;
+    if (!Array.isArray(entry) || entry.length !== 3) throw new RangeError("OVATION cells must be [longitude, latitude, probability] triples.");
     const [longitude, latitude, probability] = entry as number[];
-    if (typeof longitude !== "number" || typeof latitude !== "number" || typeof probability !== "number") continue;
+    if (
+      !Number.isInteger(longitude) || longitude < -180 || longitude > 359 ||
+      !Number.isInteger(latitude) || latitude < -90 || latitude > 90 ||
+      !Number.isInteger(probability) || probability < 0 || probability > 100
+    ) {
+      throw new RangeError("OVATION cells require integer coordinates and a 0–100 probability.");
+    }
     if (latitude < OVATION_GRID_LAT_FROM || latitude > OVATION_GRID_LAT_TO) continue;
-    if (!Number.isInteger(latitude)) continue;
-    const column = signedLongitude(normaliseLongitude(longitude)) - OVATION_GRID_LON_FROM;
+    const signed = signedLongitude(normaliseLongitude(longitude));
+    const key = `${latitude}:${signed}`;
+    if (seen.has(key)) throw new RangeError("OVATION grid contains duplicate cells.");
+    seen.add(key);
+    const column = signed - OVATION_GRID_LON_FROM;
     if (column < 0 || column >= COLUMNS) continue;
     values[(latitude - OVATION_GRID_LAT_FROM) * COLUMNS + column] = probability;
   }
@@ -104,11 +119,15 @@ function isPayload(value: unknown): value is OvationGridPayload {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<OvationGridPayload>;
   return (
-    typeof candidate.latFrom === "number" &&
-    typeof candidate.latTo === "number" &&
-    typeof candidate.lonFrom === "number" &&
-    typeof candidate.lonTo === "number" &&
-    Array.isArray(candidate.values)
+    candidate.schemaVersion === OVATION_GRID_SCHEMA_VERSION &&
+    candidate.latFrom === OVATION_GRID_LAT_FROM &&
+    candidate.latTo === OVATION_GRID_LAT_TO &&
+    candidate.lonFrom === OVATION_GRID_LON_FROM &&
+    candidate.lonTo === OVATION_GRID_LON_TO &&
+    candidate.latStep === 1 &&
+    candidate.lonStep === 1 &&
+    Array.isArray(candidate.values) &&
+    candidate.values.every((probability) => Number.isInteger(probability) && probability >= 0 && probability <= 100)
   );
 }
 
@@ -143,4 +162,16 @@ export function decodeOvationGrid(stored: unknown): OvationGrid | undefined {
 /** `AuroraOvalUiState.icelandProbability` — the model's own reading over Iceland. */
 export function icelandProbability(grid: OvationGrid | undefined): number | undefined {
   return grid?.probabilityAt(ICELAND_LAT, ICELAND_LON);
+}
+
+/** Highest published cell in the Iceland-and-nearby-sea summary box, never an island-wide average. */
+export function icelandGridPeak(grid: OvationGrid | undefined): number | undefined {
+  if (!grid) return undefined;
+  let peak = 0;
+  for (let latitude = ICELAND_GRID_LAT_FROM; latitude <= ICELAND_GRID_LAT_TO; latitude += 1) {
+    for (let longitude = ICELAND_GRID_LON_FROM; longitude <= ICELAND_GRID_LON_TO; longitude += 1) {
+      peak = Math.max(peak, grid.probabilityAt(latitude, longitude));
+    }
+  }
+  return peak;
 }

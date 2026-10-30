@@ -3,7 +3,7 @@
  * KpForecast domain logic. It reads only the already-collected snapshot.
  */
 import { decodeSiteForecast } from "@/lib/forecastCodec";
-import { decodeOvationGrid } from "@/lib/ovationGrid";
+import { auroraSourceAt, isCurrentAuroraSource, ovationState } from "@/lib/auroraData";
 import { effectiveObstruction, hourAt, type WeatherHour } from "@/lib/weatherMap";
 import {
   isNoaaKpForecastData,
@@ -295,17 +295,20 @@ export function buildAuroraForecast48(
   const base = baseTime instanceof Date ? new Date(baseTime) : new Date(baseTime);
   if (Number.isNaN(base.getTime())) throw new RangeError("baseTime must be a valid date");
 
-  const currentKp = finite(snapshot.sources.noaaKp?.data?.kp) ?? 0;
-  const forecastData = snapshot.sources.noaaKpForecast?.data;
+  const currentKpSource = auroraSourceAt(snapshot.sources.noaaKp, base);
+  const currentKp = finite(isCurrentAuroraSource(currentKpSource) ? currentKpSource?.data?.kp : undefined) ?? 0;
+  const forecastSource = auroraSourceAt(snapshot.sources.noaaKpForecast, base);
+  const forecastData = isCurrentAuroraSource(forecastSource) ? forecastSource?.data : undefined;
   const points = isNoaaKpForecastData(forecastData) ? forecastData.points : [];
   const metno = snapshot.sources.metno?.data ?? {};
   const storedSite = (Array.isArray(metno.sites) ? metno.sites : []).find(
     (candidate) => candidate && typeof candidate === "object" && (candidate as { id?: unknown }).id === site.id,
   ) as { forecast?: unknown } | undefined;
   const weather = decodeSiteForecast(metno.forecastTimes, storedSite?.forecast);
-  const ovation = decodeOvationGrid(snapshot.sources.ovation?.data?.grid);
-  const probability = ovation?.probabilityAt(site.lat, site.lon);
-  const bzGsm = finite(snapshot.sources.solarWind?.data?.bzNt);
+  const ovation = ovationState(snapshot.sources.ovation, base);
+  const probability = ovation.current ? ovation.grid?.probabilityAt(site.lat, site.lon) : undefined;
+  const solarWind = auroraSourceAt(snapshot.sources.solarWind, base);
+  const bzGsm = finite(isCurrentAuroraSource(solarWind) ? solarWind?.data?.bzNt : undefined);
 
   return Array.from({ length: hourCount }, (_, offset) => {
     const time = new Date(base.getTime() + offset * HOUR_MS);

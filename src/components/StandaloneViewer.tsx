@@ -4,12 +4,15 @@ import { useCallback, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { StandaloneViewerShell, type StandaloneKind } from "@/components/StandaloneViewerShell";
 import { WeatherMap } from "@/components/WeatherMap";
+import { AuroraViewer } from "@/components/AuroraViewer";
+import { auroraSourceAt } from "@/lib/auroraData";
+import { getSystemStatus } from "@/health/evaluate";
 import { buildWeatherViewerSites } from "@/lib/viewerData";
 import { parseCloudFrameQuery, parseRoadModeQuery, parseWeatherQuery } from "@/lib/standaloneQuery";
 import { usePublishedSnapshot } from "@/lib/usePublishedSnapshot";
 import type { CloudFrame } from "@/lib/cloudForecast";
 import type { RoadBundle } from "@/lib/roadFastLane";
-import { isNoaaKpForecastData, snapshotEntry, type DashboardSnapshot } from "@/snapshot/types";
+import { isNoaaKpForecastData, snapshotEntry, type DashboardSnapshot, type SnapshotSource } from "@/snapshot/types";
 
 const CloudForecastMap = dynamic(
   () => import("@/components/CloudForecastMap").then((module) => module.CloudForecastMap),
@@ -31,7 +34,7 @@ export function StandaloneViewer({
   kind: StandaloneKind;
   initialSnapshot: DashboardSnapshot;
 }) {
-  const { snapshot, reloadError } = usePublishedSnapshot(initialSnapshot);
+  const { snapshot, now, reloadError } = usePublishedSnapshot(initialSnapshot);
   const search = useSyncExternalStore(subscribeLocation, browserSearch, serverSearch);
   const query = search === null ? null : new URLSearchParams(search);
   const onRoadBundle = useCallback((_bundle: RoadBundle) => {}, []);
@@ -46,7 +49,13 @@ export function StandaloneViewer({
   const weatherView = query ? parseWeatherQuery(query, sites.map((site) => site.id)) : undefined;
   const kpForecast = snapshotEntry(snapshot, "noaaKpForecast");
   const kp = snapshotEntry(snapshot, "noaaKp");
-  const source = kind === "weather" ? weatherSource : kind === "cloud" ? cloudSource : roadSource;
+  const auroraEntries = ["ovation", "noaaKp", "noaaKpForecast", "solarWind", "noaaHemiPower"]
+    .map((id) => auroraSourceAt(snapshot.sources[id], now)).filter((entry): entry is SnapshotSource => entry !== undefined);
+  const auroraStatus = getSystemStatus(auroraEntries);
+  const auroraFailure = auroraEntries.find((entry) => entry.status === auroraStatus);
+  const auroraSource = auroraEntries.length ? { ...auroraEntries[0], status: auroraStatus, errorType: auroraFailure?.errorType } : undefined;
+  const source = kind === "aurora" ? auroraSource
+    : kind === "weather" ? weatherSource : kind === "cloud" ? cloudSource : roadSource;
 
   return (
     <StandaloneViewerShell
@@ -57,6 +66,8 @@ export function StandaloneViewer({
     >
       {!query ? (
         <p className="muted-line">正在開啟獨立檢視…</p>
+      ) : kind === "aurora" ? (
+        <AuroraViewer snapshot={snapshot} now={now} />
       ) : kind === "weather" ? (
         sites.length ? <WeatherMap
           sites={sites}
