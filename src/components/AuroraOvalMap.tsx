@@ -5,16 +5,13 @@ import type { Map as MapLibreMap, MapGeoJSONFeature } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { WEATHER_SITES } from "@/config/sources";
 import {
-  applyAuroraContourLayers,
   buildAuroraOvalStyle,
-  buildContourBands,
   formatIcelandProbability,
   formatOvalTime,
   formatOvalTimes,
   OVAL_ATTRIBUTION,
   OVAL_CAMERA_BOUNDS,
   OVAL_CAMERA_FALLBACK,
-  OVAL_LEGEND,
   OVAL_LOADING,
   OVAL_RESOLUTION_NOTE,
   OVAL_TITLE,
@@ -24,6 +21,7 @@ import {
 } from "@/lib/auroraOval";
 import { decodeOvationGrid, icelandProbability, icelandGridPeak } from "@/lib/ovationGrid";
 import { ovationState } from "@/lib/auroraData";
+import { applyAuroraRaster, HEAT_STOPS } from "@/lib/auroraRaster";
 import { getPublicAssetPath } from "@/lib/publicPath";
 import type { DashboardSnapshot } from "@/snapshot/types";
 
@@ -78,14 +76,13 @@ export function AuroraOvalMap({
   const [failure, setFailure] = useState<string | null>(null);
   const [selected, setSelected] = useState<SiteSelection | null>(null);
   const [region, setRegion] = useState("ALL");
+  const [landOnly, setLandOnly] = useState(true);
   // The map is created asynchronously, so the contour layers cannot simply be added in an effect
   // that runs at mount -- there is no map yet. This is what tells them the style is up.
   const [ready, setReady] = useState(false);
 
   const grid = useMemo(() => decodeOvationGrid(ovation.grid), [ovation.grid]);
   const state = ovationState(snapshot.sources.ovation, now);
-  // The contour walk is the expensive part, so it runs once per stored grid, not once per render.
-  const bands = useMemo(() => (grid ? buildContourBands(grid) : []), [grid]);
   const probability = useMemo(() => icelandProbability(grid), [grid]);
   const peak = useMemo(() => icelandGridPeak(grid), [grid]);
   const sites = useMemo(() => ovalSiteFeatureCollection(snapshot, now), [snapshot, now]);
@@ -206,19 +203,13 @@ export function AuroraOvalMap({
     source?.setData?.(sites);
   }, [sites, ready]);
 
-  /**
-   * The contour bands, inserted above the detailed Iceland fill so they sit under the markers,
-   * exactly as `AuroraOvalScreen` anchors them.
-   *
-   * `fill-antialias` is off because a band is made of many separately clipped faces of one
-   * colour; antialiasing each edge leaves hairline seams between them.
-   */
+  // Replace only the probability texture; coastline, markers and raw queries stay unchanged.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    applyAuroraContourLayers(map, bands);
-  }, [bands, ready]);
+    applyAuroraRaster(map, grid, landOnly);
+  }, [grid, landOnly, ready]);
 
   /**
    * A map built while its container is `display: none` measures zero, and fitting the northern
@@ -248,6 +239,12 @@ export function AuroraOvalMap({
   return (
     <div className="aurora-oval">
       <div className="aurora-map-controls">
+        <label>機率顯示
+          <select aria-label="極光機率顯示模式" value={landOnly ? "land" : "oval"} onChange={(event) => setLandOnly(event.target.value === "land")}>
+            <option value="land">冰島陸地機率</option>
+            <option value="oval">完整極光帶</option>
+          </select>
+        </label>
         <label>區域
           <select aria-label="極光地圖區域" value={region} onChange={(event) => selectRegion(event.target.value)}>
             <option value="ALL">冰島全境</option>
@@ -302,18 +299,19 @@ export function AuroraOvalMap({
         )}
 
         <div className="aurora-oval-legend">
-          <div className="aurora-oval-legend-bar" aria-hidden="true" />
+          <div className="aurora-oval-legend-bar" style={{ background: "linear-gradient(to right, #3D5B78 0%, #4ADE80 10%, #FB923C 30%, #F87171 50%, #F87171 100%)" }} aria-hidden="true" />
           <div className="aurora-oval-legend-items">
-            {OVAL_LEGEND.map((entry) => (
-              <span key={entry.color}>
-                <i style={{ background: entry.color }} aria-hidden="true" />
-                {entry.label}
+            {HEAT_STOPS.slice(1).map(([probability, r, g, b]) => (
+              <span key={probability}>
+                <i style={{ background: `rgb(${r},${g},${b})` }} aria-hidden="true" />
+                {probability}%
               </span>
             ))}
           </div>
         </div>
 
         <p className="aurora-oval-note">{OVAL_RESOLUTION_NOTE}</p>
+        <p className="aurora-oval-note">平滑漸層僅供視覺呈現，並非更高解析度預報；查詢仍使用 NOAA 原始約 1° 格點。陸地模式沿用既有冰島海岸遮罩。</p>
         <p className="aurora-oval-note">未著色：低於 1%。低機率不保證看不到；模型未計入雲量、日照與光害。</p>
         {peak !== undefined && <p className="aurora-oval-note">{peak < 1
           ? "本批冰島及近海包圍框未達 1% 著色門檻；忠實保留 NOAA 原始範圍。"

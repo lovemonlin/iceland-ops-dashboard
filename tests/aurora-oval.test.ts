@@ -528,8 +528,8 @@ test("the contour layers are applied after the map exists and stack high bands a
   assert.match(map, /const \[ready, setReady\] = useState\(false\)/);
   assert.match(map, /setReady\(true\)/);
   assert.match(map, /if \(!map \|\| !ready\) return;/);
-  assert.match(map, /\}, \[bands, ready\]\);/);
-  assert.match(map, /applyAuroraContourLayers\(map, bands\)/);
+  assert.match(map, /\}, \[grid, landOnly, ready\]\);/);
+  assert.match(map, /applyAuroraRaster\(map, grid, landOnly\)/);
 
   const layers = ["iceland-land-detail", "iceland-coastline-mask", AURORA_LAYER_ANCHOR, "site-circles"];
   const fakeMap = {
