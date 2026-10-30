@@ -20,6 +20,8 @@ import {
   OVAL_CAMERA_BOUNDS,
   OVAL_CAMERA_FALLBACK,
   ovalCameraPadding,
+  fitAuroraCamera,
+  ICELAND_CAMERA_BOUNDS,
   ovalSiteFeatureCollection,
   SITE_TAP_TOLERANCE,
 } from "../src/lib/auroraOval";
@@ -578,6 +580,44 @@ test("the camera keeps the app's geographic framing", () => {
   assert.equal(wide.bottom > 0 && wide.bottom < 380, true, "the bottom must leave the map visible");
   const tiny = ovalCameraPadding(120, 90);
   assert.equal(tiny.top + tiny.bottom < 90, true, "padding must never exceed the container");
+});
+
+test("Iceland camera fits desktop and phone containers without inherited overlay padding", () => {
+  const calls: { bounds: unknown; options: Record<string, unknown> }[] = [];
+  const map = { fitBounds: (bounds: unknown, options: Record<string, unknown>) => calls.push({ bounds, options }) };
+  for (const [width, height] of [[1440, 558], [390, 420], [900, 440]]) {
+    fitAuroraCamera(map as never, ICELAND_CAMERA_BOUNDS, width, height);
+    const call = calls.at(-1)!;
+    assert.deepEqual(call.bounds, ICELAND_CAMERA_BOUNDS);
+    assert.equal(call.options.duration, 0);
+    const padding = call.options.padding as { top: number; bottom: number; left: number; right: number };
+    assert.equal(padding.top, padding.bottom);
+    assert.ok(padding.top + padding.bottom < height / 2);
+    assert.ok(padding.left + padding.right < width / 2);
+  }
+  for (const site of WEATHER_SITES) {
+    assert.ok(site.lon >= ICELAND_CAMERA_BOUNDS[0][0] && site.lon <= ICELAND_CAMERA_BOUNDS[1][0]);
+    assert.ok(site.lat >= ICELAND_CAMERA_BOUNDS[0][1] && site.lat <= ICELAND_CAMERA_BOUNDS[1][1]);
+  }
+  fitAuroraCamera(map as never, ICELAND_CAMERA_BOUNDS, 0, 0);
+  assert.equal(calls.length, 3, "hidden containers never change the camera");
+  fitAuroraCamera(map as never, OVAL_CAMERA_BOUNDS, 900, 440);
+  assert.deepEqual(calls.at(-1)!.bounds, OVAL_CAMERA_BOUNDS, "northern view remains explicitly available");
+});
+
+test("default and resize keep selected bounds; all data panels stay outside the map overlay", () => {
+  const component = read("src/components/AuroraOvalMap.tsx");
+  assert.match(component, /bounds: ICELAND_CAMERA_BOUNDS/);
+  assert.match(component, /if \(cameraBounds\.current\) fitAuroraCamera\(map, cameraBounds\.current, width, height\)/);
+  assert.doesNotMatch(component, /frameOval|hadSize|map\.jumpTo/);
+  assert.match(component, /event\.originalEvent\) cameraBounds\.current = null/);
+  assert.match(component, /活動偏低/);
+  const css = read("src/app/globals.css");
+  for (const selector of ["aurora-oval-card", "aurora-oval-site"]) {
+    const rule = css.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))![1];
+    assert.match(rule, /position: static/);
+    assert.doesNotMatch(rule, /position: absolute/);
+  }
 });
 
 test("the gauges are untouched by this change", () => {

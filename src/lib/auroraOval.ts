@@ -428,19 +428,21 @@ export const OVAL_CAMERA_BOUNDS: [[number, number], [number, number]] = [
 ];
 /** What the app drops to when the fit throws. */
 export const OVAL_CAMERA_FALLBACK = { center: [-20, 68] as [number, number], zoom: 2.1 };
+export const ICELAND_CAMERA_BOUNDS: [[number, number], [number, number]] = [[-25.5, 62.8], [-12.5, 67.2]];
 
-/**
- * The app pads its fit for a full-height phone screen (34/52/34/330 px, the bottom being room for
- * the info card). A dashboard card is far shorter, so the same pixel numbers would leave nothing
- * to look at. The padding is scaled to the container instead, which preserves the framing rather
- * than the pixel counts.
- */
+/** Shared by initial load, explicit views and resize; never fit a hidden, zero-size map. */
+export function fitAuroraCamera(map: Pick<MapLibreMap, "fitBounds">, bounds: [[number, number], [number, number]], width: number, height: number) {
+  if (width <= 0 || height <= 0) return;
+  // MapLibre 6 accounts for padding in fitBounds without persisting it on the camera.
+  map.fitBounds(bounds, { padding: ovalCameraPadding(width, height), duration: 0 });
+}
+
+/** Responsive margins only; data cards no longer consume any of the map viewport. */
 export function ovalCameraPadding(width: number, height: number) {
   const side = Math.min(34, Math.round(width * 0.06));
   const top = Math.min(52, Math.round(height * 0.07));
-  // The app leaves 330 of ~700 px, about 47%, for the card it overlays at the bottom.
-  const bottom = Math.min(Math.round(height * 0.47), Math.max(0, height - top - 40));
-  return { top, bottom: Math.max(0, bottom), left: side, right: side };
+  // Information now occupies normal document flow, so no overlay space is reserved.
+  return { top, bottom: top, left: side, right: side };
 }
 
 /**

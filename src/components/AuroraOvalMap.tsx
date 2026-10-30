@@ -11,7 +11,8 @@ import {
   formatOvalTimes,
   OVAL_ATTRIBUTION,
   OVAL_CAMERA_BOUNDS,
-  OVAL_CAMERA_FALLBACK,
+  ICELAND_CAMERA_BOUNDS,
+  fitAuroraCamera,
   OVAL_LOADING,
   OVAL_RESOLUTION_NOTE,
   OVAL_TITLE,
@@ -21,7 +22,7 @@ import {
 } from "@/lib/auroraOval";
 import { decodeOvationGrid, icelandProbability, icelandGridPeak } from "@/lib/ovationGrid";
 import { ovationState } from "@/lib/auroraData";
-import { applyAuroraRaster, HEAT_STOPS } from "@/lib/auroraRaster";
+import { applyAuroraRaster, HEAT_STOPS, HEAT_LEGEND_GRADIENT, probabilityCssColor } from "@/lib/auroraRaster";
 import { getPublicAssetPath } from "@/lib/publicPath";
 import type { DashboardSnapshot } from "@/snapshot/types";
 
@@ -51,15 +52,6 @@ interface SiteSelection {
   lon: number;
 }
 
-/** The app wraps its own fit in `runCatching` and drops to a fixed centre and zoom; so does this. */
-function frameOval(map: MapLibreMap, width: number, height: number) {
-  try {
-    map.fitBounds(OVAL_CAMERA_BOUNDS, { padding: ovalCameraPadding(width, height), duration: 0 });
-  } catch {
-    map.jumpTo({ center: OVAL_CAMERA_FALLBACK.center, zoom: OVAL_CAMERA_FALLBACK.zoom });
-  }
-}
-
 export function AuroraOvalMap({
   ovation,
   snapshot,
@@ -73,10 +65,11 @@ export function AuroraOvalMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const cameraBounds = useRef<[[number, number], [number, number]] | null>(ICELAND_CAMERA_BOUNDS);
   const [failure, setFailure] = useState<string | null>(null);
   const [selected, setSelected] = useState<SiteSelection | null>(null);
   const [region, setRegion] = useState("ALL");
-  const [landOnly, setLandOnly] = useState(true);
+  const [landOnly, setLandOnly] = useState(false);
   // The map is created asynchronously, so the contour layers cannot simply be added in an effect
   // that runs at mount -- there is no map yet. This is what tells them the style is up.
   const [ready, setReady] = useState(false);
@@ -88,11 +81,17 @@ export function AuroraOvalMap({
   const sites = useMemo(() => ovalSiteFeatureCollection(snapshot, now), [snapshot, now]);
   const initialSites = useRef(sites);
 
-  const frameIceland = () => mapRef.current?.fitBounds([[-25, 63], [-13, 67]], { padding: 32, duration: 0 });
+  const frameBounds = (bounds: [[number, number], [number, number]]) => {
+    cameraBounds.current = bounds;
+    const map = mapRef.current, container = containerRef.current;
+    if (map && container) fitAuroraCamera(map, bounds, container.clientWidth, container.clientHeight);
+  };
+  const frameIceland = () => frameBounds(ICELAND_CAMERA_BOUNDS);
   const selectSite = (id: string) => {
     const site = WEATHER_SITES.find((candidate) => candidate.id === id);
     if (!site) { setSelected(null); return; }
     setSelected(site);
+    cameraBounds.current = null;
     mapRef.current?.easeTo({ center: [site.lon, site.lat], zoom: 6, duration: 0 });
   };
   const selectRegion = (value: string) => {
@@ -100,10 +99,10 @@ export function AuroraOvalMap({
     if (value === "ALL") { frameIceland(); return; }
     const points = WEATHER_SITES.filter((site) => site.region === value);
     if (!points.length) return;
-    mapRef.current?.fitBounds([
+    frameBounds([
       [Math.min(...points.map((site) => site.lon)) - 0.5, Math.min(...points.map((site) => site.lat)) - 0.25],
       [Math.max(...points.map((site) => site.lon)) + 0.5, Math.max(...points.map((site) => site.lat)) + 0.25],
-    ], { padding: 32, duration: 0 });
+    ]);
   };
 
   const observation = formatOvalTime(ovation.observationTime as string | undefined);
@@ -131,7 +130,7 @@ export function AuroraOvalMap({
         const created = new maplibre.Map({
           container,
           style: style as never,
-          bounds: OVAL_CAMERA_BOUNDS,
+          bounds: ICELAND_CAMERA_BOUNDS,
           fitBoundsOptions: { padding: ovalCameraPadding(container.clientWidth, container.clientHeight) },
           attributionControl: false,
           // The app disables both (AuroraOvalScreen.kt:180-181).
@@ -141,6 +140,9 @@ export function AuroraOvalMap({
         });
         mapRef.current = created;
         const map = created;
+        map.on("movestart", (event) => {
+          if (event.originalEvent) cameraBounds.current = null;
+        });
 
         map.on("error", (event) => {
           const message = (event as { error?: { message?: string } }).error?.message ?? "unknown map error";
@@ -151,8 +153,7 @@ export function AuroraOvalMap({
           if (disposed) return;
           if (container.clientWidth > 0 && container.clientHeight > 0) {
             map.resize();
-            if (standalone) map.fitBounds([[-25, 63], [-13, 67]], { padding: 32, duration: 0 });
-            else frameOval(map, container.clientWidth, container.clientHeight);
+            if (cameraBounds.current) fitAuroraCamera(map, cameraBounds.current, container.clientWidth, container.clientHeight);
           }
           setReady(true);
         });
@@ -194,7 +195,7 @@ export function AuroraOvalMap({
       mapRef.current = null;
       setReady(false);
     };
-  }, [standalone]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -211,38 +212,29 @@ export function AuroraOvalMap({
     applyAuroraRaster(map, grid, landOnly);
   }, [grid, landOnly, ready]);
 
-  /**
-   * A map built while its container is `display: none` measures zero, and fitting the northern
-   * hemisphere into zero pixels lands the camera at maximum zoom over empty ocean. `resize` alone
-   * keeps the centre and zoom, so the bounds are fitted again the first time it has a size.
-   */
+  // Refit the chosen bounds on resize; preserve manual pan/zoom and never restore a global view.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let hadSize = container.clientWidth > 0 && container.clientHeight > 0;
     const observer = new ResizeObserver(([entry]) => {
       const map = mapRef.current;
       if (!map) return;
       const { width, height } = entry.contentRect;
       if (width === 0 || height === 0) return;
       map.resize();
-      if (!hadSize) {
-        hadSize = true;
-        if (standalone) map.fitBounds([[-25, 63], [-13, 67]], { padding: 32, duration: 0 });
-        else frameOval(map, width, height);
-      }
+      if (cameraBounds.current) fitAuroraCamera(map, cameraBounds.current, width, height);
     });
     observer.observe(container);
     return () => observer.disconnect();
-  }, [standalone]);
+  }, []);
 
   return (
     <div className="aurora-oval">
       <div className="aurora-map-controls">
         <label>機率顯示
           <select aria-label="極光機率顯示模式" value={landOnly ? "land" : "oval"} onChange={(event) => setLandOnly(event.target.value === "land")}>
-            <option value="land">冰島陸地機率</option>
             <option value="oval">完整極光帶</option>
+            <option value="land">冰島陸地機率</option>
           </select>
         </label>
         <label>區域
@@ -258,10 +250,10 @@ export function AuroraOvalMap({
           </select>
         </label>
         <div className="aurora-map-buttons">
-          <button type="button" aria-label="極光地圖放大" onClick={() => mapRef.current?.zoomIn({ duration: 0 })}>＋</button>
-          <button type="button" aria-label="極光地圖縮小" onClick={() => mapRef.current?.zoomOut({ duration: 0 })}>−</button>
+          <button type="button" aria-label="極光地圖放大" onClick={() => { cameraBounds.current = null; mapRef.current?.zoomIn({ duration: 0 }); }}>＋</button>
+          <button type="button" aria-label="極光地圖縮小" onClick={() => { cameraBounds.current = null; mapRef.current?.zoomOut({ duration: 0 }); }}>−</button>
           <button type="button" onClick={() => { setRegion("ALL"); frameIceland(); }}>冰島全境</button>
-          <button type="button" onClick={() => { const map = mapRef.current; if (map) frameOval(map, containerRef.current?.clientWidth ?? 900, containerRef.current?.clientHeight ?? 440); }}>北半球</button>
+          <button type="button" onClick={() => frameBounds(OVAL_CAMERA_BOUNDS)}>北半球</button>
         </div>
       </div>
       <div className="aurora-oval-mapframe">
@@ -282,7 +274,7 @@ export function AuroraOvalMap({
 
       {failure && <p className="muted-line">地圖載入失敗：{failure}</p>}
 
-      {/* AuroraOvalInfoCard, overlaid at the bottom of the map as the app overlays it. */}
+      {/* Normal document flow below the map; never cover the map or its controls. */}
       <div className="aurora-oval-card">
         <strong>{standalone ? "冰島 OVATION 模型機率" : OVAL_TITLE}</strong>
         <p className={state.current ? "ok" : "warn"}>{state.current ? "有效模型預報" : `歷史資料 · ${state.label}`}</p>
@@ -299,11 +291,11 @@ export function AuroraOvalMap({
         )}
 
         <div className="aurora-oval-legend">
-          <div className="aurora-oval-legend-bar" style={{ background: "linear-gradient(to right, #3D5B78 0%, #4ADE80 10%, #FB923C 30%, #F87171 50%, #F87171 100%)" }} aria-hidden="true" />
+          <div className="aurora-oval-legend-bar" style={{ background: HEAT_LEGEND_GRADIENT }} aria-hidden="true" />
           <div className="aurora-oval-legend-items">
-            {HEAT_STOPS.slice(1).map(([probability, r, g, b]) => (
+            {HEAT_STOPS.slice(1).map(([probability]) => (
               <span key={probability}>
-                <i style={{ background: `rgb(${r},${g},${b})` }} aria-hidden="true" />
+                <i style={{ background: probabilityCssColor(probability) }} aria-hidden="true" />
                 {probability}%
               </span>
             ))}
@@ -312,10 +304,12 @@ export function AuroraOvalMap({
 
         <p className="aurora-oval-note">{OVAL_RESOLUTION_NOTE}</p>
         <p className="aurora-oval-note">平滑漸層僅供視覺呈現，並非更高解析度預報；查詢仍使用 NOAA 原始約 1° 格點。陸地模式沿用既有冰島海岸遮罩。</p>
+        <p className="aurora-oval-note">藍灰色表示低機率活動，隨機率升高漸變為綠、橘、紅；透明度僅供辨識，不等同機率百分比。圖例與地圖使用相同色階及透明度。</p>
         <p className="aurora-oval-note">未著色：低於 1%。低機率不保證看不到；模型未計入雲量、日照與光害。</p>
         {peak !== undefined && <p className="aurora-oval-note">{peak < 1
           ? "本批冰島及近海包圍框未達 1% 著色門檻；忠實保留 NOAA 原始範圍。"
           : `本批冰島及近海包圍框最高 ${peak}%（63–67°N、25–13°W，非全島平均）。`}</p>}
+        {peak !== undefined && peak < 10 && <p className="aurora-oval-note">目前模型預測活動偏低，地圖可能沒有明顯著色；未提高任何原始機率。</p>}
         <p className="aurora-oval-note">底色色帶表示 OVATION 機率；圓點顏色沿用綜合可見度評分。</p>
         <p className="aurora-oval-note">{OVAL_ATTRIBUTION}</p>
       </div>

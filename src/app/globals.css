@@ -1418,9 +1418,7 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   .road-dialog { max-height: 86vh; }
 }
 
-/* ── Aurora position map (AuroraOvalScreen.kt) ───────────────────────────────
-   The info card is overlaid at the bottom of the map, as the app overlays it — never beside it.
-   Compose dp and CSS px are both 1/160 inch at scale 1, so the app's 18/12/14 dp carry across. */
+/* Aurora map and information use separate normal-flow blocks. */
 .aurora-view-modes { margin-top: 14px; }
 .aurora-oval { position: relative; margin-top: 12px; min-width: 0; max-width: 100%; overflow: hidden; }
 .aurora-oval-canvas {
@@ -1428,8 +1426,6 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  /* The app's card covers roughly the bottom 47% of a phone screen; this keeps a similar share
-     of the map visible above it rather than letting the card take over a short container. */
   height: 440px;
   border-radius: 10px;
   overflow: hidden;
@@ -1448,12 +1444,12 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   display: block;
 }
 
-/* Bottom-centred, 12dp outer margin, 14dp inner padding, 18dp corners, surface at 0.94 alpha. */
+/* Information below the map, on both Dashboard and standalone pages. */
 .aurora-oval-card {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  position: static;
+  margin-top: 10px;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 18px;
   padding: 14px;
   background: rgba(19, 30, 45, 0.94);
@@ -1499,12 +1495,11 @@ time { color: var(--muted); font-variant-numeric: tabular-nums; }
   flex: none;
 }
 
-/* The selected site, over the map so it does not push the info card off the bottom. */
+/* Selection details also leave the entire map unobstructed. */
 .aurora-oval-site {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 12px;
+  position: static;
+  margin: 10px 0;
+  min-width: 0;
   border-radius: 12px;
   padding: 10px 12px;
   background: rgba(19, 30, 45, 0.96);

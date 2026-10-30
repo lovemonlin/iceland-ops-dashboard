@@ -2,7 +2,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { OvationGrid } from "@/lib/ovationGrid";
 import coast from "@/lib/icelandCoastRing.json";
 
-export const HEAT_STOPS = [[0, 61, 91, 120], [10, 74, 222, 128], [30, 251, 146, 60], [50, 248, 113, 113], [100, 248, 113, 113]];
+export const HEAT_STOPS = [[0, 61, 91, 120], [1, 61, 91, 120], [10, 74, 222, 128], [30, 251, 146, 60], [50, 248, 113, 113], [100, 248, 113, 113]];
 export const mercatorY = (latitude: number) => Math.log(Math.tan(Math.PI / 4 + latitude * Math.PI / 360));
 export const mercatorLatitude = (y: number) => (2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180 / Math.PI;
 
@@ -20,8 +20,17 @@ export function probabilityColor(probability: number): number[] {
   const high = HEAT_STOPS[Math.max(1, index)], low = HEAT_STOPS[Math.max(1, index) - 1];
   const fraction = Math.max(0, Math.min(1, (probability - low[0]) / (high[0] - low[0])));
   return [...low.slice(1).map((channel, i) => Math.round(channel + (high[i + 1] - channel) * fraction)),
-    probability < 1 ? 0 : Math.round(150 * Math.sqrt(probability / 100))];
+    // Display transfer only: retain the 1% cutoff and original probabilities. Low activity
+    // remains blue/green but is legible; opacity is not itself a probability percentage.
+    probability < 1 ? 0 : Math.round(255 * (0.35 + 0.35 * Math.sqrt(probability / 100)))];
 }
+
+/** Use exactly the raster's colour/opacity transfer for both legend stops and swatches. */
+export const probabilityCssColor = (probability: number) => {
+  const [r, g, b, a] = probabilityColor(probability);
+  return `rgba(${r},${g},${b},${a / 255})`;
+};
+export const HEAT_LEGEND_GRADIENT = `linear-gradient(to right, ${probabilityCssColor(0)} 0%, ${probabilityCssColor(0)} 1%, ${HEAT_STOPS.slice(1).map(([p]) => `${probabilityCssColor(p)} ${p}%`).join(", ")})`;
 
 /** Canvas pixels are uniformly spaced in Mercator, matching MapLibre's raster texture mapping. */
 export function drawAuroraRaster(grid: OvationGrid, landOnly: boolean) {
